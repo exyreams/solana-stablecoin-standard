@@ -7,72 +7,90 @@ use spl_tlv_account_resolution::{
 };
 
 /// PDA seeds for the ExtraAccountMetaList account.
+/// Must match what Token-2022 uses to look up the hook's validation account.
 pub const EXTRA_ACCOUNT_META_LIST_SEEDS: &[u8] = b"extra-account-metas";
 
-/// Accounts required to initialize the ExtraAccountMetaList for this hook.
-/// Must be called once, immediately after the SSS-2 mint is created.
 #[derive(Accounts)]
 pub struct InitializeExtraAccountMetaList<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// ExtraAccountMetaList PDA — tells the Token-2022 runtime which extra accounts
+    /// ExtraAccountMetaList PDA — tells Token-2022 which extra accounts
     /// must be passed to this hook on every transfer.
-    /// Seeds: ["extra-account-metas", mint]
     ///
-    /// CHECK: Account size is computed from ExtraAccountMetaList::size_of and
-    /// created by Anchor's init constraint.
+    /// CHECK: Account data is written manually by ExtraAccountMetaList::init.
     #[account(
         init,
         payer = payer,
-        space = ExtraAccountMetaList::size_of(2).unwrap(),
+        space = ExtraAccountMetaList::size_of(3).unwrap(),
         seeds = [EXTRA_ACCOUNT_META_LIST_SEEDS, mint.key().as_ref()],
         bump,
     )]
     pub extra_account_meta_list: UncheckedAccount<'info>,
 
     pub mint: Box<InterfaceAccount<'info, Mint>>,
+
+    /// The sss-token program whose blacklist PDAs we need to resolve.
+    /// CHECK: Stored as a fixed pubkey in the ExtraAccountMetaList so
+    /// Token-2022 can derive blacklist PDAs owned by this program.
+    pub sss_token_program: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<InitializeExtraAccountMetaList>) -> Result<()> {
-    // The hook requires two extra accounts on every transfer:
+pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Result<()> {
+    // Token-2022 execute instruction account layout:
     //
-    //  [5] source_blacklist_entry  — BlacklistEntry PDA for the source wallet owner
-    //  [6] destination_blacklist_entry — BlacklistEntry PDA for the dest wallet owner
-    //
-    // Standard Token-2022 hook account indices for the Execute instruction:
-    //   0 = source_account (token account)
-    //   1 = mint
-    //   2 = destination_account (token account)
-    //   3 = owner / authority (source wallet)
-    //   4 = ExtraAccountMetaList PDA (this account)
-    //
-    // We use AccountKey seeds relative to the transfer accounts so the runtime
-    // derives them automatically from the transfer context.
+    //   0  source_token           (token account)
+    //   1  mint
+    //   2  destination_token      (token account)
+    //   3  authority              (owner or delegate)
+    //   4  extra_account_meta_list (this PDA)
+    //   ── extra accounts resolved from this list ──
+    //   5  sss_token_program      (extra #0)
+    //   6  source_blacklist_entry  (extra #1)
+    //   7  destination_blacklist_entry (extra #2)
 
     let account_metas = vec![
-        // Source blacklist entry: seeds = ["blacklist", mint, source_owner]
-        ExtraAccountMeta::new_with_seeds(
-            &[
-                Seed::Literal { bytes: b"blacklist".to_vec() },
-                Seed::AccountKey { index: 1 }, // mint (index 1)
-                Seed::AccountKey { index: 3 }, // source token account owner (index 3)
-            ],
+        // Extra #0 (index 5): sss-token program as a fixed pubkey.
+        // Needed so we can derive blacklist PDAs under this program.
+        ExtraAccountMeta::new_with_pubkey(
+            &ctx.accounts.sss_token_program.key(),
             false, // is_signer
             false, // is_writable
         )?,
-        // Destination blacklist entry: seeds = ["blacklist", mint, dest_owner]
-        // We need to extract the owner from the destination token account (index 2)
-        // TokenAccount owner is at offset 32 (after mint pubkey)
-        ExtraAccountMeta::new_with_seeds(
+
+        // Extra #1 (index 6): source blacklist entry.
+        // PDA of sss-token program (at index 5): ["blacklist", mint, source_owner].
+        // We read the owner from the source token account's data (offset 32)
+        // instead of using the authority at index 3, because the authority
+        // could be a delegate — we always want to check the actual wallet owner.
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5, // program at overall index 5 (sss-token)
             &[
                 Seed::Literal { bytes: b"blacklist".to_vec() },
-                Seed::AccountKey { index: 1 }, // mint
-                Seed::AccountData { 
-                    account_index: 2,  // destination token account
+                Seed::AccountKey { index: 1 },       // mint
+                Seed::AccountData {
+                    account_index: 0,  // source token account
                     data_index: 32,    // owner field offset in TokenAccount
-                    length: 32,        // Pubkey length
+                    length: 32,        // Pubkey size
+                },
+            ],
+            false,
+            false,
+        )?,
+
+        // Extra #2 (index 7): destination blacklist entry.
+        // PDA of sss-token program (at index 5): ["blacklist", mint, dest_owner].
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5, // program at overall index 5 (sss-token)
+            &[
+                Seed::Literal { bytes: b"blacklist".to_vec() },
+                Seed::AccountKey { index: 1 },       // mint
+                Seed::AccountData {
+                    account_index: 2,  // destination token account
+                    data_index: 32,    // owner field offset
+                    length: 32,        // Pubkey size
                 },
             ],
             false,
@@ -81,7 +99,6 @@ pub fn handler(ctx: Context<InitializeExtraAccountMetaList>) -> Result<()> {
     ];
 
     // Write the ExtraAccountMetaList into the PDA's data.
-    // No signer seeds needed here — Anchor already handled account creation above.
     ExtraAccountMetaList::init::<spl_transfer_hook_interface::instruction::ExecuteInstruction>(
         &mut ctx.accounts.extra_account_meta_list.try_borrow_mut_data()?,
         &account_metas,

@@ -36,7 +36,7 @@ pub use instructions::{
     },
 };
 
-declare_id!("SSSTokenXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+declare_id!("EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK");
 
 #[program]
 pub mod sss_token {
