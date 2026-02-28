@@ -9,6 +9,7 @@ pub struct StablecoinInitialized {
     pub decimals: u8,
     pub enable_permanent_delegate: bool,
     pub enable_transfer_hook: bool,
+    pub enable_confidential_transfers: bool,
     pub master_authority: Pubkey,
     pub timestamp: i64,
 }
@@ -114,5 +115,34 @@ pub struct TokensSeized {
     pub to: Pubkey,
     pub amount: u64,
     pub seizer: Pubkey,
+    pub timestamp: i64,
+}
+
+// ── SSS-3 Events ─────────────────────────────────────────────────────────────
+
+/// Emitted when an account is approved for confidential transfers.
+#[event]
+pub struct AccountApprovedForConfidentialTransfer {
+    pub token_account: Pubkey,
+    pub mint: Pubkey,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when confidential credits are enabled for an account.
+#[event]
+pub struct ConfidentialCreditsEnabled {
+    pub token_account: Pubkey,
+    pub owner: Pubkey,
+    pub mint: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when confidential credits are disabled for an account.
+#[event]
+pub struct ConfidentialCreditsDisabled {
+    pub token_account: Pubkey,
+    pub owner: Pubkey,
+    pub mint: Pubkey,
     pub timestamp: i64,
 }

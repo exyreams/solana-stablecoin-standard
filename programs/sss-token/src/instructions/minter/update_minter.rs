@@ -12,7 +12,7 @@ pub struct UpdateMinter<'info> {
     pub stablecoin_state: Account<'info, StablecoinState>,
 
     #[account(
-        seeds = [b"roles_config", stablecoin_state.key().as_ref()],
+        seeds = [b"roles_config", stablecoin_state.mint.as_ref()],
         bump = roles_config.bump,
         constraint = roles_config.master_authority == authority.key(),
     )]
@@ -23,7 +23,7 @@ pub struct UpdateMinter<'info> {
 
     #[account(
         mut,
-        seeds = [MinterQuota::SEED, stablecoin_state.key().as_ref(), minter.key().as_ref()],
+        seeds = [MinterQuota::SEED, stablecoin_state.mint.as_ref(), minter.key().as_ref()],
         bump = minter_quota.bump,
     )]
     pub minter_quota: Account<'info, MinterQuota>,

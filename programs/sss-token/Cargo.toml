@@ -1,7 +1,7 @@
 [package]
 name = "sss-token"
 version = "0.1.0"
-description = "Solana Stablecoin Standard — main program (SSS-1 & SSS-2)"
+description = "Solana Stablecoin Standard — main program (SSS-1, SSS-2, SSS-3)"
 edition = "2021"
 
 [lib]
@@ -23,6 +23,7 @@ anchor-debug = []
 anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
 anchor-spl = { version = "0.32.1", features = ["token_2022", "token_2022_extensions"] }
 blake3 = "=1.7.0"
+bytemuck = "1.25.0"
 spl-token-2022 = { version = "7.0.0", features = ["no-entrypoint"] }
 spl-token-metadata-interface = "0.6.0"
 spl-transfer-hook-interface = "0.9.0"

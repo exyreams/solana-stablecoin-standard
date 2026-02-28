@@ -5,6 +5,7 @@ use spl_token_2022::{
         ExtensionType,
         default_account_state,
         metadata_pointer,
+        confidential_transfer,
     },
     instruction as token_instruction,
     state::{Mint as SplMint, AccountState},
@@ -23,10 +24,17 @@ pub struct StablecoinConfig {
     pub symbol: String,
     pub uri: String,
     pub decimals: u8,
+    // SSS-2 features
     pub enable_permanent_delegate: bool,
     pub enable_transfer_hook: bool,
     pub default_account_frozen: bool,
     pub transfer_hook_program_id: Option<Pubkey>,
+    // SSS-3 features
+    pub enable_confidential_transfers: bool,
+    pub confidential_transfer_auto_approve: bool,
+    /// Optional auditor ElGamal public key for confidential transfers.
+    /// If provided, the auditor can decrypt all confidential transfer amounts.
+    pub auditor_elgamal_pubkey: Option<[u8; 32]>,
 }
 
 #[derive(Accounts)]
@@ -80,6 +88,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     let mint_key = ctx.accounts.mint.key();
     let token_program_id = Token2022::id();
 
+    // ── Build extension list ─────────────────────────────────────────────
     let mut extensions = vec![ExtensionType::MintCloseAuthority];
     extensions.push(ExtensionType::MetadataPointer);
 
@@ -92,7 +101,11 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     if config.default_account_frozen {
         extensions.push(ExtensionType::DefaultAccountState);
     }
+    if config.enable_confidential_transfers {
+        extensions.push(ExtensionType::ConfidentialTransferMint);
+    }
 
+    // ── Create mint account with space for all extensions ────────────────
     let space = ExtensionType::try_calculate_account_len::<SplMint>(&extensions)
         .map_err(|_| SssError::Overflow)?;
     let lamports = Rent::get()?.minimum_balance(space);
@@ -111,6 +124,8 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     )?;
 
     let state_pda = ctx.accounts.stablecoin_state.key();
+
+    // ── Initialize all extensions BEFORE initialize_mint2 ────────────────
 
     invoke(
         &token_instruction::initialize_mint_close_authority(
@@ -166,6 +181,27 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         )?;
     }
 
+    // ── SSS-3: Initialize confidential transfer mint extension ───────────
+    if config.enable_confidential_transfers {
+        use spl_token_2022::solana_zk_sdk::encryption::pod::elgamal::PodElGamalPubkey;
+
+        let auditor_elgamal: Option<PodElGamalPubkey> = config
+            .auditor_elgamal_pubkey
+            .map(|bytes| *bytemuck::from_bytes::<PodElGamalPubkey>(&bytes));
+
+        invoke(
+            &confidential_transfer::instruction::initialize_mint(
+                &token_program_id,
+                &mint_key,
+                Some(state_pda),
+                config.confidential_transfer_auto_approve,
+                auditor_elgamal,
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
+
+    // ── Initialize the mint itself (MUST come after all extensions) ──────
     invoke(
         &token_instruction::initialize_mint2(
             &token_program_id,
@@ -177,6 +213,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         &[ctx.accounts.mint.to_account_info()],
     )?;
 
+    // ── Token metadata (can come after mint init) ────────────────────────
     let metadata_ix = spl_token_metadata_interface::instruction::initialize(
         &token_program_id,
         &mint_key,
@@ -196,6 +233,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         ],
     )?;
 
+    // ── Persist state ────────────────────────────────────────────────────
     let state = &mut ctx.accounts.stablecoin_state;
     state.mint = mint_key;
     state.name = config.name.clone();
@@ -205,6 +243,8 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     state.enable_permanent_delegate = config.enable_permanent_delegate;
     state.enable_transfer_hook = config.enable_transfer_hook;
     state.default_account_frozen = config.default_account_frozen;
+    state.enable_confidential_transfers = config.enable_confidential_transfers;
+    state.confidential_transfer_auto_approve = config.confidential_transfer_auto_approve;
     state.paused = false;
     state.total_supply = 0;
     state.bump = ctx.bumps.stablecoin_state;
@@ -225,6 +265,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         decimals: config.decimals,
         enable_permanent_delegate: config.enable_permanent_delegate,
         enable_transfer_hook: config.enable_transfer_hook,
+        enable_confidential_transfers: config.enable_confidential_transfers,
         master_authority: authority_key,
         timestamp: clock.unix_timestamp,
     });

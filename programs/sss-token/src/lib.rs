@@ -34,6 +34,11 @@ pub use instructions::{
         remove_from_blacklist::RemoveFromBlacklist,
         seize::Seize,
     },
+    sss3::{
+        approve_account::ApproveAccount,
+        enable_confidential_credits::EnableConfidentialCredits,
+        disable_confidential_credits::DisableConfidentialCredits,
+    },
 };
 
 declare_id!("EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK");
@@ -52,6 +57,10 @@ pub mod sss_token {
 
     pub fn burn(ctx: Context<Burn>, amount: u64) -> Result<()> {
         instructions::token_core::burn::handler(ctx, amount)
+    }
+
+    pub fn get_supply(ctx: Context<GetSupply>) -> Result<u64> {
+        instructions::token_core::get_supply::handler(ctx)
     }
 
     pub fn freeze_account(ctx: Context<FreezeAccount>) -> Result<()> {
@@ -107,6 +116,20 @@ pub mod sss_token {
 
     pub fn seize(ctx: Context<Seize>, amount: u64) -> Result<()> {
         instructions::sss2::seize::handler(ctx, amount)
+    }
+
+    // ========== SSS-3: Privacy Features ==========
+
+    pub fn approve_account(ctx: Context<ApproveAccount>) -> Result<()> {
+        instructions::sss3::approve_account::handler(ctx)
+    }
+
+    pub fn enable_confidential_credits(ctx: Context<EnableConfidentialCredits>) -> Result<()> {
+        instructions::sss3::enable_confidential_credits::handler(ctx)
+    }
+
+    pub fn disable_confidential_credits(ctx: Context<DisableConfidentialCredits>) -> Result<()> {
+        instructions::sss3::disable_confidential_credits::handler(ctx)
     }
 }
 

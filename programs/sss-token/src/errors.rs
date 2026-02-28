@@ -38,6 +38,12 @@ pub enum SssError {
     #[msg("Target account is blacklisted and cannot receive transfers")]
     BlacklistedAccount,
 
+    // ── SSS-3 ────────────────────────────────────────────────────────────────
+    #[msg("Requested feature is not enabled on this mint")]
+    FeatureNotEnabled,
+    #[msg("Invalid ElGamal public key")]
+    InvalidElGamalPubkey,
+
     // ── Misc ─────────────────────────────────────────────────────────────────
     #[msg("Name too long — maximum 32 characters")]
     NameTooLong,
@@ -49,4 +55,6 @@ pub enum SssError {
     Overflow,
     #[msg("transfer_hook_program_id is required when enable_transfer_hook = true")]
     MissingTransferHookProgram,
+    #[msg("Invalid mint address")]
+    InvalidMint,
 }
