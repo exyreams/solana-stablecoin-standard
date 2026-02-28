@@ -1,32 +1,31 @@
 {
-    "name": "@stbr/sss-token-cli",
-    "version": "0.1.0",
-    "description": "Solana Stablecoin Standard — Admin CLI",
-    "bin": {
-        "sss-token": "dist/index.js"
-    },
-    "main": "dist/index.js",
-    "license": "MIT",
-    "scripts": {
-        "build": "tsc",
-        "dev": "ts-node src/index.ts",
-        "prepublishOnly": "pnpm build"
-    },
-    "dependencies": {
-        "@coral-xyz/anchor": "^0.32.1",
-        "@solana/spl-token": "^0.4.9",
-        "@solana/web3.js": "^1.95.3",
-        "@stbr/sss-token-sdk": "workspace:*",
-        "@iarna/toml": "^2.2.5",
-        "chalk": "^4.1.2",
-        "cli-table3": "^0.6.3",
-        "commander": "^12.0.0",
-        "ora": "^5.4.1",
-        "zod": "^3.22.4"
-    },
-    "devDependencies": {
-        "@types/node": "^20.11.5",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.3.3"
-    }
+  "name": "@stbr/sss-token-cli",
+  "version": "0.1.0",
+  "description": "Solana Stablecoin Standard — Admin CLI",
+  "bin": {
+    "sss-token": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.3",
+    "@stbr/sss-token-sdk": "workspace:*",
+    "@iarna/toml": "^2.2.5",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3",
+    "commander": "^12.0.0",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
 }
