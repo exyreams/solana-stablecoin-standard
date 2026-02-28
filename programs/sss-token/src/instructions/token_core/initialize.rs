@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program::program::invoke};
+use anchor_lang::{prelude::*, solana_program::program::{invoke, invoke_signed}};
 use anchor_spl::token_2022::Token2022;
 use spl_token_2022::{
     extension::{
@@ -87,6 +87,18 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     let authority_key = ctx.accounts.authority.key();
     let mint_key = ctx.accounts.mint.key();
     let token_program_id = Token2022::id();
+    let state_pda = ctx.accounts.stablecoin_state.key();
+
+    // PDA signer seeds — the stablecoin_state PDA was already created by
+    // Anchor's `init` constraint, so the address is valid.  We need these
+    // seeds for invoke_signed calls where the PDA must act as a signer
+    // (e.g. metadata initialization requires the mint authority to sign).
+    let stablecoin_bump = ctx.bumps.stablecoin_state;
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"stablecoin_state",
+        mint_key.as_ref(),
+        &[stablecoin_bump],
+    ]];
 
     // ── Build extension list ─────────────────────────────────────────────
     let mut extensions = vec![ExtensionType::MintCloseAuthority];
@@ -123,24 +135,26 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         &token_program_id,
     )?;
 
-    let state_pda = ctx.accounts.stablecoin_state.key();
-
     // ── Initialize all extensions BEFORE initialize_mint2 ────────────────
 
+    // MintCloseAuthority — set to PDA so only the program can close the
+    // mint (requires zero supply).  No EOA retains this power.
     invoke(
         &token_instruction::initialize_mint_close_authority(
             &token_program_id,
             &mint_key,
-            Some(&authority_key),
+            Some(&state_pda),
         )?,
         &[ctx.accounts.mint.to_account_info()],
     )?;
 
+    // MetadataPointer — authority set to PDA for consistency; the pointer
+    // itself targets the mint account (metadata stored on-mint).
     invoke(
         &metadata_pointer::instruction::initialize(
             &token_program_id,
             &mint_key,
-            Some(authority_key),
+            Some(state_pda),
             Some(mint_key),
         )?,
         &[ctx.accounts.mint.to_account_info()],
@@ -170,11 +184,13 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
 
     if config.enable_transfer_hook {
         let hook_program_id = config.transfer_hook_program_id.unwrap();
+        // Transfer hook authority set to PDA — only the program can
+        // update the hook program ID in the future (via a new instruction).
         invoke(
             &spl_token_2022::extension::transfer_hook::instruction::initialize(
                 &token_program_id,
                 &mint_key,
-                Some(authority_key),
+                Some(state_pda),
                 Some(hook_program_id),
             )?,
             &[ctx.accounts.mint.to_account_info()],
@@ -214,23 +230,29 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     )?;
 
     // ── Token metadata (can come after mint init) ────────────────────────
+    // Both update_authority and mint_authority are set to the PDA.
+    // The PDA is the mint authority (set above in initialize_mint2),
+    // so it must sign this instruction via invoke_signed.
     let metadata_ix = spl_token_metadata_interface::instruction::initialize(
         &token_program_id,
         &mint_key,
-        &authority_key,
+        &state_pda,         // update_authority = PDA
         &mint_key,
-        &authority_key,
+        &state_pda,         // mint_authority = PDA (signer)
         config.name.clone(),
         config.symbol.clone(),
         config.uri.clone(),
     );
 
-    invoke(
+    invoke_signed(
         &metadata_ix,
         &[
             ctx.accounts.mint.to_account_info(),
-            ctx.accounts.authority.to_account_info(),
+            ctx.accounts.stablecoin_state.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.stablecoin_state.to_account_info(),
         ],
+        signer_seeds,
     )?;
 
     // ── Persist state ────────────────────────────────────────────────────
@@ -247,7 +269,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     state.confidential_transfer_auto_approve = config.confidential_transfer_auto_approve;
     state.paused = false;
     state.total_supply = 0;
-    state.bump = ctx.bumps.stablecoin_state;
+    state.bump = stablecoin_bump;
 
     let roles = &mut ctx.accounts.roles_config;
     roles.master_authority = authority_key;

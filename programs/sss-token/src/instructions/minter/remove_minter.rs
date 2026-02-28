@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, state::{MinterQuota, RolesConfig, StablecoinState}};
+use crate::{errors::SssError, events::MinterRemoved, state::{MinterQuota, RolesConfig, StablecoinState}};
 
 #[derive(Accounts)]
 pub struct RemoveMinter<'info> {
@@ -37,6 +37,18 @@ pub fn handler(ctx: Context<RemoveMinter>) -> Result<()> {
         ctx.accounts.authority.key() == ctx.accounts.roles_config.master_authority,
         SssError::Unauthorized
     );
+
+    let mint = ctx.accounts.stablecoin_state.mint;
+    let minter_key = ctx.accounts.minter.key();
+    let total_minted = ctx.accounts.minter_quota.minted;
+
+    emit!(MinterRemoved {
+        mint,
+        minter: minter_key,
+        total_minted,
+        authority: ctx.accounts.authority.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     // Account closed via `close = authority` constraint above.
     Ok(())

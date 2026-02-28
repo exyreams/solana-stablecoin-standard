@@ -83,8 +83,9 @@ pub mod sss_token {
         ctx: Context<UpdateMinter>,
         quota: u64,
         active: bool,
+        reset_minted: bool,
     ) -> Result<()> {
-        instructions::minter::update_minter::handler(ctx, quota, active)
+        instructions::minter::update_minter::handler(ctx, quota, active, reset_minted)
     }
 
     pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {

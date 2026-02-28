@@ -44,12 +44,6 @@ pub fn handler(ctx: Context<Burn>, amount: u64) -> Result<()> {
         SssError::NotBurner
     );
 
-    // Update total supply
-    state.total_supply = state
-        .total_supply
-        .checked_sub(amount)
-        .ok_or(SssError::Overflow)?;
-
     let cpi_ctx = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
         SplBurn {
@@ -59,6 +53,14 @@ pub fn handler(ctx: Context<Burn>, amount: u64) -> Result<()> {
         },
     );
     spl_burn(cpi_ctx, amount)?;
+
+    // Sync total_supply with the actual on-chain mint supply after the burn.
+    // This approach keeps total_supply accurate even if tokens were previously
+    // burned directly via Token-2022 (bypassing this program).  The CPI above
+    // already validates that the account holds enough tokens, so an explicit
+    // checked_sub is unnecessary.
+    ctx.accounts.mint.reload()?;
+    state.total_supply = ctx.accounts.mint.supply;
 
     emit!(TokensBurned {
         mint: ctx.accounts.mint.key(),

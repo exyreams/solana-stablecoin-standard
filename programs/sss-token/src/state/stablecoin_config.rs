@@ -1,7 +1,13 @@
 use anchor_lang::prelude::*;
 
 /// Central configuration stored on-chain for the stablecoin.
-/// Initialized once; most fields are immutable after init (except paused/roles).
+/// Initialized once; most fields are immutable after init (except paused/total_supply).
+///
+/// **Note on `total_supply`:** This field is synced with the actual `mint.supply`
+/// after every mint/burn operation through this program.  If tokens are burned
+/// directly via Token-2022 (bypassing this program), the value may be temporarily
+/// stale until the next program-mediated mint or burn.  Use the `get_supply`
+/// instruction (which reads directly from the mint account) for the canonical value.
 #[account]
 #[derive(Default)]
 pub struct StablecoinState {
@@ -33,7 +39,8 @@ pub struct StablecoinState {
     // ── Runtime state ────────────────────────────────────────────────────
     /// Whether minting/burning is paused globally.
     pub paused: bool,
-    /// Total supply tracking (updated on mint/burn).
+    /// Total supply tracking — synced with `mint.supply` after every program
+    /// mint/burn.  For the canonical value, read directly from the mint account.
     pub total_supply: u64,
     /// PDA bump.
     pub bump: u8,
@@ -56,14 +63,6 @@ impl StablecoinState {
         + 1                    // paused
         + 8                    // total_supply
         + 1;                   // bump
-
-    /// Returns the master authority from the roles config.
-    /// This is a convenience method - actual authority is stored in RolesConfig.
-    pub fn master_authority(&self) -> Pubkey {
-        // Note: In practice, you'd pass in or load the RolesConfig
-        // This is a placeholder showing the pattern
-        Pubkey::default()
-    }
 
     /// Check if this is an SSS-3 (privacy-enabled) stablecoin.
     pub fn is_sss3(&self) -> bool {

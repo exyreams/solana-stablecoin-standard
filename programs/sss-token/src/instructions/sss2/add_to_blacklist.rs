@@ -33,6 +33,26 @@ pub struct AddToBlacklist<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Truncate a string to fit within `max_bytes` without splitting a
+/// multi-byte UTF-8 character.  The original code used `.chars().take(128)`
+/// which counts *characters*, not bytes — a 128-character string of 4-byte
+/// emoji would be 512 bytes and exceed the 128-byte allocation.
+fn truncate_to_bytes(s: &str, max_bytes: usize) -> String {
+    if s.len() <= max_bytes {
+        return s.to_string();
+    }
+    // Walk character boundaries until adding the next char would exceed the limit.
+    let mut end = 0;
+    for c in s.chars() {
+        let next = end + c.len_utf8();
+        if next > max_bytes {
+            break;
+        }
+        end = next;
+    }
+    s[..end].to_string()
+}
+
 pub fn handler(ctx: Context<AddToBlacklist>, reason: String) -> Result<()> {
     let state = &ctx.accounts.stablecoin_state;
     let roles = &ctx.accounts.roles_config;
@@ -48,7 +68,9 @@ pub fn handler(ctx: Context<AddToBlacklist>, reason: String) -> Result<()> {
     let entry = &mut ctx.accounts.blacklist_entry;
     entry.mint = state.mint;
     entry.address = ctx.accounts.target.key();
-    entry.reason = reason.chars().take(128).collect();
+    // Truncate by bytes (not characters) to guarantee the serialized
+    // string fits within the 128-byte allocation in BlacklistEntry::LEN.
+    entry.reason = truncate_to_bytes(&reason, 128);
     entry.timestamp = clock.unix_timestamp;
     entry.bump = ctx.bumps.blacklist_entry;
 

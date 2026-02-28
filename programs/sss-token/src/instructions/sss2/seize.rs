@@ -6,6 +6,18 @@ use anchor_spl::{
 
 use crate::{errors::SssError, events::TokensSeized, state::{RolesConfig, StablecoinState}};
 
+/// Seize tokens from any account using the permanent delegate authority.
+///
+/// # Design Notes
+///
+/// **No blacklist check required:**  Seizure may target accounts that are not
+/// blacklisted (e.g., court orders, regulatory directives).  Blacklisting and
+/// seizure are independent compliance tools.  If an operator wants to
+/// blacklist-then-seize, they issue two separate instructions.
+///
+/// **No pause check:**  Seizure must remain operational even when the
+/// stablecoin is paused.  During a security incident the operator may need to
+/// pause minting/burning while still moving funds to a treasury.
 #[derive(Accounts)]
 pub struct Seize<'info> {
     /// The human operator who triggered the seize — must hold the `seizer` role.

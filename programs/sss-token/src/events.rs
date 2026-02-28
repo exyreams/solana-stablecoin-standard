@@ -86,6 +86,43 @@ pub struct AuthorityTransferCompleted {
     pub timestamp: i64,
 }
 
+// ── Minter Lifecycle Events ──────────────────────────────────────────────────
+
+/// Emitted when a new minter is added.
+#[event]
+pub struct MinterAdded {
+    pub mint: Pubkey,
+    pub minter: Pubkey,
+    pub quota: u64,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when a minter is removed.
+#[event]
+pub struct MinterRemoved {
+    pub mint: Pubkey,
+    pub minter: Pubkey,
+    /// Total tokens minted by this minter before removal — useful for auditing.
+    pub total_minted: u64,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when a minter's configuration is updated.
+#[event]
+pub struct MinterUpdated {
+    pub mint: Pubkey,
+    pub minter: Pubkey,
+    pub new_quota: u64,
+    pub previous_quota: u64,
+    pub minted_reset: bool,
+    pub previous_minted: u64,
+    pub active: bool,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
 // ── SSS-2 Events ─────────────────────────────────────────────────────────────
 
 /// Emitted when an address is added to the blacklist.

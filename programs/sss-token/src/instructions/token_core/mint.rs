@@ -37,19 +37,18 @@ pub struct MintTokens<'info> {
     #[account(mut)]
     pub mint: Box<InterfaceAccount<'info, MintAccount>>,
 
-    #[account(mut)]
+    #[account(mut, token::mint = mint)]
     pub recipient_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Program<'info, Token2022>,
 }
 
 pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
-    let state = &mut ctx.accounts.stablecoin_state;
+    // ── Guards (read-only checks first, no mutable borrow yet) ──────────────
+    require!(!ctx.accounts.stablecoin_state.paused, SssError::Paused);
+
     let quota = &mut ctx.accounts.minter_quota;
 
-    // ── Guards ───────────────────────────────────────────────────────────────
-    require!(!state.paused, SssError::Paused);
-    
     // Check if minter is authorized via quota system
     require!(quota.active, SssError::MinterInactive);
 
@@ -68,21 +67,16 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
 
     quota.minted = new_minted;
 
-    // Update total supply
-    state.total_supply = state
-        .total_supply
-        .checked_add(amount)
-        .ok_or(SssError::Overflow)?;
-
-    // ── Mint using PDA authority ─────────────────────────────────────────────
+    // ── Read values needed for PDA signing before any mutable borrow ────────
     let mint_key = ctx.accounts.mint.key();
-    let bump = state.bump;
+    let bump = ctx.accounts.stablecoin_state.bump;
     let signer_seeds: &[&[&[u8]]] = &[&[
         b"stablecoin_state",
         mint_key.as_ref(),
         &[bump],
     ]];
 
+    // ── Mint using PDA authority ─────────────────────────────────────────────
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),
         MintTo {
@@ -94,8 +88,15 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     );
     mint_to(cpi_ctx, amount)?;
 
+    // ── Sync total_supply with actual on-chain mint supply ───────────────────
+    // This ensures accuracy even if tokens were burned directly via
+    // Token-2022 without going through this program's burn instruction.
+    ctx.accounts.mint.reload()?;
+    let state = &mut ctx.accounts.stablecoin_state;
+    state.total_supply = ctx.accounts.mint.supply;
+
     emit!(TokensMinted {
-        mint: ctx.accounts.mint.key(),
+        mint: mint_key,
         recipient: ctx.accounts.recipient_token_account.key(),
         amount,
         minter: ctx.accounts.minter.key(),

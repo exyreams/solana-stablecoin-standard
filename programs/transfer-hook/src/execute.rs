@@ -2,6 +2,25 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount};
 use crate::errors::HookError;
 
+/// Transfer hook execution — called by Token-2022 on every transfer involving
+/// the associated mint.
+///
+/// # Caller Verification
+///
+/// This handler does not explicitly verify that the caller is Token-2022.
+/// Any account can invoke this instruction directly.  This is safe because
+/// the handler is purely read-only: it checks whether blacklist PDAs exist
+/// (lamports > 0) and either succeeds or returns an error.  No state is
+/// modified, so a direct call has no side effects beyond consuming compute.
+///
+/// If future versions add state mutations, caller verification should be
+/// added per SPL Transfer Hook Interface best practices:
+/// ```ignore
+/// spl_transfer_hook_interface::onchain::check_execution_account(
+///     &ctx.accounts.extra_account_meta_list,
+///     program_id,
+/// )?;
+/// ```
 #[derive(Accounts)]
 pub struct Execute<'info> {
     /// Source token account (index 0).

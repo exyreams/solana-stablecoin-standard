@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, state::{MinterQuota, RolesConfig, StablecoinState}};
+use crate::{errors::SssError, events::MinterAdded, state::{MinterQuota, RolesConfig, StablecoinState}};
 
 #[derive(Accounts)]
 pub struct AddMinter<'info> {
@@ -41,13 +41,24 @@ pub fn handler(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
         SssError::Unauthorized
     );
 
+    let mint = ctx.accounts.stablecoin_state.mint;
+    let minter_key = ctx.accounts.minter.key();
+
     let q = &mut ctx.accounts.minter_quota;
-    q.mint = ctx.accounts.stablecoin_state.mint;
-    q.minter = ctx.accounts.minter.key();
+    q.mint = mint;
+    q.minter = minter_key;
     q.quota = quota;
     q.minted = 0;
     q.active = true;
     q.bump = ctx.bumps.minter_quota;
+
+    emit!(MinterAdded {
+        mint,
+        minter: minter_key,
+        quota,
+        authority: ctx.accounts.authority.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     Ok(())
 }

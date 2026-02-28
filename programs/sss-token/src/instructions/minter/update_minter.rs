@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::state::{MinterQuota, StablecoinState, RolesConfig};
+use crate::{events::MinterUpdated, state::{MinterQuota, StablecoinState, RolesConfig}};
 
 #[derive(Accounts)]
 pub struct UpdateMinter<'info> {
@@ -29,9 +29,34 @@ pub struct UpdateMinter<'info> {
     pub minter_quota: Account<'info, MinterQuota>,
 }
 
-pub fn handler(ctx: Context<UpdateMinter>, quota: u64, active: bool) -> Result<()> {
+pub fn handler(
+    ctx: Context<UpdateMinter>,
+    quota: u64,
+    active: bool,
+    reset_minted: bool,
+) -> Result<()> {
     let q = &mut ctx.accounts.minter_quota;
+    let previous_quota = q.quota;
+    let previous_minted = q.minted;
+
     q.quota = quota;
     q.active = active;
+
+    if reset_minted {
+        q.minted = 0;
+    }
+
+    emit!(MinterUpdated {
+        mint: ctx.accounts.stablecoin_state.mint,
+        minter: ctx.accounts.minter.key(),
+        new_quota: quota,
+        previous_quota,
+        minted_reset: reset_minted,
+        previous_minted,
+        active,
+        authority: ctx.accounts.authority.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
     Ok(())
 }
