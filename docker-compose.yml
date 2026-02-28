@@ -1,0 +1,79 @@
+version: "3.9"
+
+services:
+  mint-burn-service:
+    build:
+      context: ./services/mint-burn-service
+      dockerfile: Dockerfile
+    container_name: sss_mint_burn
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=mint-burn-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  event-indexer:
+    build:
+      context: ./services/event-indexer
+      dockerfile: Dockerfile
+    container_name: sss_event_indexer
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=event-indexer
+    volumes:
+      - indexer_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  compliance-service:
+    build:
+      context: ./services/compliance-service
+      dockerfile: Dockerfile
+    container_name: sss_compliance
+    ports:
+      - "3003:3000"
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=compliance-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  webhook-service:
+    build:
+      context: ./services/webhook-service
+      dockerfile: Dockerfile
+    container_name: sss_webhooks
+    ports:
+      - "3004:3000"
+    env_file:
+      - .env
+    environment:
+      - SERVICE_NAME=webhook-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  indexer_data:

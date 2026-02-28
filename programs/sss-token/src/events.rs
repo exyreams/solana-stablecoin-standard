@@ -1,0 +1,118 @@
+use anchor_lang::prelude::*;
+
+/// Emitted when a new stablecoin is initialized.
+#[event]
+pub struct StablecoinInitialized {
+    pub mint: Pubkey,
+    pub name: String,
+    pub symbol: String,
+    pub decimals: u8,
+    pub enable_permanent_delegate: bool,
+    pub enable_transfer_hook: bool,
+    pub master_authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when tokens are minted.
+#[event]
+pub struct TokensMinted {
+    pub mint: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub minter: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when tokens are burned.
+#[event]
+pub struct TokensBurned {
+    pub mint: Pubkey,
+    pub from: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+/// Emitted when a token account is frozen.
+#[event]
+pub struct AccountFrozen {
+    pub mint: Pubkey,
+    pub account: Pubkey,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when a token account is thawed.
+#[event]
+pub struct AccountThawed {
+    pub mint: Pubkey,
+    pub account: Pubkey,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when minting/burning is paused or unpaused.
+#[event]
+pub struct PauseStateChanged {
+    pub mint: Pubkey,
+    pub paused: bool,
+    pub reason: Option<String>,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when roles are updated.
+#[event]
+pub struct RolesUpdated {
+    pub mint: Pubkey,
+    pub updated_by: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when master authority transfer is initiated.
+#[event]
+pub struct AuthorityTransferInitiated {
+    pub mint: Pubkey,
+    pub current_master: Pubkey,
+    pub pending_master: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when master authority transfer is accepted.
+#[event]
+pub struct AuthorityTransferCompleted {
+    pub mint: Pubkey,
+    pub new_master: Pubkey,
+    pub timestamp: i64,
+}
+
+// ── SSS-2 Events ─────────────────────────────────────────────────────────────
+
+/// Emitted when an address is added to the blacklist.
+#[event]
+pub struct AddedToBlacklist {
+    pub mint: Pubkey,
+    pub address: Pubkey,
+    pub reason: String,
+    pub blacklister: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when an address is removed from the blacklist.
+#[event]
+pub struct RemovedFromBlacklist {
+    pub mint: Pubkey,
+    pub address: Pubkey,
+    pub blacklister: Pubkey,
+    pub timestamp: i64,
+}
+
+/// Emitted when tokens are seized via permanent delegate.
+#[event]
+pub struct TokensSeized {
+    pub mint: Pubkey,
+    pub from: Pubkey,
+    pub to: Pubkey,
+    pub amount: u64,
+    pub seizer: Pubkey,
+    pub timestamp: i64,
+}

@@ -1,0 +1,114 @@
+use anchor_lang::prelude::*;
+
+pub mod errors;
+pub mod events;
+pub mod instructions;
+pub mod state;
+
+pub use instructions::*;
+
+pub use instructions::{
+    token_core::{
+        initialize::Initialize,
+        mint::MintTokens,
+        burn::Burn,
+        get_supply::GetSupply,
+    },
+    account::{
+        freeze_account::FreezeAccount,
+        thaw_account::ThawAccount,
+    },
+    admin::{
+        pause::Pause,
+        unpause::Unpause,
+        update_roles::UpdateRoles,
+        transfer_authority::TransferAuthority,
+    },
+    minter::{
+        add_minter::AddMinter,
+        remove_minter::RemoveMinter,
+        update_minter::UpdateMinter,
+    },
+    sss2::{
+        add_to_blacklist::AddToBlacklist,
+        remove_from_blacklist::RemoveFromBlacklist,
+        seize::Seize,
+    },
+};
+
+declare_id!("SSSTokenXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+
+#[program]
+pub mod sss_token {
+    use super::*;
+
+    pub fn initialize(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()> {
+        instructions::token_core::initialize::handler(ctx, config)
+    }
+
+    pub fn mint(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
+        instructions::token_core::mint::handler(ctx, amount)
+    }
+
+    pub fn burn(ctx: Context<Burn>, amount: u64) -> Result<()> {
+        instructions::token_core::burn::handler(ctx, amount)
+    }
+
+    pub fn freeze_account(ctx: Context<FreezeAccount>) -> Result<()> {
+        instructions::account::freeze_account::handler(ctx)
+    }
+
+    pub fn thaw_account(ctx: Context<ThawAccount>) -> Result<()> {
+        instructions::account::thaw_account::handler(ctx)
+    }
+
+    pub fn pause(ctx: Context<Pause>, reason: Option<String>) -> Result<()> {
+        instructions::admin::pause::handler(ctx, reason)
+    }
+
+    pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
+        instructions::admin::unpause::handler(ctx)
+    }
+
+    pub fn update_minter(
+        ctx: Context<UpdateMinter>,
+        quota: u64,
+        active: bool,
+    ) -> Result<()> {
+        instructions::minter::update_minter::handler(ctx, quota, active)
+    }
+
+    pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
+        instructions::minter::add_minter::handler(ctx, quota)
+    }
+
+    pub fn remove_minter(ctx: Context<RemoveMinter>) -> Result<()> {
+        instructions::minter::remove_minter::handler(ctx)
+    }
+
+    pub fn update_roles(ctx: Context<UpdateRoles>, new_roles: RolesUpdate) -> Result<()> {
+        instructions::admin::update_roles::handler(ctx, new_roles)
+    }
+
+    pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
+        instructions::admin::transfer_authority::handler(ctx)
+    }
+
+    pub fn add_to_blacklist(
+        ctx: Context<AddToBlacklist>,
+        reason: String,
+    ) -> Result<()> {
+        instructions::sss2::add_to_blacklist::handler(ctx, reason)
+    }
+
+    pub fn remove_from_blacklist(ctx: Context<RemoveFromBlacklist>) -> Result<()> {
+        instructions::sss2::remove_from_blacklist::handler(ctx)
+    }
+
+    pub fn seize(ctx: Context<Seize>, amount: u64) -> Result<()> {
+        instructions::sss2::seize::handler(ctx, amount)
+    }
+}
+
+pub use instructions::token_core::initialize::StablecoinConfig;
+pub use instructions::admin::update_roles::RolesUpdate;
