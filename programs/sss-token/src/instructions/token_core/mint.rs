@@ -45,6 +45,7 @@ pub struct MintTokens<'info> {
 
 pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     // ── Guards (read-only checks first, no mutable borrow yet) ──────────────
+    require!(amount > 0, SssError::ZeroAmount);
     require!(!ctx.accounts.stablecoin_state.paused, SssError::Paused);
 
     let quota = &mut ctx.accounts.minter_quota;

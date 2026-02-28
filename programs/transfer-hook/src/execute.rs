@@ -13,14 +13,13 @@ use crate::errors::HookError;
 /// (lamports > 0) and either succeeds or returns an error.  No state is
 /// modified, so a direct call has no side effects beyond consuming compute.
 ///
-/// If future versions add state mutations, caller verification should be
-/// added per SPL Transfer Hook Interface best practices:
-/// ```ignore
-/// spl_transfer_hook_interface::onchain::check_execution_account(
-///     &ctx.accounts.extra_account_meta_list,
-///     program_id,
-/// )?;
-/// ```
+/// # Permanent Delegate Bypass
+///
+/// When the transfer authority (index 3) matches the stablecoin_state PDA
+/// (index 8), this is a permanent delegate operation (seize).  Blacklist
+/// checks are skipped because the operator may need to seize tokens FROM
+/// a blacklisted account.  The seize instruction in the sss-token program
+/// enforces its own role-based access control (seizer / master_authority).
 #[derive(Accounts)]
 pub struct Execute<'info> {
     /// Source token account (index 0).
@@ -33,7 +32,8 @@ pub struct Execute<'info> {
     pub destination_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Source token account authority — owner or delegate (index 3).
-    /// CHECK: Passed by Token-2022 runtime; not used directly.
+    /// Used to detect permanent delegate (seize) operations.
+    /// CHECK: Passed by Token-2022 runtime.
     pub authority: UncheckedAccount<'info>,
 
     /// ExtraAccountMetaList PDA (index 4).
@@ -54,9 +54,27 @@ pub struct Execute<'info> {
     /// Derived as PDA of sss-token: ["blacklist", mint, dest_owner].
     /// CHECK: We only check lamports — nonzero means blacklisted.
     pub destination_blacklist_entry: UncheckedAccount<'info>,
+
+    /// The stablecoin_state PDA (index 8, extra account #3).
+    /// Used to identify permanent delegate (seize) operations.
+    /// If authority == stablecoin_state, blacklist checks are skipped.
+    /// CHECK: Resolved from ExtraAccountMetaList as external PDA of sss-token.
+    pub stablecoin_state: UncheckedAccount<'info>,
 }
 
 pub fn execute_handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
+    let authority_key = ctx.accounts.authority.key();
+    let stablecoin_state_key = ctx.accounts.stablecoin_state.key();
+
+    // If the transfer authority is the stablecoin_state PDA, this is a
+    // permanent delegate operation (seize).  Seizure must bypass blacklist
+    // checks — the operator may need to seize FROM a blacklisted account.
+    // The seize instruction already enforces its own role-based access
+    // control (seizer / master_authority), so this is safe.
+    if authority_key == stablecoin_state_key {
+        return Ok(());
+    }
+
     let source_entry = &ctx.accounts.source_blacklist_entry;
     let dest_entry = &ctx.accounts.destination_blacklist_entry;
 

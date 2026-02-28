@@ -19,6 +19,10 @@ pub enum SssError {
     // ── State ────────────────────────────────────────────────────────────────
     #[msg("Stablecoin is paused — minting and burning are disabled")]
     Paused,
+    #[msg("Stablecoin is already paused")]
+    AlreadyPaused,
+    #[msg("Stablecoin is not paused")]
+    NotPaused,
     #[msg("Minter is inactive")]
     MinterInactive,
     #[msg("Mint amount exceeds minter quota")]
@@ -44,13 +48,17 @@ pub enum SssError {
     #[msg("Invalid ElGamal public key")]
     InvalidElGamalPubkey,
 
-    // ── Misc ─────────────────────────────────────────────────────────────────
+    // ── Validation ───────────────────────────────────────────────────────────
+    #[msg("Amount must be greater than zero")]
+    ZeroAmount,
     #[msg("Name too long — maximum 32 characters")]
     NameTooLong,
     #[msg("Symbol too long — maximum 10 characters")]
     SymbolTooLong,
     #[msg("URI too long — maximum 200 characters")]
     UriTooLong,
+    #[msg("Cannot close mint: supply must be zero")]
+    SupplyNotZero,
     #[msg("Arithmetic overflow")]
     Overflow,
     #[msg("transfer_hook_program_id is required when enable_transfer_hook = true")]

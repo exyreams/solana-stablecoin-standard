@@ -4,8 +4,10 @@ pub mod initialize;
 pub mod mint;
 pub mod burn;
 pub mod get_supply;
+pub mod close_mint;
 
 pub use initialize::*;
 pub use mint::*;
 pub use burn::*;
 pub use get_supply::*;
+pub use close_mint::*;

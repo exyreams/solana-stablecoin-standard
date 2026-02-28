@@ -257,6 +257,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
 
     // ── Persist state ────────────────────────────────────────────────────
     let state = &mut ctx.accounts.stablecoin_state;
+    state.version = StablecoinState::CURRENT_VERSION;
     state.mint = mint_key;
     state.name = config.name.clone();
     state.symbol = config.symbol.clone();

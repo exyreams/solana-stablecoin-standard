@@ -18,6 +18,11 @@ use crate::{errors::SssError, events::TokensSeized, state::{RolesConfig, Stablec
 /// **No pause check:**  Seizure must remain operational even when the
 /// stablecoin is paused.  During a security incident the operator may need to
 /// pause minting/burning while still moving funds to a treasury.
+///
+/// **Transfer hook bypass:**  When the transfer hook is active, the hook
+/// detects that the transfer authority is the stablecoin_state PDA
+/// (permanent delegate) and skips blacklist checks.  This allows seizing
+/// from blacklisted accounts.
 #[derive(Accounts)]
 pub struct Seize<'info> {
     /// The human operator who triggered the seize — must hold the `seizer` role.
@@ -54,6 +59,8 @@ pub struct Seize<'info> {
 }
 
 pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
+    require!(amount > 0, SssError::ZeroAmount);
+
     let state = &ctx.accounts.stablecoin_state;
     let roles = &ctx.accounts.roles_config;
 

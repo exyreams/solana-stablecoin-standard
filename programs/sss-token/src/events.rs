@@ -183,3 +183,13 @@ pub struct ConfidentialCreditsDisabled {
     pub mint: Pubkey,
     pub timestamp: i64,
 }
+
+// ── Mint Lifecycle ───────────────────────────────────────────────────────────
+
+/// Emitted when a mint is permanently closed.
+#[event]
+pub struct MintClosed {
+    pub mint: Pubkey,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}

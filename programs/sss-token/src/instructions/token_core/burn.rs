@@ -34,6 +34,8 @@ pub struct Burn<'info> {
 }
 
 pub fn handler(ctx: Context<Burn>, amount: u64) -> Result<()> {
+    require!(amount > 0, SssError::ZeroAmount);
+
     let state = &mut ctx.accounts.stablecoin_state;
     let roles = &ctx.accounts.roles_config;
 

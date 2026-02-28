@@ -11,6 +11,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct StablecoinState {
+    /// Schema version for future state migrations.
+    pub version: u8,
     /// The mint address this config governs.
     pub mint: Pubkey,
     /// Human-readable name (e.g. "My Stablecoin").
@@ -47,9 +49,13 @@ pub struct StablecoinState {
 }
 
 impl StablecoinState {
+    /// Current schema version.  Increment this when the account layout changes.
+    pub const CURRENT_VERSION: u8 = 1;
+
     /// Account discriminator + fields.
     /// String fields: name (max 32), symbol (max 10), uri (max 200).
     pub const LEN: usize = 8   // discriminator
+        + 1                    // version
         + 32                   // mint
         + 4 + 32               // name (len prefix + max 32 bytes)
         + 4 + 10               // symbol

@@ -23,6 +23,8 @@ pub fn handler(ctx: Context<Unpause>) -> Result<()> {
         SssError::NotPauser
     );
 
+    require!(ctx.accounts.stablecoin_state.paused, SssError::NotPaused);
+
     ctx.accounts.stablecoin_state.paused = false;
 
     emit!(PauseStateChanged {

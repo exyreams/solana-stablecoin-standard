@@ -22,7 +22,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
     #[account(
         init,
         payer = payer,
-        space = ExtraAccountMetaList::size_of(3).unwrap(),
+        space = ExtraAccountMetaList::size_of(4).unwrap(),
         seeds = [EXTRA_ACCOUNT_META_LIST_SEEDS, mint.key().as_ref()],
         bump,
     )]
@@ -50,6 +50,7 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
     //   5  sss_token_program      (extra #0)
     //   6  source_blacklist_entry  (extra #1)
     //   7  destination_blacklist_entry (extra #2)
+    //   8  stablecoin_state        (extra #3)
 
     let account_metas = vec![
         // Extra #0 (index 5): sss-token program as a fixed pubkey.
@@ -92,6 +93,21 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
                     data_index: 32,    // owner field offset
                     length: 32,        // Pubkey size
                 },
+            ],
+            false,
+            false,
+        )?,
+
+        // Extra #3 (index 8): stablecoin_state PDA.
+        // Used by the hook to identify permanent delegate (seize) operations.
+        // When the authority at index 3 matches this PDA, the transfer is a
+        // seize operation and blacklist checks are skipped.
+        // Derived as PDA of sss-token (at index 5): ["stablecoin_state", mint].
+        ExtraAccountMeta::new_external_pda_with_seeds(
+            5, // program at overall index 5 (sss-token)
+            &[
+                Seed::Literal { bytes: b"stablecoin_state".to_vec() },
+                Seed::AccountKey { index: 1 }, // mint
             ],
             false,
             false,

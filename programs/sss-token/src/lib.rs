@@ -13,6 +13,7 @@ pub use instructions::{
         mint::MintTokens,
         burn::Burn,
         get_supply::GetSupply,
+        close_mint::CloseMint,
     },
     account::{
         freeze_account::FreezeAccount,
@@ -61,6 +62,10 @@ pub mod sss_token {
 
     pub fn get_supply(ctx: Context<GetSupply>) -> Result<u64> {
         instructions::token_core::get_supply::handler(ctx)
+    }
+
+    pub fn close_mint(ctx: Context<CloseMint>) -> Result<()> {
+        instructions::token_core::close_mint::handler(ctx)
     }
 
     pub fn freeze_account(ctx: Context<FreezeAccount>) -> Result<()> {

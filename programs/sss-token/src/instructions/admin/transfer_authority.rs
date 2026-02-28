@@ -27,6 +27,7 @@ pub struct TransferAuthority<'info> {
 ///
 /// Step 1 — current master calls this: sets `pending_master = new_master`.
 /// Step 2 — pending master calls this: finalizes the transfer.
+/// The `new_master` account is unused in this step (any pubkey is accepted).
 pub fn handler(ctx: Context<TransferAuthority>) -> Result<()> {
     let roles = &mut ctx.accounts.roles_config;
     let caller = ctx.accounts.caller.key();

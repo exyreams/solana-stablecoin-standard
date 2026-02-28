@@ -13,7 +13,7 @@ pub struct BlacklistEntry {
     pub mint: Pubkey,
     /// The blacklisted wallet address.
     pub address: Pubkey,
-    /// Human-readable reason (e.g. "OFAC SDN match"), max 128 chars.
+    /// Human-readable reason (e.g. "OFAC SDN match"), max 128 bytes.
     pub reason: String,
     /// Unix timestamp when the entry was created.
     pub timestamp: i64,
