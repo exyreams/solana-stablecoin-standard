@@ -41,10 +41,12 @@ The `transfer-hook` program runs on **every token transfer**. It checks whether 
 2. The hook's `fallback` function parses the SPL instruction and routes to the handler
 3. The handler compares the transfer authority (index 3) against the `stablecoin_state` PDA (index 8)
 4. **If they match**, this is a permanent delegate (seize) operation — blacklist checks are **skipped** and the transfer succeeds
-5. **If they don't match**, the handler checks `lamports > 0` on two blacklist entry PDAs:
+5. **If they don't match**, the handler checks two blacklist entry PDAs:
    - Source: `["blacklist", mint, source_token_account_owner]`
    - Destination: `["blacklist", mint, dest_token_account_owner]`
-6. If either PDA exists (has lamports), the transfer is rejected
+6. A blacklist entry is considered **active** only if `lamports > 0 && owner == sss_token_program`. If either PDA meets this condition, the transfer is rejected.
+
+> **Note:** Checking both `lamports > 0` and `owner == sss_token_program` prevents a griefing attack where an attacker injects SOL into a closed blacklist PDA address to cause a false positive. A PDA with lamports but the wrong owner (e.g. System Program after closure) is not treated as an active blacklist entry.
 
 ### Error Codes
 
@@ -77,6 +79,8 @@ The `ExtraAccountMetaList` must be initialized once after the mint is created:
 sss-token hook init --mint <MINT_ADDRESS>
 ```
 
+> **Security:** The `initialize_extra_account_meta_list` instruction requires the payer to be the `master_authority`. The instruction verifies the `roles_config` PDA derivation and ownership, and reads `master_authority` from account data. This prevents front-running attacks where a malicious actor initializes the `ExtraAccountMetaList` with an incorrect `sss_token_program`, which would break blacklist enforcement for all transfers.
+
 ---
 
 ## Additional Accounts
@@ -93,9 +97,9 @@ Seeds: `["blacklist", mint, address]` — owned by the `sss-token` program.
 | `timestamp` | `i64` | Unix timestamp of blacklisting |
 | `bump` | `u8` | PDA bump seed |
 
-**Existence of this PDA = address is blacklisted.** Closing it removes the address from the blacklist and reclaims rent.
+**An address is blacklisted if and only if its `BlacklistEntry` PDA exists, has `lamports > 0`, and is owned by `sss_token_program`.** Closing the PDA removes the address from the blacklist and reclaims rent.
 
-**Note on reason field:** The reason is truncated to 128 bytes at the UTF-8 character boundary. Multi-byte characters (emoji, CJK, etc.) are handled safely — the string is never split mid-character.
+> **Note on reason field:** The reason is truncated to 128 bytes at the UTF-8 character boundary. Multi-byte characters (emoji, CJK, etc.) are handled safely — the string is never split mid-character.
 
 ---
 
@@ -106,7 +110,7 @@ Seeds: `["blacklist", mint, address]` — owned by the `sss-token` program.
 | `add_to_blacklist` | blacklister / master | Creates `BlacklistEntry` PDA |
 | `remove_from_blacklist` | blacklister / master | Closes `BlacklistEntry` PDA (reclaims rent) |
 | `seize` | seizer / master | Transfers tokens via permanent delegate (amount > 0) |
-| `initialize_extra_account_meta_list` | payer | Sets up the transfer hook's account resolution (called once) |
+| `initialize_extra_account_meta_list` | `master_authority` | Sets up the transfer hook's account resolution (called once) |
 
 All three `sss-token` instructions **check feature flags** and fail with `ComplianceNotEnabled` if the corresponding extension was not enabled during initialization:
 
@@ -163,7 +167,11 @@ The transfer hook resolves blacklist PDAs using the token account's `owner` fiel
 
 ### Transfer Hook Is Read-Only
 
-The transfer hook handler only reads blacklist PDA lamports and compares pubkeys — it never modifies state. This means direct invocation of the hook (outside of Token-2022) is harmless. No caller verification is needed in the current design.
+The transfer hook handler only reads blacklist PDA lamports/ownership and compares pubkeys — it never modifies state. This means direct invocation of the hook (outside of Token-2022) is harmless. No caller verification is needed in the current design.
+
+### Blacklist Entry Validity Requires Owner Check
+
+The transfer hook validates blacklist entries by checking both `lamports > 0` and `owner == sss_token_program`. Checking lamports alone is insufficient: after a `remove_from_blacklist` instruction closes a PDA and reclaims rent, an attacker could re-inject SOL into that address to make it appear as an active blacklist entry again. Requiring `sss_token_program` ownership prevents this — a re-griefed address will be owned by the System Program, not `sss_token_program`, and will not trigger a blacklist rejection.
 
 ---
 
@@ -197,17 +205,17 @@ const stable = await SolanaStablecoin.create(connection, {
 
 2. Blacklist the address:
    sss-token blacklist add <X> --reason "OFAC SDN match"
-   → Creates BlacklistEntry PDA on-chain
+   → Creates BlacklistEntry PDA on-chain (owned by sss_token_program)
    → Emits AddedToBlacklist event
 
 3. All transfers to/from X now fail automatically
-   → Transfer hook checks lamports on BlacklistEntry PDA
+   → Transfer hook checks lamports > 0 && owner == sss_token_program on BlacklistEntry PDA
    → Rejects with SourceBlacklisted or DestinationBlacklisted
 
 4. Seize tokens (works even though X is blacklisted):
    sss-token seize <X-token-account> --to <treasury>
    → Permanent delegate transfers tokens without owner signature
-   → Transfer hook detects PDA as authority, skips blacklist check
+   → Transfer hook detects stablecoin_state PDA as authority, skips blacklist check
    → Emits TokensSeized event
 
 5. If address is cleared:
