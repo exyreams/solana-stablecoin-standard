@@ -24,6 +24,10 @@ import {
   hookCommand,
   // Privacy (SSS-3)
   privacyCommand,
+  // Oracle
+  oracleCommand,
+  // TUI
+  tuiCommand,
 } from './commands';
 
 const program = new Command();
@@ -61,6 +65,12 @@ program.addCommand(hookCommand());
 
 // ── SSS-3 privacy ────────────────────────────────────────────────────────────
 program.addCommand(privacyCommand());
+
+// ── Oracle ───────────────────────────────────────────────────────────────────
+program.addCommand(oracleCommand());
+
+// ── TUI ──────────────────────────────────────────────────────────────────────
+program.addCommand(tuiCommand());
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err.message);

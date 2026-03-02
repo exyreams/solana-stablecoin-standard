@@ -22,7 +22,7 @@ import {
 
 // IDL for sss-oracle program
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const ORACLE_IDL = require('../../../target/idl/sss_oracle.json');
+const ORACLE_IDL = require('../idl/sss_oracle.json');
 
 /**
  * Oracle module for managing multi-source price feeds.

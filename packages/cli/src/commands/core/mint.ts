@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { Connection, PublicKey } from '@solana/web3.js';
 import ora from 'ora';
-import { SolanaStablecoin } from '@stbr/sss-token-sdk';
+import { SolanaStablecoin } from 'sss-token-sdk';
 import { loadKeypair } from '../../utils/keypair';
 import { success, printTxLink, error } from '../../utils/display';
 
@@ -25,9 +25,10 @@ export function mintCommand(): Command {
         const status = await stable.getStatus();
         const rawAmount = BigInt(Math.round(parseFloat(amount) * 10 ** status.decimals));
 
-        const sig = await stable.mint({
+        const sig = await stable.mintTokens({
           recipient: new PublicKey(recipient),
           amount: rawAmount,
+          minter: authority,
         });
 
         spinner.succeed(`Minted ${amount} ${status.symbol}`);

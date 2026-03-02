@@ -111,16 +111,117 @@ sss-token blacklist seize <from-token-account> \
 
 ## Role Management
 
-### Add a Minter with Quota
+### View Current Roles
 ```bash
-sss-token minters add <minter-address> --quota 100000
-# 0 quota = unlimited
+sss-token roles show
 ```
 
-### Remove a Minter
+### Update Roles
 ```bash
+sss-token roles update --burner <address> --pauser <address>
+sss-token roles update --blacklister <address> --seizer <address>
+```
+
+### Transfer Master Authority (Two-Step)
+```bash
+# Step 1: Current master initiates transfer
+sss-token roles transfer <new-master-address>
+
+# Step 2: New master accepts
+sss-token roles accept
+```
+
+### Manage Minters
+```bash
+# List all minters
+sss-token minters list
+
+# Add a minter with quota
+sss-token minters add <minter-address> --quota 100000
+# 0 quota = unlimited
+
+# Update minter quota or status
+sss-token minters update <minter-address> --quota 200000 --active
+sss-token minters update <minter-address> --no-active  # Disable minter
+
+# Remove a minter
 sss-token minters remove <minter-address>
 ```
+
+---
+
+## SSS-3 Privacy Operations
+
+### Approve Account for Confidential Transfers
+```bash
+sss-token privacy approve <token-account>
+```
+
+### Enable/Disable Confidential Credits
+```bash
+sss-token privacy enable-credits <token-account>
+sss-token privacy disable-credits <token-account>
+```
+
+---
+
+## Oracle Operations (Non-USD Pegs)
+
+### Initialize Oracle
+```bash
+sss-token oracle init --base EUR --quote USD \
+  --staleness 300 --method median
+```
+
+### Add Price Feeds
+```bash
+sss-token oracle add-feed --index 0 --type switchboard \
+  --address <feed-pubkey> --label "Switchboard EUR/USD"
+
+sss-token oracle add-feed --index 1 --type pyth \
+  --address <feed-pubkey> --label "Pyth EUR/USD"
+```
+
+### Crank Feed (Update Price)
+```bash
+sss-token oracle crank 0 --price 1050000000 --confidence 1000000
+# Price in 9-decimal fixed-point (1.05 = 1050000000)
+```
+
+### Get Current Price
+```bash
+sss-token oracle price --side mint
+sss-token oracle price --side redeem
+```
+
+### View Oracle Status
+```bash
+sss-token oracle status
+sss-token oracle feeds
+```
+
+### Update Oracle Config
+```bash
+sss-token oracle update --staleness 600 --method weighted
+```
+
+---
+
+## Real-Time Monitoring
+
+### Launch Interactive TUI
+```bash
+sss-token tui
+```
+
+The TUI provides:
+- Real-time token info and supply
+- Role assignments
+- Minters table with quotas
+- Supply history chart
+- Activity log
+
+Press `q` to quit, `r` to refresh manually.
 
 ---
 

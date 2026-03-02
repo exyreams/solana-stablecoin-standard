@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { Connection, PublicKey } from '@solana/web3.js';
 import ora from 'ora';
-import { SolanaStablecoin, Presets } from '@stbr/sss-token-sdk';
+import { SolanaStablecoin, Presets } from 'sss-token-sdk';
 import { loadKeypair } from '../../utils/keypair';
 import { loadCustomConfig } from '../../utils/config';
 import { success, info, error, printTable } from '../../utils/display';
@@ -55,7 +55,7 @@ export function initCommand(): Command {
         }
 
         // Preset-based initialization
-        let preset: Presets;
+        let preset: typeof Presets[keyof typeof Presets];
         let presetLabel: string;
 
         switch (opts.preset.toLowerCase()) {
