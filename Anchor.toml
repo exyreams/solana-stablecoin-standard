@@ -8,10 +8,12 @@ skip-lint = false
 [programs.localnet]
 sss_token = "EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK"
 transfer_hook = "F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf"
+sss_oracle = "7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd"
 
 [programs.devnet]
 sss_token = "EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK"
 transfer_hook = "F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf"
+sss_oracle = "7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd"
 
 [registry]
 url = "https://api.apr.dev"
@@ -27,4 +29,5 @@ test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/anchor/**/*.ts"
 members = [
     "programs/sss-token",
     "programs/transfer-hook",
+    "programs/sss-oracle",
 ]
