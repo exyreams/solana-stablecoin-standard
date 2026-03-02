@@ -1,4 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
+import type { Keypair } from '@solana/web3.js';
 
 // ── Config Types ─────────────────────────────────────────────────────────────
 
@@ -97,4 +98,102 @@ export interface BlacklistEntry {
   address: PublicKey;
   reason: string;
   timestamp: bigint;
+}
+
+// ── Oracle Types ──────────────────────────────────────────────────────────────
+
+export enum AggregationMethod {
+  Median = 0,
+  Mean = 1,
+  WeightedMean = 2,
+}
+
+export enum FeedType {
+  Switchboard = 0,
+  Pyth = 1,
+  Chainlink = 2,
+  Manual = 3,
+  API = 4,
+}
+
+export interface OracleInitializeOptions {
+  baseCurrency: string;
+  quoteCurrency: string;
+  maxStalenessSeconds?: number;
+  maxConfidenceIntervalBps?: number;
+  aggregationMethod?: AggregationMethod;
+  minFeedsRequired?: number;
+  deviationThresholdBps?: number;
+  maxPriceChangeBps?: number;
+  mintPremiumBps?: number;
+  redeemDiscountBps?: number;
+  cranker?: PublicKey;
+}
+
+export interface OracleUpdateConfigOptions {
+  maxStalenessSeconds?: number;
+  maxConfidenceIntervalBps?: number;
+  aggregationMethod?: AggregationMethod;
+  minFeedsRequired?: number;
+  deviationThresholdBps?: number;
+  maxPriceChangeBps?: number;
+  mintPremiumBps?: number;
+  redeemDiscountBps?: number;
+  cranker?: PublicKey;
+  paused?: boolean;
+}
+
+export interface AddFeedOptions {
+  feedIndex: number;
+  feedType: FeedType;
+  feedAddress?: PublicKey;
+  label: string;
+  weight?: number;
+  maxStalenessOverride?: number;
+}
+
+export interface CrankFeedOptions {
+  feedIndex: number;
+  price: bigint;
+  confidence: bigint;
+  cranker?: Keypair;
+}
+
+export interface OracleStatus {
+  version: number;
+  authority: PublicKey;
+  pendingAuthority: PublicKey | null;
+  cranker: PublicKey;
+  mint: PublicKey;
+  baseCurrency: string;
+  quoteCurrency: string;
+  maxStalenessSeconds: number;
+  maxConfidenceIntervalBps: number;
+  aggregationMethod: number;
+  minFeedsRequired: number;
+  deviationThresholdBps: number;
+  maxPriceChangeBps: number;
+  mintPremiumBps: number;
+  redeemDiscountBps: number;
+  manualPrice: bigint;
+  manualPriceActive: boolean;
+  lastAggregatedPrice: bigint;
+  lastAggregatedConfidence: bigint;
+  lastAggregatedTimestamp: number;
+  feedCount: number;
+  paused: boolean;
+}
+
+export interface PriceFeedInfo {
+  oracleConfig: PublicKey;
+  feedIndex: number;
+  feedType: number;
+  feedAddress: PublicKey;
+  label: string;
+  lastPrice: bigint;
+  lastConfidence: bigint;
+  lastTimestamp: number;
+  weight: number;
+  enabled: boolean;
+  maxStalenessOverride: number;
 }

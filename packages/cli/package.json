@@ -1,5 +1,5 @@
 {
-  "name": "@stbr/sss-token-cli",
+  "name": "sss-token-cli",
   "version": "0.1.0",
   "description": "Solana Stablecoin Standard — Admin CLI",
   "bin": {

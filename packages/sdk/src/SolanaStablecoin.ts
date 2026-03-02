@@ -25,6 +25,7 @@ import {
 import { Presets, SSS_1 } from './presets';
 import { ComplianceModule } from './compliance/ComplianceModule';
 import { PrivacyModule } from './privacy/PrivacyModule';
+import { OracleModule } from './oracle/OracleModule';
 import {
   deriveStablecoinState,
   deriveRolesConfig,
@@ -50,6 +51,7 @@ export class SolanaStablecoin {
   public readonly mint: PublicKey;
   public readonly compliance: ComplianceModule;
   public readonly privacy: PrivacyModule;
+  public readonly oracle: OracleModule;
 
   private constructor(
     program: Program,
@@ -57,6 +59,7 @@ export class SolanaStablecoin {
     authority: Keypair,
     mint: PublicKey,
     transferHookProgramId?: PublicKey,
+    oracleProgramId?: PublicKey,
   ) {
     this.program = program;
     this.connection = connection;
@@ -70,6 +73,7 @@ export class SolanaStablecoin {
       transferHookProgramId,
     );
     this.privacy = new PrivacyModule(program, mint, authority);
+    this.oracle = new OracleModule(connection, mint, authority, oracleProgramId);
   }
 
   // ── Factory ────────────────────────────────────────────────────────────────
@@ -107,12 +111,12 @@ export class SolanaStablecoin {
    */
   static async create(
     connection: Connection,
-    options: CreateOptions & { authority: Keypair; programId?: PublicKey },
+    options: CreateOptions & { authority: Keypair; programId?: PublicKey; oracleProgramId?: PublicKey },
   ): Promise<SolanaStablecoin> {
     const programId = options.programId ?? new PublicKey(IDL.address ?? IDL.metadata?.address);
     const wallet = new Wallet(options.authority);
-    const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-    const program = new Program(IDL as any, programId, provider);
+    const provider: AnchorProvider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
+    const program = new Program(IDL as any, provider);
 
     const preset = options.preset ?? SSS_1;
     const ext = options.extensions ?? {};
@@ -170,6 +174,7 @@ export class SolanaStablecoin {
       options.authority,
       mintKeypair.publicKey,
       hookProgramId,
+      options.oracleProgramId,
     );
   }
 
@@ -187,12 +192,13 @@ export class SolanaStablecoin {
     options?: {
       programId?: PublicKey;
       transferHookProgramId?: PublicKey;
+      oracleProgramId?: PublicKey;
     },
   ): Promise<SolanaStablecoin> {
     const id = options?.programId ?? new PublicKey(IDL.address ?? IDL.metadata?.address);
     const wallet = new Wallet(authority);
-    const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
-    const program = new Program(IDL as any, id, provider);
+    const provider: AnchorProvider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
+    const program = new Program(IDL as any, provider);
 
     // Auto-detect transfer hook: read state and default to project hook program
     let hookProgramId = options?.transferHookProgramId;
@@ -208,7 +214,14 @@ export class SolanaStablecoin {
       }
     }
 
-    return new SolanaStablecoin(program, connection, authority, mint, hookProgramId);
+    return new SolanaStablecoin(
+      program,
+      connection,
+      authority,
+      mint,
+      hookProgramId,
+      options?.oracleProgramId,
+    );
   }
 
   // ── Core Operations ────────────────────────────────────────────────────────
@@ -217,7 +230,7 @@ export class SolanaStablecoin {
    * Mint tokens to a recipient. Creates the recipient's ATA if needed.
    * The minter must have an active MinterQuota PDA with sufficient quota.
    */
-  async mint(options: {
+  async mintTokens(options: {
     recipient: PublicKey;
     amount: bigint;
     minter?: Keypair;
