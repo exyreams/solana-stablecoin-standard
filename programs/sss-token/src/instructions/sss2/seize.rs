@@ -23,6 +23,22 @@ use crate::{errors::SssError, events::TokensSeized, state::{RolesConfig, Stablec
 /// detects that the transfer authority is the stablecoin_state PDA
 /// (permanent delegate) and skips blacklist checks.  This allows seizing
 /// from blacklisted accounts.
+///
+/// # Transfer Hook Accounts (SSS-2)
+///
+/// When the mint has a TransferHook extension, Token-2022's `transfer_checked`
+/// processor CPIs into the hook program using extra accounts resolved from the
+/// ExtraAccountMetaList.  These **must** be passed as `remaining_accounts`:
+///
+///   1. ExtraAccountMetaList PDA — seeds: `["extra-account-metas", mint]`
+///      (owned by the transfer-hook program)
+///   2. Transfer hook program
+///   3. sss-token program (extra #0 in the meta list)
+///   4. Source blacklist entry PDA (extra #1)
+///   5. Destination blacklist entry PDA (extra #2)
+///   6. stablecoin_state PDA (extra #3)
+///
+/// For SSS-1 mints (no hook), `remaining_accounts` should be empty.
 #[derive(Accounts)]
 pub struct Seize<'info> {
     /// The human operator who triggered the seize — must hold the `seizer` role.
@@ -56,9 +72,16 @@ pub struct Seize<'info> {
     pub to_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Program<'info, Token2022>,
+
+    // When transfer_hook is enabled (SSS-2), the client must pass all
+    // hook-related accounts as remaining_accounts.  See doc comment above
+    // for the required account list.
 }
 
-pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, Seize<'info>>,
+    amount: u64,
+) -> Result<()> {
     require!(amount > 0, SssError::ZeroAmount);
 
     let state = &ctx.accounts.stablecoin_state;
@@ -82,6 +105,15 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
         &[bump],
     ]];
 
+    // Build CPI with remaining_accounts appended for transfer hook support.
+    //
+    // When the mint has a TransferHook extension (SSS-2), Token-2022's
+    // processor needs the hook-related accounts to be present *after* the
+    // standard TransferChecked accounts in the CPI's account list.
+    // `with_remaining_accounts` appends them in the correct position.
+    //
+    // When no hook is active (SSS-1), remaining_accounts is empty and
+    // Token-2022 processes a standard transfer — no extra accounts needed.
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),
         TransferChecked {
@@ -92,7 +124,9 @@ pub fn handler(ctx: Context<Seize>, amount: u64) -> Result<()> {
             authority: ctx.accounts.stablecoin_state.to_account_info(),
         },
         signer_seeds,
-    );
+    )
+    .with_remaining_accounts(ctx.remaining_accounts.to_vec());
+
     transfer_checked(cpi_ctx, amount, state.decimals)?;
 
     emit!(TokensSeized {

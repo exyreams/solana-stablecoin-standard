@@ -10,8 +10,8 @@ use crate::errors::HookError;
 /// This handler does not explicitly verify that the caller is Token-2022.
 /// Any account can invoke this instruction directly.  This is safe because
 /// the handler is purely read-only: it checks whether blacklist PDAs exist
-/// (lamports > 0) and either succeeds or returns an error.  No state is
-/// modified, so a direct call has no side effects beyond consuming compute.
+/// and either succeeds or returns an error.  No state is modified, so a
+/// direct call has no side effects beyond consuming compute.
 ///
 /// # Permanent Delegate Bypass
 ///
@@ -20,6 +20,17 @@ use crate::errors::HookError;
 /// checks are skipped because the operator may need to seize tokens FROM
 /// a blacklisted account.  The seize instruction in the sss-token program
 /// enforces its own role-based access control (seizer / master_authority).
+///
+/// # Blacklist Detection
+///
+/// A wallet is considered blacklisted when its BlacklistEntry PDA:
+///   1. Has `lamports > 0` (account exists on-chain), **AND**
+///   2. Is owned by the sss-token program (legitimate entry, not griefed).
+///
+/// This two-condition check prevents a griefing attack where an adversary
+/// sends SOL to a closed blacklist PDA address.  After closure the PDA is
+/// owned by the system program, so the ownership check correctly identifies
+/// it as *not* blacklisted.
 #[derive(Accounts)]
 pub struct Execute<'info> {
     /// Source token account (index 0).
@@ -42,17 +53,18 @@ pub struct Execute<'info> {
 
     /// The sss-token program (index 5, extra account #0).
     /// Needed so Token-2022 can derive blacklist PDAs owned by sss-token.
+    /// Also used as the reference key for ownership checks on blacklist entries.
     /// CHECK: Resolved from the fixed pubkey stored in ExtraAccountMetaList.
     pub sss_token_program: UncheckedAccount<'info>,
 
     /// Blacklist entry PDA for the source wallet owner (index 6, extra account #1).
     /// Derived as PDA of sss-token: ["blacklist", mint, source_owner].
-    /// CHECK: We only check lamports — nonzero means blacklisted.
+    /// CHECK: We check lamports AND ownership — see module doc for rationale.
     pub source_blacklist_entry: UncheckedAccount<'info>,
 
     /// Blacklist entry PDA for the destination wallet owner (index 7, extra account #2).
     /// Derived as PDA of sss-token: ["blacklist", mint, dest_owner].
-    /// CHECK: We only check lamports — nonzero means blacklisted.
+    /// CHECK: We check lamports AND ownership — see module doc for rationale.
     pub destination_blacklist_entry: UncheckedAccount<'info>,
 
     /// The stablecoin_state PDA (index 8, extra account #3).
@@ -60,6 +72,16 @@ pub struct Execute<'info> {
     /// If authority == stablecoin_state, blacklist checks are skipped.
     /// CHECK: Resolved from ExtraAccountMetaList as external PDA of sss-token.
     pub stablecoin_state: UncheckedAccount<'info>,
+}
+
+/// Returns `true` when the blacklist PDA represents a legitimate,
+/// active blacklist entry:
+///   - The account has lamports (it exists on-chain).
+///   - The account is owned by the sss-token program (not the system program
+///     or any other program that might hold lamports at this address).
+#[inline]
+fn is_blacklisted(entry: &UncheckedAccount, sss_program_key: &Pubkey) -> bool {
+    entry.lamports() > 0 && entry.owner == sss_program_key
 }
 
 pub fn execute_handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
@@ -75,17 +97,17 @@ pub fn execute_handler(ctx: Context<Execute>, _amount: u64) -> Result<()> {
         return Ok(());
     }
 
-    let source_entry = &ctx.accounts.source_blacklist_entry;
-    let dest_entry = &ctx.accounts.destination_blacklist_entry;
+    let sss_program_key = ctx.accounts.sss_token_program.key();
 
-    // A PDA with lamports > 0 exists on-chain → the address is blacklisted.
+    // Check both lamports AND ownership to prevent griefing.
+    // See module-level doc comment for full rationale.
     require!(
-        source_entry.lamports() == 0,
+        !is_blacklisted(&ctx.accounts.source_blacklist_entry, &sss_program_key),
         HookError::SourceBlacklisted
     );
 
     require!(
-        dest_entry.lamports() == 0,
+        !is_blacklisted(&ctx.accounts.destination_blacklist_entry, &sss_program_key),
         HookError::DestinationBlacklisted
     );
 

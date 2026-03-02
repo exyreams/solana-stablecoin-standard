@@ -105,8 +105,8 @@ pub mod sss_token {
         instructions::admin::update_roles::handler(ctx, new_roles)
     }
 
-    pub fn transfer_authority(ctx: Context<TransferAuthority>) -> Result<()> {
-        instructions::admin::transfer_authority::handler(ctx)
+    pub fn transfer_authority(ctx: Context<TransferAuthority>,new_master: Option<Pubkey>,) -> Result<()> {
+        instructions::admin::transfer_authority::handler(ctx, new_master)
     }
 
     pub fn add_to_blacklist(
@@ -119,11 +119,10 @@ pub mod sss_token {
     pub fn remove_from_blacklist(ctx: Context<RemoveFromBlacklist>) -> Result<()> {
         instructions::sss2::remove_from_blacklist::handler(ctx)
     }
-
-    pub fn seize(ctx: Context<Seize>, amount: u64) -> Result<()> {
+    
+    pub fn seize<'info>(ctx: Context<'_, '_, '_, 'info, Seize<'info>>, amount: u64) -> Result<()> {
         instructions::sss2::seize::handler(ctx, amount)
     }
-
     // ========== SSS-3: Privacy Features ==========
 
     pub fn approve_account(ctx: Context<ApproveAccount>) -> Result<()> {

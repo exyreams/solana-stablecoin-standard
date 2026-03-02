@@ -6,4 +6,6 @@ pub enum HookError {
     SourceBlacklisted,
     #[msg("Transfer blocked: destination address is blacklisted")]
     DestinationBlacklisted,
+    #[msg("Unauthorized: caller is not the stablecoin master authority")]
+    InvalidAuthority,
 }
