@@ -16,7 +16,7 @@
     "@coral-xyz/anchor": "^0.32.1",
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.3",
-    "sss-token-sdk": "workspace:*",
+    "@stbr/sss-token-sdk": "workspace:*",
     "@iarna/toml": "^2.2.5",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.3",
