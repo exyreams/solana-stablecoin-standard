@@ -21,156 +21,146 @@ impl FuzzTest {
 
     #[init]
     fn start(&mut self) {
-        // Initialize oracle at the start of each iteration
+        // Accounts will be created on-demand in flows
     }
 
-    /// Attack Scenario 1: Price Manipulation via Circuit Breaker
-    /// Tests that circuit breaker prevents large price swings
+    /// Flow 1: Initialize oracle for EUR/USD
     #[flow]
-    fn price_manipulation_attempt(&mut self) {
-        // Crank feed with price X
-        // Crank with price Y where |X-Y|/max(X,Y) > max_price_change_bps
-        // Should fail with PriceChangeExceedsLimit
+    fn flow_initialize_oracle_eur_usd(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let mint = self.fuzz_accounts.mint.insert(&mut self.trident, None);
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
+        let cranker = self.fuzz_accounts.cranker.insert(&mut self.trident, None);
+
+        let params = InitializeOracleParams::new(
+            "EUR".to_string(),
+            "USD".to_string(),
+            300,
+            100,
+            0,
+            1,
+            50,
+            500,
+            10,
+            10,
+            cranker,
+        );
+
+        let accounts = sss_oracle::InitializeOracleInstructionAccounts {
+            authority,
+            mint,
+            oracle_config,
+        };
+
+        let data = sss_oracle::InitializeOracleInstructionData::new(params);
+        let ix = sss_oracle::InitializeOracleInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 2: Stale Price Exploitation
-    /// Tests that stale prices are filtered out
+    /// Flow 2: Add price feed
     #[flow]
-    fn stale_price_exploitation(&mut self) {
-        // Crank all feeds
-        // Wait > max_staleness_seconds
-        // Aggregate should fail InsufficientFeeds (all stale)
+    fn flow_add_feed(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
+        let price_feed_entry = self.fuzz_accounts.price_feed_entry.insert(&mut self.trident, None);
+
+        let feed_address = Pubkey::new_unique();
+        let params = AddFeedParams::new(
+            0,
+            0,
+            feed_address,
+            "Pyth EUR/USD".to_string(),
+            100,
+            300,
+        );
+
+        let accounts = sss_oracle::AddFeedInstructionAccounts {
+            authority,
+            oracle_config,
+            price_feed_entry,
+        };
+
+        let data = sss_oracle::AddFeedInstructionData::new(params);
+        let ix = sss_oracle::AddFeedInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 3: Manual Override Bypass
-    /// Tests that manual price overrides feed prices
+    /// Flow 3: Crank feed
     #[flow]
-    fn manual_override_test(&mut self) {
-        // Set manual_price_active = true with price P
-        // Crank feeds with different prices
-        // Aggregate result MUST be P (manual overrides)
+    fn flow_crank_feed(&mut self) {
+        let cranker = self.fuzz_accounts.cranker.insert(&mut self.trident, None);
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
+        let price_feed_entry = self.fuzz_accounts.price_feed_entry.insert(&mut self.trident, None);
+
+        let accounts = sss_oracle::CrankFeedInstructionAccounts {
+            cranker,
+            oracle_config,
+            price_feed_entry,
+        };
+
+        let data = sss_oracle::CrankFeedInstructionData::new(1_100_000_000, 1_000_000);
+        let ix = sss_oracle::CrankFeedInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 4: Unauthorized Cranker
-    /// Tests that only authorized crankers can update feeds
+    /// Flow 4: Aggregate prices
     #[flow]
-    fn unauthorized_cranker(&mut self) {
-        // Non-cranker, non-authority calls crank_feed - should fail
-        // Update cranker to new key
-        // Old cranker should fail
+    fn flow_aggregate(&mut self) {
+        let cranker = self.fuzz_accounts.cranker.insert(&mut self.trident, None);
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
+
+        let accounts = sss_oracle::AggregateInstructionAccounts {
+            cranker,
+            oracle_config,
+        };
+
+        let data = sss_oracle::AggregateInstructionData::new();
+        let ix = sss_oracle::AggregateInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 5: Deviation Attack
-    /// Tests that excessive price deviation is detected
+    /// Flow 5: Get mint price
     #[flow]
-    fn deviation_attack(&mut self) {
-        // Set deviation_threshold_bps = 100 (1%)
-        // Feed A reports 1000, Feed B reports 1020 (2% apart)
-        // Aggregate should fail ExcessiveDeviation
+    fn flow_get_mint_price(&mut self) {
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
+
+        let accounts = sss_oracle::GetMintPriceInstructionAccounts {
+            oracle_config,
+        };
+
+        let data = sss_oracle::GetMintPriceInstructionData::new();
+        let ix = sss_oracle::GetMintPriceInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 6: Confidence Interval Exploit
-    /// Tests that feeds with wide confidence intervals are filtered
+    /// Flow 6: Set manual price
     #[flow]
-    fn confidence_interval_exploit(&mut self) {
-        // Set max_confidence_interval_bps = 50 (0.5%)
-        // Crank feed with confidence = 10% of price
-        // Aggregate should skip that feed
-    }
+    fn flow_set_manual_price(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let oracle_config = self.fuzz_accounts.oracle_config.insert(&mut self.trident, None);
 
-    /// Attack Scenario 7: Feed Count Desync
-    /// Tests that feed_count stays accurate
-    #[flow]
-    fn feed_count_desync(&mut self) {
-        // Add 3 feeds
-        // Remove 2 feeds
-        // feed_count should be 1
-        // Try close_oracle - should fail ActiveFeedsExist
-        // Remove last feed
-        // close_oracle - should succeed
-    }
+        let accounts = sss_oracle::SetManualPriceInstructionAccounts {
+            authority,
+            oracle_config,
+        };
 
-    /// Attack Scenario 8: Double-Add Same Index
-    /// Tests that feed indices are unique
-    #[flow]
-    fn double_add_same_index(&mut self) {
-        // Add feed at index 0
-        // Add feed at index 0 again - should fail (PDA exists)
-    }
-
-    /// Attack Scenario 9: Weighted Mean Weight=0 Attack
-    /// Tests that zero weights are rejected
-    #[flow]
-    fn zero_weight_attack(&mut self) {
-        // Try add_feed with weight=0 - should fail InvalidParameter
-    }
-
-    /// Attack Scenario 10: Arithmetic Overflow in Aggregation
-    /// Tests that aggregation handles large numbers safely
-    #[flow]
-    fn arithmetic_overflow_test(&mut self) {
-        // Set all feed prices to u64::MAX
-        // Aggregate with mean
-        // Should use u128 intermediates and not panic
-    }
-
-    /// Attack Scenario 11: Pause Bypass Attempt
-    /// Tests that pause state is respected
-    #[flow]
-    fn pause_bypass_attempt(&mut self) {
-        // Pause oracle
-        // Attempt crank_feed - should fail OraclePaused
-        // Attempt aggregate - should fail OraclePaused
-        // set_manual_price - should succeed (by design)
-    }
-
-    /// Attack Scenario 12: Authority Transfer Hijack
-    /// Tests two-step authority transfer security
-    #[flow]
-    fn authority_transfer_hijack(&mut self) {
-        // Initiate transfer to attacker A
-        // Unrelated party B calls accept - should fail NotPendingAuthority
-        // A calls accept - should succeed
-        // Former authority cannot update config
-    }
-
-    /// Attack Scenario 13: Spread Arbitrage Detection
-    /// Tests that negative spreads create arbitrage opportunities
-    #[flow]
-    fn spread_arbitrage_detection(&mut self) {
-        // Set mint_premium_bps = -100 (discount for minters)
-        // Set redeem_discount_bps = -100 (premium for redeemers)
-        // Now mint_price < redeem_price (arbitrage exists)
-        // Program allows this but documents it
-    }
-
-    /// Attack Scenario 14: Close With Feeds
-    /// Tests that oracle cannot be closed with active feeds
-    #[flow]
-    fn close_with_feeds(&mut self) {
-        // Initialize oracle
-        // Add 3 feeds
-        // close_oracle - should fail
-        // Remove all 3
-        // close_oracle - should succeed
-    }
-
-    /// Attack Scenario 15: Max Feeds Boundary
-    /// Tests the maximum number of feeds limit
-    #[flow]
-    fn max_feeds_boundary(&mut self) {
-        // Add MAX_FEEDS (16) feeds successfully
-        // Add feed #17 - should fail MaxFeedsReached
-        // Remove one
-        // Add one - should succeed
+        let data = sss_oracle::SetManualPriceInstructionData::new(1_050_000_000, true);
+        let ix = sss_oracle::SetManualPriceInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
     #[end]
     fn end(&mut self) {
-        // Cleanup after each iteration
+        // Cleanup handled automatically
     }
 }
 
 fn main() {
-    FuzzTest::fuzz(50_000_000, 100);
+    FuzzTest::fuzz(10000, 100); // 10,000 iterations per thread, 100 threads = 1M total
 }

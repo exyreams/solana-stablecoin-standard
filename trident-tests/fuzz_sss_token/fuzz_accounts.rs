@@ -7,26 +7,49 @@ use trident_fuzz::fuzzing::*;
 ///
 /// Docs: https://ackee.xyz/trident/docs/latest/trident-api-macro/trident-types/fuzz-accounts/
 #[derive(Default)]
+#[allow(dead_code)]
 pub struct AccountAddresses {
+    pub payer: AddressStorage,
+
+    pub extra_account_meta_list: AddressStorage,
+
+    pub mint: AddressStorage,
+
+    pub sss_token_program: AddressStorage,
+
+    pub roles_config: AddressStorage,
+
+    pub system_program: AddressStorage,
+
+    pub source_token: AddressStorage,
+
+    pub destination_token: AddressStorage,
+
     pub authority: AddressStorage,
+
+    pub source_blacklist_entry: AddressStorage,
+
+    pub destination_blacklist_entry: AddressStorage,
 
     pub stablecoin_state: AddressStorage,
 
-    pub roles_config: AddressStorage,
+    pub oracle_config: AddressStorage,
+
+    pub price_feed_entry: AddressStorage,
+
+    pub cranker: AddressStorage,
+
+    pub caller: AddressStorage,
 
     pub minter: AddressStorage,
 
     pub minter_quota: AddressStorage,
-
-    pub system_program: AddressStorage,
 
     pub blacklister: AddressStorage,
 
     pub target: AddressStorage,
 
     pub blacklist_entry: AddressStorage,
-
-    pub mint: AddressStorage,
 
     pub token_account: AddressStorage,
 
@@ -49,6 +72,4 @@ pub struct AccountAddresses {
     pub seizer: AddressStorage,
 
     pub to_token_account: AddressStorage,
-
-    pub caller: AddressStorage,
 }

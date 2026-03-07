@@ -17,9 +17,9 @@ name = "fuzz_sss_token"
 path = "fuzz_sss_token/test_fuzz.rs"
 
 [[bin]]
-name = "fuzz_transfer_hook"
-path = "fuzz_transfer_hook/test_fuzz.rs"
-
-[[bin]]
 name = "fuzz_oracle"
 path = "fuzz_oracle/test_fuzz.rs"
+
+[[bin]]
+name = "fuzz_transfer_hook"
+path = "fuzz_transfer_hook/test_fuzz.rs"

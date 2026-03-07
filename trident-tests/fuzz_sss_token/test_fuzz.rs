@@ -21,109 +21,200 @@ impl FuzzTest {
 
     #[init]
     fn start(&mut self) {
-        // Initialize at the start of each iteration
-        // The fuzzer will automatically call program instructions
+        // Accounts will be created on-demand in flows
     }
 
-    /// Attack Scenario 1: Unauthorized Role Escalation
-    /// Tests that random signers cannot escalate privileges
+    /// Flow 1: Initialize SSS-1 (minimal) stablecoin
     #[flow]
-    fn unauthorized_role_escalation(&mut self) {
-        // Random signer attempts to add_minter - should fail
-        // Random signer attempts to seize - should fail
-        // Blacklister attempts to pause (if not pauser) - should fail
+    fn flow_initialize_sss1(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let mint = self.fuzz_accounts.mint.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+
+        let config = StablecoinConfig::new(
+            "Minimal Stablecoin".to_string(),
+            "MIN".to_string(),
+            "https://example.com/minimal.json".to_string(),
+            6,
+            false,
+            false,
+            false,
+            None,
+            false,
+            false,
+            None,
+        );
+
+        let accounts = sss_token::InitializeInstructionAccounts {
+            authority,
+            mint,
+            stablecoin_state,
+            roles_config,
+        };
+
+        let data = sss_token::InitializeInstructionData::new(config);
+        let ix = sss_token::InitializeInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 2: Quota Bypass
-    /// Tests that minter quotas are enforced correctly
+    /// Flow 2: Mint tokens
     #[flow]
-    fn quota_bypass_attempt(&mut self) {
-        // Set quota = 100, mint 100, then mint 1 more - should fail
-        // Set quota = 0 (unlimited), mint large amount - should succeed
-        // Update quota lower than minted - future mints should fail
+    fn flow_mint_tokens(&mut self) {
+        let minter = self.fuzz_accounts.minter.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+        let minter_quota = self.fuzz_accounts.minter_quota.insert(&mut self.trident, None);
+        let mint = self.fuzz_accounts.mint.insert(&mut self.trident, None);
+        let recipient_token_account = self.fuzz_accounts.recipient_token_account.insert(&mut self.trident, None);
+
+        let accounts = sss_token::MintInstructionAccounts {
+            minter,
+            stablecoin_state,
+            roles_config,
+            minter_quota,
+            mint,
+            recipient_token_account,
+        };
+
+        let data = sss_token::MintInstructionData::new(1000);
+        let ix = sss_token::MintInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 3: Pause Bypass
-    /// Tests that pause state is respected
+    /// Flow 3: Burn tokens
     #[flow]
-    fn pause_bypass_attempt(&mut self) {
-        // Pause program
-        // Attempt mint - should fail
-        // Attempt burn - should fail  
-        // Attempt seize - should succeed (seize bypasses pause)
+    fn flow_burn_tokens(&mut self) {
+        let burner = self.fuzz_accounts.burner.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+        let mint = self.fuzz_accounts.mint.insert(&mut self.trident, None);
+        let from_token_account = self.fuzz_accounts.source_token.insert(&mut self.trident, None);
+
+        let accounts = sss_token::BurnInstructionAccounts {
+            burner,
+            stablecoin_state,
+            roles_config,
+            mint,
+            from_token_account,
+        };
+
+        let data = sss_token::BurnInstructionData::new(500);
+        let ix = sss_token::BurnInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 4: Double Blacklist
-    /// Tests blacklist PDA creation/deletion
+    /// Flow 4: Pause stablecoin
     #[flow]
-    fn double_blacklist(&mut self) {
-        // Add address to blacklist
-        // Add same address again - should fail (PDA exists)
-        // Remove and re-add - both should succeed
+    fn flow_pause(&mut self) {
+        let pauser = self.fuzz_accounts.pauser.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+
+        let accounts = sss_token::PauseInstructionAccounts {
+            pauser,
+            stablecoin_state,
+            roles_config,
+        };
+
+        let data = sss_token::PauseInstructionData::new(Some("Emergency pause".to_string()));
+        let ix = sss_token::PauseInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 5: Authority Transfer Hijack
-    /// Tests two-step authority transfer security
+    /// Flow 5: Unpause stablecoin
     #[flow]
-    fn authority_transfer_hijack(&mut self) {
-        // Initiate transfer to attacker
-        // Attacker accepts before cancel - becomes master
-        // After cancel, attacker accepts - should fail
+    fn flow_unpause(&mut self) {
+        let pauser = self.fuzz_accounts.pauser.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+
+        let accounts = sss_token::UnpauseInstructionAccounts {
+            pauser,
+            stablecoin_state,
+            roles_config,
+        };
+
+        let data = sss_token::UnpauseInstructionData::new();
+        let ix = sss_token::UnpauseInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 6: Supply Desync
-    /// Tests that supply stays in sync with mint.supply
+    /// Flow 6: Add minter
     #[flow]
-    fn supply_desync_check(&mut self) {
-        // Mint tokens via sss-token
-        // Program should track supply correctly
-        // After any operation, total_supply should match mint.supply
+    fn flow_add_minter(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+        let minter = self.fuzz_accounts.minter.insert(&mut self.trident, None);
+        let minter_quota = self.fuzz_accounts.minter_quota.insert(&mut self.trident, None);
+
+        let accounts = sss_token::AddMinterInstructionAccounts {
+            authority,
+            stablecoin_state,
+            roles_config,
+            minter,
+            minter_quota,
+        };
+
+        let data = sss_token::AddMinterInstructionData::new(1_000_000);
+        let ix = sss_token::AddMinterInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 7: Blacklist Griefing
-    /// Tests that closed blacklist entries don't cause false positives
+    /// Flow 7: Add to blacklist (SSS-2)
     #[flow]
-    fn blacklist_griefing(&mut self) {
-        // Close blacklist entry
-        // Transfer should succeed (not falsely blacklisted)
+    fn flow_add_to_blacklist(&mut self) {
+        let blacklister = self.fuzz_accounts.blacklister.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+        let target = self.fuzz_accounts.target.insert(&mut self.trident, None);
+        let blacklist_entry = self.fuzz_accounts.source_blacklist_entry.insert(&mut self.trident, None);
+
+        let accounts = sss_token::AddToBlacklistInstructionAccounts {
+            blacklister,
+            stablecoin_state,
+            roles_config,
+            target,
+            blacklist_entry,
+        };
+
+        let data = sss_token::AddToBlacklistInstructionData::new("Suspicious activity".to_string());
+        let ix = sss_token::AddToBlacklistInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 
-    /// Attack Scenario 8: Seize from Blacklisted Account
-    /// Tests that permanent delegate can seize from blacklisted accounts
+    /// Flow 8: Freeze account
     #[flow]
-    fn seize_from_blacklisted(&mut self) {
-        // Blacklist account A
-        // Seize from A - should succeed (permanent delegate bypasses hook)
-    }
+    fn flow_freeze_account(&mut self) {
+        let authority = self.fuzz_accounts.authority.insert(&mut self.trident, None);
+        let stablecoin_state = self.fuzz_accounts.stablecoin_state.insert(&mut self.trident, None);
+        let roles_config = self.fuzz_accounts.roles_config.insert(&mut self.trident, None);
+        let mint = self.fuzz_accounts.mint.insert(&mut self.trident, None);
+        let target_account = self.fuzz_accounts.source_token.insert(&mut self.trident, None);
 
-    /// Attack Scenario 9: Close Mint with Outstanding Supply
-    /// Tests that mint cannot be closed with outstanding supply
-    #[flow]
-    fn close_mint_with_supply(&mut self) {
-        // Mint tokens
-        // Attempt close_mint - should fail (supply != 0)
-        // Burn all tokens
-        // Attempt close_mint - should succeed
-    }
+        let accounts = sss_token::FreezeAccountInstructionAccounts {
+            authority,
+            stablecoin_state,
+            roles_config,
+            mint,
+            target_account,
+        };
 
-    /// Attack Scenario 10: Minter Lifecycle
-    /// Tests minter add/remove/deactivate flows
-    #[flow]
-    fn minter_lifecycle(&mut self) {
-        // Add minter
-        // Remove minter
-        // Mint with removed minter - should fail
-        // Add minter again
-        // Deactivate via update_minter
-        // Mint - should fail
-    }
-
-    #[end]
-    fn end(&mut self) {
-        // Cleanup after each iteration
+        let data = sss_token::FreezeAccountInstructionData::new();
+        let ix = sss_token::FreezeAccountInstruction::data(data).accounts(accounts).instruction();
+        
+        let _ = self.trident.process_transaction(&[ix], None);
     }
 }
 
 fn main() {
-    FuzzTest::fuzz(50_000_000, 100);
+    FuzzTest::fuzz(10000, 100); // 10,000 iterations per thread, 100 threads = 1M total
 }

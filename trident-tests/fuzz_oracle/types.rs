@@ -15,6 +15,370 @@ use trident_fuzz::fuzzing::*;
 // ============================================================================
 
 // ----------------------------------------------------------------------------
+// Program: transfer_hook
+// ----------------------------------------------------------------------------
+pub mod transfer_hook {
+    use super::*;
+
+    // ------------------------------------------------------------------------
+    // Program ID
+    // ------------------------------------------------------------------------
+
+    /// Returns the program ID for transfer_hook
+    pub fn program_id() -> Pubkey {
+        pubkey!("F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf")
+    }
+
+    // ------------------------------------------------------------------------
+    // Instructions
+    // ------------------------------------------------------------------------
+
+    // ....................................................................
+    // Instruction: InitializeExtraAccountMetaList
+    // ....................................................................
+
+    /// Main instruction struct for InitializeExtraAccountMetaList
+    pub struct InitializeExtraAccountMetaListInstruction {
+        pub accounts: InitializeExtraAccountMetaListInstructionAccountMetas,
+        pub data: InitializeExtraAccountMetaListInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for InitializeExtraAccountMetaList instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct InitializeExtraAccountMetaListInstructionAccountMetas {
+        pub payer: AccountMeta,
+
+        pub extra_account_meta_list: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub sss_token_program: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub system_program: AccountMeta,
+    }
+
+    /// Account pubkeys for InitializeExtraAccountMetaList instruction
+    #[derive(Debug, Clone)]
+    pub struct InitializeExtraAccountMetaListInstructionAccounts {
+        pub payer: Pubkey,
+
+        pub extra_account_meta_list: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub sss_token_program: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl InitializeExtraAccountMetaListInstructionAccounts {
+        pub fn new(
+            payer: Pubkey,
+
+            extra_account_meta_list: Pubkey,
+
+            mint: Pubkey,
+
+            sss_token_program: Pubkey,
+
+            roles_config: Pubkey,
+        ) -> Self {
+            Self {
+                payer,
+
+                extra_account_meta_list,
+
+                mint,
+
+                sss_token_program,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for InitializeExtraAccountMetaList
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct InitializeExtraAccountMetaListInstructionData {}
+
+    impl InitializeExtraAccountMetaListInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for InitializeExtraAccountMetaListInstruction
+    impl InitializeExtraAccountMetaListInstruction {
+        fn discriminator() -> [u8; 8] {
+            [92u8, 197u8, 174u8, 197u8, 41u8, 124u8, 19u8, 3u8]
+        }
+
+        pub fn data(data: InitializeExtraAccountMetaListInstructionData) -> Self {
+            Self {
+                accounts: InitializeExtraAccountMetaListInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(
+            mut self,
+            accounts: InitializeExtraAccountMetaListInstructionAccounts,
+        ) -> Self {
+            self.accounts.payer = AccountMeta::new(accounts.payer, true);
+
+            self.accounts.extra_account_meta_list =
+                AccountMeta::new(accounts.extra_account_meta_list, false);
+
+            self.accounts.mint = AccountMeta::new_readonly(accounts.mint, false);
+
+            self.accounts.sss_token_program =
+                AccountMeta::new_readonly(accounts.sss_token_program, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.payer.clone());
+
+            metas.push(self.accounts.extra_account_meta_list.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.sss_token_program.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.system_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: TransferHook
+    // ....................................................................
+
+    /// Main instruction struct for TransferHook
+    pub struct TransferHookInstruction {
+        pub accounts: TransferHookInstructionAccountMetas,
+        pub data: TransferHookInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for TransferHook instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct TransferHookInstructionAccountMetas {
+        pub source_token: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub destination_token: AccountMeta,
+
+        pub authority: AccountMeta,
+
+        pub extra_account_meta_list: AccountMeta,
+
+        pub sss_token_program: AccountMeta,
+
+        pub source_blacklist_entry: AccountMeta,
+
+        pub destination_blacklist_entry: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+    }
+
+    /// Account pubkeys for TransferHook instruction
+    #[derive(Debug, Clone)]
+    pub struct TransferHookInstructionAccounts {
+        pub source_token: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub destination_token: Pubkey,
+
+        pub authority: Pubkey,
+
+        pub extra_account_meta_list: Pubkey,
+
+        pub sss_token_program: Pubkey,
+
+        pub source_blacklist_entry: Pubkey,
+
+        pub destination_blacklist_entry: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+    }
+
+    impl TransferHookInstructionAccounts {
+        pub fn new(
+            source_token: Pubkey,
+
+            mint: Pubkey,
+
+            destination_token: Pubkey,
+
+            authority: Pubkey,
+
+            extra_account_meta_list: Pubkey,
+
+            sss_token_program: Pubkey,
+
+            source_blacklist_entry: Pubkey,
+
+            destination_blacklist_entry: Pubkey,
+
+            stablecoin_state: Pubkey,
+        ) -> Self {
+            Self {
+                source_token,
+
+                mint,
+
+                destination_token,
+
+                authority,
+
+                extra_account_meta_list,
+
+                sss_token_program,
+
+                source_blacklist_entry,
+
+                destination_blacklist_entry,
+
+                stablecoin_state,
+            }
+        }
+    }
+
+    /// Instruction data for TransferHook
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct TransferHookInstructionData {
+        pub amount: u64,
+    }
+
+    impl TransferHookInstructionData {
+        pub fn new(amount: u64) -> Self {
+            Self { amount }
+        }
+    }
+
+    /// Implementation for TransferHookInstruction
+    impl TransferHookInstruction {
+        fn discriminator() -> [u8; 8] {
+            [220u8, 57u8, 220u8, 152u8, 126u8, 125u8, 97u8, 168u8]
+        }
+
+        pub fn data(data: TransferHookInstructionData) -> Self {
+            Self {
+                accounts: TransferHookInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: TransferHookInstructionAccounts) -> Self {
+            self.accounts.source_token = AccountMeta::new_readonly(accounts.source_token, false);
+
+            self.accounts.mint = AccountMeta::new_readonly(accounts.mint, false);
+
+            self.accounts.destination_token =
+                AccountMeta::new_readonly(accounts.destination_token, false);
+
+            self.accounts.authority = AccountMeta::new_readonly(accounts.authority, false);
+
+            self.accounts.extra_account_meta_list =
+                AccountMeta::new_readonly(accounts.extra_account_meta_list, false);
+
+            self.accounts.sss_token_program =
+                AccountMeta::new_readonly(accounts.sss_token_program, false);
+
+            self.accounts.source_blacklist_entry =
+                AccountMeta::new_readonly(accounts.source_blacklist_entry, false);
+
+            self.accounts.destination_blacklist_entry =
+                AccountMeta::new_readonly(accounts.destination_blacklist_entry, false);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.source_token.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.destination_token.clone());
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.extra_account_meta_list.clone());
+
+            metas.push(self.accounts.sss_token_program.clone());
+
+            metas.push(self.accounts.source_blacklist_entry.clone());
+
+            metas.push(self.accounts.destination_blacklist_entry.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Composite Accounts
+    // ------------------------------------------------------------------------
+}
+
+// ----------------------------------------------------------------------------
 // Program: sss_oracle
 // ----------------------------------------------------------------------------
 pub mod sss_oracle {
@@ -1156,6 +1520,2695 @@ pub mod sss_oracle {
     // ------------------------------------------------------------------------
 }
 
+// ----------------------------------------------------------------------------
+// Program: sss_token
+// ----------------------------------------------------------------------------
+pub mod sss_token {
+    use super::*;
+
+    // ------------------------------------------------------------------------
+    // Program ID
+    // ------------------------------------------------------------------------
+
+    /// Returns the program ID for sss_token
+    pub fn program_id() -> Pubkey {
+        pubkey!("EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK")
+    }
+
+    // ------------------------------------------------------------------------
+    // Instructions
+    // ------------------------------------------------------------------------
+
+    // ....................................................................
+    // Instruction: AddMinter
+    // ....................................................................
+
+    /// Main instruction struct for AddMinter
+    pub struct AddMinterInstruction {
+        pub accounts: AddMinterInstructionAccountMetas,
+        pub data: AddMinterInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for AddMinter instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct AddMinterInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub minter: AccountMeta,
+
+        pub minter_quota: AccountMeta,
+
+        pub system_program: AccountMeta,
+    }
+
+    /// Account pubkeys for AddMinter instruction
+    #[derive(Debug, Clone)]
+    pub struct AddMinterInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub minter: Pubkey,
+
+        pub minter_quota: Pubkey,
+    }
+
+    impl AddMinterInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            minter: Pubkey,
+
+            minter_quota: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                minter,
+
+                minter_quota,
+            }
+        }
+    }
+
+    /// Instruction data for AddMinter
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct AddMinterInstructionData {
+        pub quota: u64,
+    }
+
+    impl AddMinterInstructionData {
+        pub fn new(quota: u64) -> Self {
+            Self { quota }
+        }
+    }
+
+    /// Implementation for AddMinterInstruction
+    impl AddMinterInstruction {
+        fn discriminator() -> [u8; 8] {
+            [75u8, 86u8, 218u8, 40u8, 219u8, 6u8, 141u8, 29u8]
+        }
+
+        pub fn data(data: AddMinterInstructionData) -> Self {
+            Self {
+                accounts: AddMinterInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: AddMinterInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.minter = AccountMeta::new_readonly(accounts.minter, false);
+
+            self.accounts.minter_quota = AccountMeta::new(accounts.minter_quota, false);
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.minter.clone());
+
+            metas.push(self.accounts.minter_quota.clone());
+
+            metas.push(self.accounts.system_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: AddToBlacklist
+    // ....................................................................
+
+    /// Main instruction struct for AddToBlacklist
+    pub struct AddToBlacklistInstruction {
+        pub accounts: AddToBlacklistInstructionAccountMetas,
+        pub data: AddToBlacklistInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for AddToBlacklist instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct AddToBlacklistInstructionAccountMetas {
+        pub blacklister: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub target: AccountMeta,
+
+        pub blacklist_entry: AccountMeta,
+
+        pub system_program: AccountMeta,
+    }
+
+    /// Account pubkeys for AddToBlacklist instruction
+    #[derive(Debug, Clone)]
+    pub struct AddToBlacklistInstructionAccounts {
+        pub blacklister: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub target: Pubkey,
+
+        pub blacklist_entry: Pubkey,
+    }
+
+    impl AddToBlacklistInstructionAccounts {
+        pub fn new(
+            blacklister: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            target: Pubkey,
+
+            blacklist_entry: Pubkey,
+        ) -> Self {
+            Self {
+                blacklister,
+
+                stablecoin_state,
+
+                roles_config,
+
+                target,
+
+                blacklist_entry,
+            }
+        }
+    }
+
+    /// Instruction data for AddToBlacklist
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct AddToBlacklistInstructionData {
+        pub reason: String,
+    }
+
+    impl AddToBlacklistInstructionData {
+        pub fn new(reason: String) -> Self {
+            Self { reason }
+        }
+    }
+
+    /// Implementation for AddToBlacklistInstruction
+    impl AddToBlacklistInstruction {
+        fn discriminator() -> [u8; 8] {
+            [90u8, 115u8, 98u8, 231u8, 173u8, 119u8, 117u8, 176u8]
+        }
+
+        pub fn data(data: AddToBlacklistInstructionData) -> Self {
+            Self {
+                accounts: AddToBlacklistInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: AddToBlacklistInstructionAccounts) -> Self {
+            self.accounts.blacklister = AccountMeta::new(accounts.blacklister, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.target = AccountMeta::new_readonly(accounts.target, false);
+
+            self.accounts.blacklist_entry = AccountMeta::new(accounts.blacklist_entry, false);
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.blacklister.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.target.clone());
+
+            metas.push(self.accounts.blacklist_entry.clone());
+
+            metas.push(self.accounts.system_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: ApproveAccount
+    // ....................................................................
+
+    /// Main instruction struct for ApproveAccount
+    pub struct ApproveAccountInstruction {
+        pub accounts: ApproveAccountInstructionAccountMetas,
+        pub data: ApproveAccountInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for ApproveAccount instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct ApproveAccountInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub token_account: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for ApproveAccount instruction
+    #[derive(Debug, Clone)]
+    pub struct ApproveAccountInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub token_account: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl ApproveAccountInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            mint: Pubkey,
+
+            token_account: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                mint,
+
+                token_account,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for ApproveAccount
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct ApproveAccountInstructionData {}
+
+    impl ApproveAccountInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for ApproveAccountInstruction
+    impl ApproveAccountInstruction {
+        fn discriminator() -> [u8; 8] {
+            [53u8, 151u8, 52u8, 252u8, 172u8, 189u8, 4u8, 145u8]
+        }
+
+        pub fn data(data: ApproveAccountInstructionData) -> Self {
+            Self {
+                accounts: ApproveAccountInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: ApproveAccountInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.mint = AccountMeta::new_readonly(accounts.mint, false);
+
+            self.accounts.token_account = AccountMeta::new(accounts.token_account, false);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.token_account.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Burn
+    // ....................................................................
+
+    /// Main instruction struct for Burn
+    pub struct BurnInstruction {
+        pub accounts: BurnInstructionAccountMetas,
+        pub data: BurnInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Burn instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct BurnInstructionAccountMetas {
+        pub burner: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub from_token_account: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for Burn instruction
+    #[derive(Debug, Clone)]
+    pub struct BurnInstructionAccounts {
+        pub burner: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub from_token_account: Pubkey,
+    }
+
+    impl BurnInstructionAccounts {
+        pub fn new(
+            burner: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            mint: Pubkey,
+
+            from_token_account: Pubkey,
+        ) -> Self {
+            Self {
+                burner,
+
+                stablecoin_state,
+
+                roles_config,
+
+                mint,
+
+                from_token_account,
+            }
+        }
+    }
+
+    /// Instruction data for Burn
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct BurnInstructionData {
+        pub amount: u64,
+    }
+
+    impl BurnInstructionData {
+        pub fn new(amount: u64) -> Self {
+            Self { amount }
+        }
+    }
+
+    /// Implementation for BurnInstruction
+    impl BurnInstruction {
+        fn discriminator() -> [u8; 8] {
+            [116u8, 110u8, 29u8, 56u8, 107u8, 219u8, 42u8, 93u8]
+        }
+
+        pub fn data(data: BurnInstructionData) -> Self {
+            Self {
+                accounts: BurnInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: BurnInstructionAccounts) -> Self {
+            self.accounts.burner = AccountMeta::new_readonly(accounts.burner, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.from_token_account = AccountMeta::new(accounts.from_token_account, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.burner.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.from_token_account.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: CloseMint
+    // ....................................................................
+
+    /// Main instruction struct for CloseMint
+    pub struct CloseMintInstruction {
+        pub accounts: CloseMintInstructionAccountMetas,
+        pub data: CloseMintInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for CloseMint instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct CloseMintInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for CloseMint instruction
+    #[derive(Debug, Clone)]
+    pub struct CloseMintInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub mint: Pubkey,
+    }
+
+    impl CloseMintInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            mint: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                mint,
+            }
+        }
+    }
+
+    /// Instruction data for CloseMint
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct CloseMintInstructionData {}
+
+    impl CloseMintInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for CloseMintInstruction
+    impl CloseMintInstruction {
+        fn discriminator() -> [u8; 8] {
+            [149u8, 251u8, 157u8, 212u8, 65u8, 181u8, 235u8, 129u8]
+        }
+
+        pub fn data(data: CloseMintInstructionData) -> Self {
+            Self {
+                accounts: CloseMintInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: CloseMintInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new(accounts.roles_config, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: DisableConfidentialCredits
+    // ....................................................................
+
+    /// Main instruction struct for DisableConfidentialCredits
+    pub struct DisableConfidentialCreditsInstruction {
+        pub accounts: DisableConfidentialCreditsInstructionAccountMetas,
+        pub data: DisableConfidentialCreditsInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for DisableConfidentialCredits instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct DisableConfidentialCreditsInstructionAccountMetas {
+        pub owner: AccountMeta,
+
+        pub token_account: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for DisableConfidentialCredits instruction
+    #[derive(Debug, Clone)]
+    pub struct DisableConfidentialCreditsInstructionAccounts {
+        pub owner: Pubkey,
+
+        pub token_account: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+    }
+
+    impl DisableConfidentialCreditsInstructionAccounts {
+        pub fn new(owner: Pubkey, token_account: Pubkey, stablecoin_state: Pubkey) -> Self {
+            Self {
+                owner,
+
+                token_account,
+
+                stablecoin_state,
+            }
+        }
+    }
+
+    /// Instruction data for DisableConfidentialCredits
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct DisableConfidentialCreditsInstructionData {}
+
+    impl DisableConfidentialCreditsInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for DisableConfidentialCreditsInstruction
+    impl DisableConfidentialCreditsInstruction {
+        fn discriminator() -> [u8; 8] {
+            [143u8, 118u8, 87u8, 13u8, 137u8, 122u8, 217u8, 217u8]
+        }
+
+        pub fn data(data: DisableConfidentialCreditsInstructionData) -> Self {
+            Self {
+                accounts: DisableConfidentialCreditsInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: DisableConfidentialCreditsInstructionAccounts) -> Self {
+            self.accounts.owner = AccountMeta::new(accounts.owner, true);
+
+            self.accounts.token_account = AccountMeta::new(accounts.token_account, false);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.owner.clone());
+
+            metas.push(self.accounts.token_account.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: EnableConfidentialCredits
+    // ....................................................................
+
+    /// Main instruction struct for EnableConfidentialCredits
+    pub struct EnableConfidentialCreditsInstruction {
+        pub accounts: EnableConfidentialCreditsInstructionAccountMetas,
+        pub data: EnableConfidentialCreditsInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for EnableConfidentialCredits instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct EnableConfidentialCreditsInstructionAccountMetas {
+        pub owner: AccountMeta,
+
+        pub token_account: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for EnableConfidentialCredits instruction
+    #[derive(Debug, Clone)]
+    pub struct EnableConfidentialCreditsInstructionAccounts {
+        pub owner: Pubkey,
+
+        pub token_account: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+    }
+
+    impl EnableConfidentialCreditsInstructionAccounts {
+        pub fn new(owner: Pubkey, token_account: Pubkey, stablecoin_state: Pubkey) -> Self {
+            Self {
+                owner,
+
+                token_account,
+
+                stablecoin_state,
+            }
+        }
+    }
+
+    /// Instruction data for EnableConfidentialCredits
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct EnableConfidentialCreditsInstructionData {}
+
+    impl EnableConfidentialCreditsInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for EnableConfidentialCreditsInstruction
+    impl EnableConfidentialCreditsInstruction {
+        fn discriminator() -> [u8; 8] {
+            [241u8, 79u8, 23u8, 41u8, 47u8, 133u8, 96u8, 20u8]
+        }
+
+        pub fn data(data: EnableConfidentialCreditsInstructionData) -> Self {
+            Self {
+                accounts: EnableConfidentialCreditsInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: EnableConfidentialCreditsInstructionAccounts) -> Self {
+            self.accounts.owner = AccountMeta::new(accounts.owner, true);
+
+            self.accounts.token_account = AccountMeta::new(accounts.token_account, false);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.owner.clone());
+
+            metas.push(self.accounts.token_account.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: FreezeAccount
+    // ....................................................................
+
+    /// Main instruction struct for FreezeAccount
+    pub struct FreezeAccountInstruction {
+        pub accounts: FreezeAccountInstructionAccountMetas,
+        pub data: FreezeAccountInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for FreezeAccount instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct FreezeAccountInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub target_account: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for FreezeAccount instruction
+    #[derive(Debug, Clone)]
+    pub struct FreezeAccountInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub target_account: Pubkey,
+    }
+
+    impl FreezeAccountInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            mint: Pubkey,
+
+            target_account: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                mint,
+
+                target_account,
+            }
+        }
+    }
+
+    /// Instruction data for FreezeAccount
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct FreezeAccountInstructionData {}
+
+    impl FreezeAccountInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for FreezeAccountInstruction
+    impl FreezeAccountInstruction {
+        fn discriminator() -> [u8; 8] {
+            [253u8, 75u8, 82u8, 133u8, 167u8, 238u8, 43u8, 130u8]
+        }
+
+        pub fn data(data: FreezeAccountInstructionData) -> Self {
+            Self {
+                accounts: FreezeAccountInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: FreezeAccountInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new_readonly(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.target_account = AccountMeta::new(accounts.target_account, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.target_account.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: GetSupply
+    // ....................................................................
+
+    /// Main instruction struct for GetSupply
+    pub struct GetSupplyInstruction {
+        pub accounts: GetSupplyInstructionAccountMetas,
+        pub data: GetSupplyInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for GetSupply instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct GetSupplyInstructionAccountMetas {
+        pub stablecoin_state: AccountMeta,
+
+        pub mint: AccountMeta,
+    }
+
+    /// Account pubkeys for GetSupply instruction
+    #[derive(Debug, Clone)]
+    pub struct GetSupplyInstructionAccounts {
+        pub stablecoin_state: Pubkey,
+
+        pub mint: Pubkey,
+    }
+
+    impl GetSupplyInstructionAccounts {
+        pub fn new(stablecoin_state: Pubkey, mint: Pubkey) -> Self {
+            Self {
+                stablecoin_state,
+
+                mint,
+            }
+        }
+    }
+
+    /// Instruction data for GetSupply
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct GetSupplyInstructionData {}
+
+    impl GetSupplyInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for GetSupplyInstruction
+    impl GetSupplyInstruction {
+        fn discriminator() -> [u8; 8] {
+            [230u8, 188u8, 127u8, 244u8, 19u8, 234u8, 88u8, 198u8]
+        }
+
+        pub fn data(data: GetSupplyInstructionData) -> Self {
+            Self {
+                accounts: GetSupplyInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: GetSupplyInstructionAccounts) -> Self {
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.mint = AccountMeta::new_readonly(accounts.mint, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Initialize
+    // ....................................................................
+
+    /// Main instruction struct for Initialize
+    pub struct InitializeInstruction {
+        pub accounts: InitializeInstructionAccountMetas,
+        pub data: InitializeInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Initialize instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct InitializeInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub token_program: AccountMeta,
+
+        pub system_program: AccountMeta,
+
+        pub rent: AccountMeta,
+    }
+
+    /// Account pubkeys for Initialize instruction
+    #[derive(Debug, Clone)]
+    pub struct InitializeInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl InitializeInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            mint: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                mint,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for Initialize
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct InitializeInstructionData {
+        pub config: StablecoinConfig,
+    }
+
+    impl InitializeInstructionData {
+        pub fn new(config: StablecoinConfig) -> Self {
+            Self { config }
+        }
+    }
+
+    /// Implementation for InitializeInstruction
+    impl InitializeInstruction {
+        fn discriminator() -> [u8; 8] {
+            [175u8, 175u8, 109u8, 31u8, 13u8, 152u8, 155u8, 237u8]
+        }
+
+        pub fn data(data: InitializeInstructionData) -> Self {
+            Self {
+                accounts: InitializeInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: InitializeInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new(accounts.roles_config, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self.accounts.rent = AccountMeta::new_readonly(
+                pubkey!("SysvarRent111111111111111111111111111111111"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.push(self.accounts.system_program.clone());
+
+            metas.push(self.accounts.rent.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Mint
+    // ....................................................................
+
+    /// Main instruction struct for Mint
+    pub struct MintInstruction {
+        pub accounts: MintInstructionAccountMetas,
+        pub data: MintInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Mint instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct MintInstructionAccountMetas {
+        pub minter: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub minter_quota: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub recipient_token_account: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for Mint instruction
+    #[derive(Debug, Clone)]
+    pub struct MintInstructionAccounts {
+        pub minter: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub minter_quota: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub recipient_token_account: Pubkey,
+    }
+
+    impl MintInstructionAccounts {
+        pub fn new(
+            minter: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            minter_quota: Pubkey,
+
+            mint: Pubkey,
+
+            recipient_token_account: Pubkey,
+        ) -> Self {
+            Self {
+                minter,
+
+                stablecoin_state,
+
+                roles_config,
+
+                minter_quota,
+
+                mint,
+
+                recipient_token_account,
+            }
+        }
+    }
+
+    /// Instruction data for Mint
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct MintInstructionData {
+        pub amount: u64,
+    }
+
+    impl MintInstructionData {
+        pub fn new(amount: u64) -> Self {
+            Self { amount }
+        }
+    }
+
+    /// Implementation for MintInstruction
+    impl MintInstruction {
+        fn discriminator() -> [u8; 8] {
+            [51u8, 57u8, 225u8, 47u8, 182u8, 146u8, 137u8, 166u8]
+        }
+
+        pub fn data(data: MintInstructionData) -> Self {
+            Self {
+                accounts: MintInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: MintInstructionAccounts) -> Self {
+            self.accounts.minter = AccountMeta::new_readonly(accounts.minter, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.minter_quota = AccountMeta::new(accounts.minter_quota, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.recipient_token_account =
+                AccountMeta::new(accounts.recipient_token_account, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.minter.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.minter_quota.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.recipient_token_account.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Pause
+    // ....................................................................
+
+    /// Main instruction struct for Pause
+    pub struct PauseInstruction {
+        pub accounts: PauseInstructionAccountMetas,
+        pub data: PauseInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Pause instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct PauseInstructionAccountMetas {
+        pub pauser: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+    }
+
+    /// Account pubkeys for Pause instruction
+    #[derive(Debug, Clone)]
+    pub struct PauseInstructionAccounts {
+        pub pauser: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl PauseInstructionAccounts {
+        pub fn new(pauser: Pubkey, stablecoin_state: Pubkey, roles_config: Pubkey) -> Self {
+            Self {
+                pauser,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for Pause
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct PauseInstructionData {
+        pub reason: Option<String>,
+    }
+
+    impl PauseInstructionData {
+        pub fn new(reason: Option<String>) -> Self {
+            Self { reason }
+        }
+    }
+
+    /// Implementation for PauseInstruction
+    impl PauseInstruction {
+        fn discriminator() -> [u8; 8] {
+            [211u8, 22u8, 221u8, 251u8, 74u8, 121u8, 193u8, 47u8]
+        }
+
+        pub fn data(data: PauseInstructionData) -> Self {
+            Self {
+                accounts: PauseInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: PauseInstructionAccounts) -> Self {
+            self.accounts.pauser = AccountMeta::new_readonly(accounts.pauser, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.pauser.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: RemoveFromBlacklist
+    // ....................................................................
+
+    /// Main instruction struct for RemoveFromBlacklist
+    pub struct RemoveFromBlacklistInstruction {
+        pub accounts: RemoveFromBlacklistInstructionAccountMetas,
+        pub data: RemoveFromBlacklistInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for RemoveFromBlacklist instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct RemoveFromBlacklistInstructionAccountMetas {
+        pub blacklister: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub target: AccountMeta,
+
+        pub blacklist_entry: AccountMeta,
+    }
+
+    /// Account pubkeys for RemoveFromBlacklist instruction
+    #[derive(Debug, Clone)]
+    pub struct RemoveFromBlacklistInstructionAccounts {
+        pub blacklister: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub target: Pubkey,
+
+        pub blacklist_entry: Pubkey,
+    }
+
+    impl RemoveFromBlacklistInstructionAccounts {
+        pub fn new(
+            blacklister: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            target: Pubkey,
+
+            blacklist_entry: Pubkey,
+        ) -> Self {
+            Self {
+                blacklister,
+
+                stablecoin_state,
+
+                roles_config,
+
+                target,
+
+                blacklist_entry,
+            }
+        }
+    }
+
+    /// Instruction data for RemoveFromBlacklist
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct RemoveFromBlacklistInstructionData {}
+
+    impl RemoveFromBlacklistInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for RemoveFromBlacklistInstruction
+    impl RemoveFromBlacklistInstruction {
+        fn discriminator() -> [u8; 8] {
+            [47u8, 105u8, 20u8, 10u8, 165u8, 168u8, 203u8, 219u8]
+        }
+
+        pub fn data(data: RemoveFromBlacklistInstructionData) -> Self {
+            Self {
+                accounts: RemoveFromBlacklistInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: RemoveFromBlacklistInstructionAccounts) -> Self {
+            self.accounts.blacklister = AccountMeta::new(accounts.blacklister, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.target = AccountMeta::new_readonly(accounts.target, false);
+
+            self.accounts.blacklist_entry = AccountMeta::new(accounts.blacklist_entry, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.blacklister.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.target.clone());
+
+            metas.push(self.accounts.blacklist_entry.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: RemoveMinter
+    // ....................................................................
+
+    /// Main instruction struct for RemoveMinter
+    pub struct RemoveMinterInstruction {
+        pub accounts: RemoveMinterInstructionAccountMetas,
+        pub data: RemoveMinterInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for RemoveMinter instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct RemoveMinterInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub minter: AccountMeta,
+
+        pub minter_quota: AccountMeta,
+    }
+
+    /// Account pubkeys for RemoveMinter instruction
+    #[derive(Debug, Clone)]
+    pub struct RemoveMinterInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub minter: Pubkey,
+
+        pub minter_quota: Pubkey,
+    }
+
+    impl RemoveMinterInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            minter: Pubkey,
+
+            minter_quota: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                minter,
+
+                minter_quota,
+            }
+        }
+    }
+
+    /// Instruction data for RemoveMinter
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct RemoveMinterInstructionData {}
+
+    impl RemoveMinterInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for RemoveMinterInstruction
+    impl RemoveMinterInstruction {
+        fn discriminator() -> [u8; 8] {
+            [241u8, 69u8, 84u8, 16u8, 164u8, 232u8, 131u8, 79u8]
+        }
+
+        pub fn data(data: RemoveMinterInstructionData) -> Self {
+            Self {
+                accounts: RemoveMinterInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: RemoveMinterInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.minter = AccountMeta::new_readonly(accounts.minter, false);
+
+            self.accounts.minter_quota = AccountMeta::new(accounts.minter_quota, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.minter.clone());
+
+            metas.push(self.accounts.minter_quota.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Seize
+    // ....................................................................
+
+    /// Main instruction struct for Seize
+    pub struct SeizeInstruction {
+        pub accounts: SeizeInstructionAccountMetas,
+        pub data: SeizeInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Seize instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct SeizeInstructionAccountMetas {
+        pub seizer: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub from_token_account: AccountMeta,
+
+        pub to_token_account: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for Seize instruction
+    #[derive(Debug, Clone)]
+    pub struct SeizeInstructionAccounts {
+        pub seizer: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub from_token_account: Pubkey,
+
+        pub to_token_account: Pubkey,
+    }
+
+    impl SeizeInstructionAccounts {
+        pub fn new(
+            seizer: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            mint: Pubkey,
+
+            from_token_account: Pubkey,
+
+            to_token_account: Pubkey,
+        ) -> Self {
+            Self {
+                seizer,
+
+                stablecoin_state,
+
+                roles_config,
+
+                mint,
+
+                from_token_account,
+
+                to_token_account,
+            }
+        }
+    }
+
+    /// Instruction data for Seize
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct SeizeInstructionData {
+        pub amount: u64,
+    }
+
+    impl SeizeInstructionData {
+        pub fn new(amount: u64) -> Self {
+            Self { amount }
+        }
+    }
+
+    /// Implementation for SeizeInstruction
+    impl SeizeInstruction {
+        fn discriminator() -> [u8; 8] {
+            [129u8, 159u8, 143u8, 31u8, 161u8, 224u8, 241u8, 84u8]
+        }
+
+        pub fn data(data: SeizeInstructionData) -> Self {
+            Self {
+                accounts: SeizeInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: SeizeInstructionAccounts) -> Self {
+            self.accounts.seizer = AccountMeta::new_readonly(accounts.seizer, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.from_token_account = AccountMeta::new(accounts.from_token_account, false);
+
+            self.accounts.to_token_account = AccountMeta::new(accounts.to_token_account, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.seizer.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.from_token_account.clone());
+
+            metas.push(self.accounts.to_token_account.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: ThawAccount
+    // ....................................................................
+
+    /// Main instruction struct for ThawAccount
+    pub struct ThawAccountInstruction {
+        pub accounts: ThawAccountInstructionAccountMetas,
+        pub data: ThawAccountInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for ThawAccount instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct ThawAccountInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub target_account: AccountMeta,
+
+        pub token_program: AccountMeta,
+    }
+
+    /// Account pubkeys for ThawAccount instruction
+    #[derive(Debug, Clone)]
+    pub struct ThawAccountInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub target_account: Pubkey,
+    }
+
+    impl ThawAccountInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            mint: Pubkey,
+
+            target_account: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                mint,
+
+                target_account,
+            }
+        }
+    }
+
+    /// Instruction data for ThawAccount
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct ThawAccountInstructionData {}
+
+    impl ThawAccountInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for ThawAccountInstruction
+    impl ThawAccountInstruction {
+        fn discriminator() -> [u8; 8] {
+            [115u8, 152u8, 79u8, 213u8, 213u8, 169u8, 184u8, 35u8]
+        }
+
+        pub fn data(data: ThawAccountInstructionData) -> Self {
+            Self {
+                accounts: ThawAccountInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: ThawAccountInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new_readonly(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, false);
+
+            self.accounts.target_account = AccountMeta::new(accounts.target_account, false);
+
+            self.accounts.token_program = AccountMeta::new_readonly(
+                pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.target_account.clone());
+
+            metas.push(self.accounts.token_program.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: TransferAuthority
+    // ....................................................................
+
+    /// Main instruction struct for TransferAuthority
+    pub struct TransferAuthorityInstruction {
+        pub accounts: TransferAuthorityInstructionAccountMetas,
+        pub data: TransferAuthorityInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for TransferAuthority instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct TransferAuthorityInstructionAccountMetas {
+        pub caller: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+    }
+
+    /// Account pubkeys for TransferAuthority instruction
+    #[derive(Debug, Clone)]
+    pub struct TransferAuthorityInstructionAccounts {
+        pub caller: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl TransferAuthorityInstructionAccounts {
+        pub fn new(caller: Pubkey, stablecoin_state: Pubkey, roles_config: Pubkey) -> Self {
+            Self {
+                caller,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for TransferAuthority
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct TransferAuthorityInstructionData {
+        pub new_master: Option<Pubkey>,
+    }
+
+    impl TransferAuthorityInstructionData {
+        pub fn new(new_master: Option<Pubkey>) -> Self {
+            Self { new_master }
+        }
+    }
+
+    /// Implementation for TransferAuthorityInstruction
+    impl TransferAuthorityInstruction {
+        fn discriminator() -> [u8; 8] {
+            [48u8, 169u8, 76u8, 72u8, 229u8, 180u8, 55u8, 161u8]
+        }
+
+        pub fn data(data: TransferAuthorityInstructionData) -> Self {
+            Self {
+                accounts: TransferAuthorityInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: TransferAuthorityInstructionAccounts) -> Self {
+            self.accounts.caller = AccountMeta::new_readonly(accounts.caller, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new(accounts.roles_config, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.caller.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: Unpause
+    // ....................................................................
+
+    /// Main instruction struct for Unpause
+    pub struct UnpauseInstruction {
+        pub accounts: UnpauseInstructionAccountMetas,
+        pub data: UnpauseInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for Unpause instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct UnpauseInstructionAccountMetas {
+        pub pauser: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+    }
+
+    /// Account pubkeys for Unpause instruction
+    #[derive(Debug, Clone)]
+    pub struct UnpauseInstructionAccounts {
+        pub pauser: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl UnpauseInstructionAccounts {
+        pub fn new(pauser: Pubkey, stablecoin_state: Pubkey, roles_config: Pubkey) -> Self {
+            Self {
+                pauser,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for Unpause
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct UnpauseInstructionData {}
+
+    impl UnpauseInstructionData {
+        pub fn new() -> Self {
+            Self {}
+        }
+    }
+
+    /// Implementation for UnpauseInstruction
+    impl UnpauseInstruction {
+        fn discriminator() -> [u8; 8] {
+            [169u8, 144u8, 4u8, 38u8, 10u8, 141u8, 188u8, 255u8]
+        }
+
+        pub fn data(data: UnpauseInstructionData) -> Self {
+            Self {
+                accounts: UnpauseInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: UnpauseInstructionAccounts) -> Self {
+            self.accounts.pauser = AccountMeta::new_readonly(accounts.pauser, true);
+
+            self.accounts.stablecoin_state = AccountMeta::new(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.pauser.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: UpdateMinter
+    // ....................................................................
+
+    /// Main instruction struct for UpdateMinter
+    pub struct UpdateMinterInstruction {
+        pub accounts: UpdateMinterInstructionAccountMetas,
+        pub data: UpdateMinterInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for UpdateMinter instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct UpdateMinterInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+
+        pub minter: AccountMeta,
+
+        pub minter_quota: AccountMeta,
+    }
+
+    /// Account pubkeys for UpdateMinter instruction
+    #[derive(Debug, Clone)]
+    pub struct UpdateMinterInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+
+        pub minter: Pubkey,
+
+        pub minter_quota: Pubkey,
+    }
+
+    impl UpdateMinterInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            roles_config: Pubkey,
+
+            minter: Pubkey,
+
+            minter_quota: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+
+                minter,
+
+                minter_quota,
+            }
+        }
+    }
+
+    /// Instruction data for UpdateMinter
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct UpdateMinterInstructionData {
+        pub quota: u64,
+
+        pub active: bool,
+
+        pub reset_minted: bool,
+    }
+
+    impl UpdateMinterInstructionData {
+        pub fn new(quota: u64, active: bool, reset_minted: bool) -> Self {
+            Self {
+                quota,
+
+                active,
+
+                reset_minted,
+            }
+        }
+    }
+
+    /// Implementation for UpdateMinterInstruction
+    impl UpdateMinterInstruction {
+        fn discriminator() -> [u8; 8] {
+            [164u8, 129u8, 164u8, 88u8, 75u8, 29u8, 91u8, 38u8]
+        }
+
+        pub fn data(data: UpdateMinterInstructionData) -> Self {
+            Self {
+                accounts: UpdateMinterInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: UpdateMinterInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new_readonly(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new_readonly(accounts.roles_config, false);
+
+            self.accounts.minter = AccountMeta::new_readonly(accounts.minter, false);
+
+            self.accounts.minter_quota = AccountMeta::new(accounts.minter_quota, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.push(self.accounts.minter.clone());
+
+            metas.push(self.accounts.minter_quota.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: UpdateRoles
+    // ....................................................................
+
+    /// Main instruction struct for UpdateRoles
+    pub struct UpdateRolesInstruction {
+        pub accounts: UpdateRolesInstructionAccountMetas,
+        pub data: UpdateRolesInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for UpdateRoles instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct UpdateRolesInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub roles_config: AccountMeta,
+    }
+
+    /// Account pubkeys for UpdateRoles instruction
+    #[derive(Debug, Clone)]
+    pub struct UpdateRolesInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub roles_config: Pubkey,
+    }
+
+    impl UpdateRolesInstructionAccounts {
+        pub fn new(authority: Pubkey, stablecoin_state: Pubkey, roles_config: Pubkey) -> Self {
+            Self {
+                authority,
+
+                stablecoin_state,
+
+                roles_config,
+            }
+        }
+    }
+
+    /// Instruction data for UpdateRoles
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct UpdateRolesInstructionData {
+        pub new_roles: RolesUpdate,
+    }
+
+    impl UpdateRolesInstructionData {
+        pub fn new(new_roles: RolesUpdate) -> Self {
+            Self { new_roles }
+        }
+    }
+
+    /// Implementation for UpdateRolesInstruction
+    impl UpdateRolesInstruction {
+        fn discriminator() -> [u8; 8] {
+            [220u8, 152u8, 205u8, 233u8, 177u8, 123u8, 219u8, 125u8]
+        }
+
+        pub fn data(data: UpdateRolesInstructionData) -> Self {
+            Self {
+                accounts: UpdateRolesInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: UpdateRolesInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new_readonly(accounts.authority, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.roles_config = AccountMeta::new(accounts.roles_config, false);
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.roles_config.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Composite Accounts
+    // ------------------------------------------------------------------------
+}
+
 // ============================================================================
 // CUSTOM TYPES
 // ============================================================================
@@ -2002,6 +5055,994 @@ impl UpdateOracleConfigParams {
             cranker,
 
             paused,
+        }
+    }
+}
+
+/// Custom struct: AccountApprovedForConfidentialTransfer
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AccountApprovedForConfidentialTransfer {
+    pub token_account: Pubkey,
+
+    pub mint: Pubkey,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AccountApprovedForConfidentialTransfer {
+    pub fn new(token_account: Pubkey, mint: Pubkey, authority: Pubkey, timestamp: i64) -> Self {
+        Self {
+            token_account,
+
+            mint,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: AccountFrozen
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AccountFrozen {
+    pub mint: Pubkey,
+
+    pub account: Pubkey,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AccountFrozen {
+    pub fn new(mint: Pubkey, account: Pubkey, authority: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            account,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: AccountThawed
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AccountThawed {
+    pub mint: Pubkey,
+
+    pub account: Pubkey,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AccountThawed {
+    pub fn new(mint: Pubkey, account: Pubkey, authority: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            account,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: AddedToBlacklist
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AddedToBlacklist {
+    pub mint: Pubkey,
+
+    pub address: Pubkey,
+
+    pub reason: String,
+
+    pub blacklister: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AddedToBlacklist {
+    pub fn new(
+        mint: Pubkey,
+
+        address: Pubkey,
+
+        reason: String,
+
+        blacklister: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            address,
+
+            reason,
+
+            blacklister,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: AuthorityTransferCompleted
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AuthorityTransferCompleted {
+    pub mint: Pubkey,
+
+    pub new_master: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AuthorityTransferCompleted {
+    pub fn new(mint: Pubkey, new_master: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            new_master,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: AuthorityTransferInitiated
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct AuthorityTransferInitiated {
+    pub mint: Pubkey,
+
+    pub current_master: Pubkey,
+
+    pub pending_master: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl AuthorityTransferInitiated {
+    pub fn new(
+        mint: Pubkey,
+
+        current_master: Pubkey,
+
+        pending_master: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            current_master,
+
+            pending_master,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: BlacklistEntry
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct BlacklistEntry {
+    pub mint: Pubkey,
+
+    pub address: Pubkey,
+
+    pub reason: String,
+
+    pub timestamp: i64,
+
+    pub bump: u8,
+}
+
+impl BlacklistEntry {
+    pub fn new(mint: Pubkey, address: Pubkey, reason: String, timestamp: i64, bump: u8) -> Self {
+        Self {
+            mint,
+
+            address,
+
+            reason,
+
+            timestamp,
+
+            bump,
+        }
+    }
+}
+
+/// Custom struct: ConfidentialCreditsDisabled
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct ConfidentialCreditsDisabled {
+    pub token_account: Pubkey,
+
+    pub owner: Pubkey,
+
+    pub mint: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl ConfidentialCreditsDisabled {
+    pub fn new(token_account: Pubkey, owner: Pubkey, mint: Pubkey, timestamp: i64) -> Self {
+        Self {
+            token_account,
+
+            owner,
+
+            mint,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: ConfidentialCreditsEnabled
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct ConfidentialCreditsEnabled {
+    pub token_account: Pubkey,
+
+    pub owner: Pubkey,
+
+    pub mint: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl ConfidentialCreditsEnabled {
+    pub fn new(token_account: Pubkey, owner: Pubkey, mint: Pubkey, timestamp: i64) -> Self {
+        Self {
+            token_account,
+
+            owner,
+
+            mint,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: MintClosed
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MintClosed {
+    pub mint: Pubkey,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl MintClosed {
+    pub fn new(mint: Pubkey, authority: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: MinterAdded
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MinterAdded {
+    pub mint: Pubkey,
+
+    pub minter: Pubkey,
+
+    pub quota: u64,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl MinterAdded {
+    pub fn new(
+        mint: Pubkey,
+
+        minter: Pubkey,
+
+        quota: u64,
+
+        authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            minter,
+
+            quota,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: MinterQuota
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MinterQuota {
+    pub mint: Pubkey,
+
+    pub minter: Pubkey,
+
+    pub quota: u64,
+
+    pub minted: u64,
+
+    pub active: bool,
+
+    pub bump: u8,
+}
+
+impl MinterQuota {
+    pub fn new(
+        mint: Pubkey,
+
+        minter: Pubkey,
+
+        quota: u64,
+
+        minted: u64,
+
+        active: bool,
+
+        bump: u8,
+    ) -> Self {
+        Self {
+            mint,
+
+            minter,
+
+            quota,
+
+            minted,
+
+            active,
+
+            bump,
+        }
+    }
+}
+
+/// Custom struct: MinterRemoved
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MinterRemoved {
+    pub mint: Pubkey,
+
+    pub minter: Pubkey,
+
+    pub total_minted: u64,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl MinterRemoved {
+    pub fn new(
+        mint: Pubkey,
+
+        minter: Pubkey,
+
+        total_minted: u64,
+
+        authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            minter,
+
+            total_minted,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: MinterUpdated
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MinterUpdated {
+    pub mint: Pubkey,
+
+    pub minter: Pubkey,
+
+    pub new_quota: u64,
+
+    pub previous_quota: u64,
+
+    pub minted_reset: bool,
+
+    pub previous_minted: u64,
+
+    pub active: bool,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl MinterUpdated {
+    pub fn new(
+        mint: Pubkey,
+
+        minter: Pubkey,
+
+        new_quota: u64,
+
+        previous_quota: u64,
+
+        minted_reset: bool,
+
+        previous_minted: u64,
+
+        active: bool,
+
+        authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            minter,
+
+            new_quota,
+
+            previous_quota,
+
+            minted_reset,
+
+            previous_minted,
+
+            active,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: PauseStateChanged
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct PauseStateChanged {
+    pub mint: Pubkey,
+
+    pub paused: bool,
+
+    pub reason: Option<String>,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl PauseStateChanged {
+    pub fn new(
+        mint: Pubkey,
+
+        paused: bool,
+
+        reason: Option<String>,
+
+        authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            paused,
+
+            reason,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: RemovedFromBlacklist
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct RemovedFromBlacklist {
+    pub mint: Pubkey,
+
+    pub address: Pubkey,
+
+    pub blacklister: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl RemovedFromBlacklist {
+    pub fn new(mint: Pubkey, address: Pubkey, blacklister: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            address,
+
+            blacklister,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: RolesConfig
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct RolesConfig {
+    pub master_authority: Pubkey,
+
+    pub pending_master: Option<Pubkey>,
+
+    pub burner: Pubkey,
+
+    pub pauser: Pubkey,
+
+    pub blacklister: Pubkey,
+
+    pub seizer: Pubkey,
+
+    pub bump: u8,
+}
+
+impl RolesConfig {
+    pub fn new(
+        master_authority: Pubkey,
+
+        pending_master: Option<Pubkey>,
+
+        burner: Pubkey,
+
+        pauser: Pubkey,
+
+        blacklister: Pubkey,
+
+        seizer: Pubkey,
+
+        bump: u8,
+    ) -> Self {
+        Self {
+            master_authority,
+
+            pending_master,
+
+            burner,
+
+            pauser,
+
+            blacklister,
+
+            seizer,
+
+            bump,
+        }
+    }
+}
+
+/// Custom struct: RolesUpdate
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct RolesUpdate {
+    pub burner: Option<Pubkey>,
+
+    pub pauser: Option<Pubkey>,
+
+    pub blacklister: Option<Pubkey>,
+
+    pub seizer: Option<Pubkey>,
+}
+
+impl RolesUpdate {
+    pub fn new(
+        burner: Option<Pubkey>,
+
+        pauser: Option<Pubkey>,
+
+        blacklister: Option<Pubkey>,
+
+        seizer: Option<Pubkey>,
+    ) -> Self {
+        Self {
+            burner,
+
+            pauser,
+
+            blacklister,
+
+            seizer,
+        }
+    }
+}
+
+/// Custom struct: RolesUpdated
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct RolesUpdated {
+    pub mint: Pubkey,
+
+    pub updated_by: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl RolesUpdated {
+    pub fn new(mint: Pubkey, updated_by: Pubkey, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            updated_by,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: StablecoinConfig
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct StablecoinConfig {
+    pub name: String,
+
+    pub symbol: String,
+
+    pub uri: String,
+
+    pub decimals: u8,
+
+    pub enable_permanent_delegate: bool,
+
+    pub enable_transfer_hook: bool,
+
+    pub default_account_frozen: bool,
+
+    pub transfer_hook_program_id: Option<Pubkey>,
+
+    pub enable_confidential_transfers: bool,
+
+    pub confidential_transfer_auto_approve: bool,
+
+    pub auditor_elgamal_pubkey: Option<[u8; 32]>,
+}
+
+impl StablecoinConfig {
+    pub fn new(
+        name: String,
+
+        symbol: String,
+
+        uri: String,
+
+        decimals: u8,
+
+        enable_permanent_delegate: bool,
+
+        enable_transfer_hook: bool,
+
+        default_account_frozen: bool,
+
+        transfer_hook_program_id: Option<Pubkey>,
+
+        enable_confidential_transfers: bool,
+
+        confidential_transfer_auto_approve: bool,
+
+        auditor_elgamal_pubkey: Option<[u8; 32]>,
+    ) -> Self {
+        Self {
+            name,
+
+            symbol,
+
+            uri,
+
+            decimals,
+
+            enable_permanent_delegate,
+
+            enable_transfer_hook,
+
+            default_account_frozen,
+
+            transfer_hook_program_id,
+
+            enable_confidential_transfers,
+
+            confidential_transfer_auto_approve,
+
+            auditor_elgamal_pubkey,
+        }
+    }
+}
+
+/// Custom struct: StablecoinInitialized
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct StablecoinInitialized {
+    pub mint: Pubkey,
+
+    pub name: String,
+
+    pub symbol: String,
+
+    pub decimals: u8,
+
+    pub enable_permanent_delegate: bool,
+
+    pub enable_transfer_hook: bool,
+
+    pub enable_confidential_transfers: bool,
+
+    pub master_authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl StablecoinInitialized {
+    pub fn new(
+        mint: Pubkey,
+
+        name: String,
+
+        symbol: String,
+
+        decimals: u8,
+
+        enable_permanent_delegate: bool,
+
+        enable_transfer_hook: bool,
+
+        enable_confidential_transfers: bool,
+
+        master_authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            name,
+
+            symbol,
+
+            decimals,
+
+            enable_permanent_delegate,
+
+            enable_transfer_hook,
+
+            enable_confidential_transfers,
+
+            master_authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: StablecoinState
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct StablecoinState {
+    pub version: u8,
+
+    pub mint: Pubkey,
+
+    pub name: String,
+
+    pub symbol: String,
+
+    pub decimals: u8,
+
+    pub uri: String,
+
+    pub enable_permanent_delegate: bool,
+
+    pub enable_transfer_hook: bool,
+
+    pub default_account_frozen: bool,
+
+    pub enable_confidential_transfers: bool,
+
+    pub confidential_transfer_auto_approve: bool,
+
+    pub paused: bool,
+
+    pub total_supply: u64,
+
+    pub bump: u8,
+}
+
+impl StablecoinState {
+    pub fn new(
+        version: u8,
+
+        mint: Pubkey,
+
+        name: String,
+
+        symbol: String,
+
+        decimals: u8,
+
+        uri: String,
+
+        enable_permanent_delegate: bool,
+
+        enable_transfer_hook: bool,
+
+        default_account_frozen: bool,
+
+        enable_confidential_transfers: bool,
+
+        confidential_transfer_auto_approve: bool,
+
+        paused: bool,
+
+        total_supply: u64,
+
+        bump: u8,
+    ) -> Self {
+        Self {
+            version,
+
+            mint,
+
+            name,
+
+            symbol,
+
+            decimals,
+
+            uri,
+
+            enable_permanent_delegate,
+
+            enable_transfer_hook,
+
+            default_account_frozen,
+
+            enable_confidential_transfers,
+
+            confidential_transfer_auto_approve,
+
+            paused,
+
+            total_supply,
+
+            bump,
+        }
+    }
+}
+
+/// Custom struct: TokensBurned
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct TokensBurned {
+    pub mint: Pubkey,
+
+    pub from: Pubkey,
+
+    pub amount: u64,
+
+    pub timestamp: i64,
+}
+
+impl TokensBurned {
+    pub fn new(mint: Pubkey, from: Pubkey, amount: u64, timestamp: i64) -> Self {
+        Self {
+            mint,
+
+            from,
+
+            amount,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: TokensMinted
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct TokensMinted {
+    pub mint: Pubkey,
+
+    pub recipient: Pubkey,
+
+    pub amount: u64,
+
+    pub minter: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl TokensMinted {
+    pub fn new(
+        mint: Pubkey,
+
+        recipient: Pubkey,
+
+        amount: u64,
+
+        minter: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            recipient,
+
+            amount,
+
+            minter,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: TokensSeized
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct TokensSeized {
+    pub mint: Pubkey,
+
+    pub from: Pubkey,
+
+    pub to: Pubkey,
+
+    pub amount: u64,
+
+    pub seizer: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl TokensSeized {
+    pub fn new(
+        mint: Pubkey,
+
+        from: Pubkey,
+
+        to: Pubkey,
+
+        amount: u64,
+
+        seizer: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            from,
+
+            to,
+
+            amount,
+
+            seizer,
+
+            timestamp,
         }
     }
 }

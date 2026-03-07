@@ -1,24 +1,13 @@
 use trident_fuzz::fuzzing::*;
 
 /// Storage for all account addresses used in fuzz testing.
-///
-/// This struct serves as a centralized repository for account addresses,
-/// enabling their reuse across different instruction flows and test scenarios.
-///
-/// Docs: https://ackee.xyz/trident/docs/latest/trident-api-macro/trident-types/fuzz-accounts/
 #[derive(Default)]
+#[allow(dead_code)]
 pub struct AccountAddresses {
     pub authority: AddressStorage,
-
-    pub oracle_config: AddressStorage,
-
-    pub price_feed_entry: AddressStorage,
-
-    pub system_program: AddressStorage,
-
-    pub cranker: AddressStorage,
-
     pub mint: AddressStorage,
-
+    pub oracle_config: AddressStorage,
+    pub price_feed_entry: AddressStorage,
+    pub cranker: AddressStorage,
     pub caller: AddressStorage,
 }
