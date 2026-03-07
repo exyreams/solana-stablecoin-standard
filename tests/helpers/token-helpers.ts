@@ -1,0 +1,259 @@
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import { SssToken } from "../../target/types/sss_token";
+import { airdrop } from "./common";
+
+// Declare Buffer for Node.js environment
+declare const Buffer: {
+  from(data: string | Uint8Array | number[]): Uint8Array;
+};
+
+// ── PDA derivation ─────────────────────────────────────────
+
+export function findStablecoinStatePda(
+  mint: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("stablecoin_state"), mint.toBuffer()],
+    programId
+  );
+}
+
+export function findRolesConfigPda(
+  mint: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("roles_config"), mint.toBuffer()],
+    programId
+  );
+}
+
+export function findMinterQuotaPda(
+  mint: PublicKey,
+  minter: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("minter_quota"), mint.toBuffer(), minter.toBuffer()],
+    programId
+  );
+}
+
+export function findBlacklistEntryPda(
+  mint: PublicKey,
+  address: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("blacklist"), mint.toBuffer(), address.toBuffer()],
+    programId
+  );
+}
+
+// ── Default config ─────────────────────────────────────────
+
+export interface StablecoinConfig {
+  name: string;
+  symbol: string;
+  uri: string;
+  decimals: number;
+  enablePermanentDelegate: boolean;
+  enableTransferHook: boolean;
+  defaultAccountFrozen: boolean;
+  transferHookProgramId: PublicKey | null;
+  enableConfidentialTransfers: boolean;
+  confidentialTransferAutoApprove: boolean;
+  auditorElgamalPubkey: number[] | null;
+}
+
+export function sss1Config(): StablecoinConfig {
+  return {
+    name: "Test Stablecoin",
+    symbol: "TUSD",
+    uri: "https://example.com/metadata.json",
+    decimals: 6,
+    enablePermanentDelegate: false,
+    enableTransferHook: false,
+    defaultAccountFrozen: false,
+    transferHookProgramId: null,
+    enableConfidentialTransfers: false,
+    confidentialTransferAutoApprove: false,
+    auditorElgamalPubkey: null,
+  };
+}
+
+export function sss2Config(
+  transferHookProgramId: PublicKey
+): StablecoinConfig {
+  return {
+    name: "Compliant Stablecoin",
+    symbol: "CUSD",
+    uri: "https://example.com/metadata.json",
+    decimals: 6,
+    enablePermanentDelegate: true,
+    enableTransferHook: true,
+    defaultAccountFrozen: false,
+    transferHookProgramId,
+    enableConfidentialTransfers: false,
+    confidentialTransferAutoApprove: false,
+    auditorElgamalPubkey: null,
+  };
+}
+
+// ── Setup helpers ──────────────────────────────────────────
+
+export interface TokenTestContext {
+  program: Program<SssToken>;
+  provider: anchor.AnchorProvider;
+  authority: Keypair;
+  mint: Keypair;
+  stablecoinState: PublicKey;
+  rolesConfig: PublicKey;
+}
+
+/**
+ * Initialize an SSS-1 stablecoin and return all context.
+ */
+export async function setupSss1Token(
+  program: Program<SssToken>,
+  provider: anchor.AnchorProvider,
+  configOverrides?: Partial<StablecoinConfig>
+): Promise<TokenTestContext> {
+  const authority = Keypair.generate();
+  const mint = Keypair.generate();
+
+  await airdrop(provider, authority.publicKey);
+
+  const [stablecoinState] = findStablecoinStatePda(
+    mint.publicKey,
+    program.programId
+  );
+  const [rolesConfig] = findRolesConfigPda(
+    mint.publicKey,
+    program.programId
+  );
+
+  const config = { ...sss1Config(), ...configOverrides };
+
+  await program.methods
+    .initialize(config)
+    .accountsStrict({
+      authority: authority.publicKey,
+      mint: mint.publicKey,
+      stablecoinState,
+      rolesConfig,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+      rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+    })
+    .signers([authority, mint])
+    .rpc();
+
+  return {
+    program,
+    provider,
+    authority,
+    mint,
+    stablecoinState,
+    rolesConfig,
+  };
+}
+
+/**
+ * Create an associated token account for Token-2022.
+ */
+export async function createTokenAccount(
+  provider: anchor.AnchorProvider,
+  mint: PublicKey,
+  owner: PublicKey,
+  payer: Keypair
+): Promise<PublicKey> {
+  const ata = getAssociatedTokenAddressSync(
+    mint,
+    owner,
+    false,
+    TOKEN_2022_PROGRAM_ID
+  );
+
+  const ix = createAssociatedTokenAccountInstruction(
+    payer.publicKey,
+    ata,
+    owner,
+    mint,
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const tx = new Transaction().add(ix);
+  await provider.sendAndConfirm(tx, [payer]);
+  return ata;
+}
+
+/**
+ * Add a minter with quota.
+ */
+export async function addMinter(
+  ctx: TokenTestContext,
+  minter: PublicKey,
+  quota: number
+): Promise<PublicKey> {
+  const [minterQuota] = findMinterQuotaPda(
+    ctx.mint.publicKey,
+    minter,
+    ctx.program.programId
+  );
+
+  await ctx.program.methods
+    .addMinter(new anchor.BN(quota))
+    .accountsStrict({
+      authority: ctx.authority.publicKey,
+      stablecoinState: ctx.stablecoinState,
+      rolesConfig: ctx.rolesConfig,
+      minter,
+      minterQuota,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([ctx.authority])
+    .rpc();
+
+  return minterQuota;
+}
+
+/**
+ * Mint tokens to a recipient.
+ */
+export async function mintTokens(
+  ctx: TokenTestContext,
+  minter: Keypair,
+  minterQuota: PublicKey,
+  recipientTokenAccount: PublicKey,
+  amount: number
+): Promise<void> {
+  await ctx.program.methods
+    .mint(new anchor.BN(amount))
+    .accountsStrict({
+      minter: minter.publicKey,
+      stablecoinState: ctx.stablecoinState,
+      rolesConfig: ctx.rolesConfig,
+      minterQuota,
+      mint: ctx.mint.publicKey,
+      recipientTokenAccount,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    })
+    .signers([minter])
+    .rpc();
+}

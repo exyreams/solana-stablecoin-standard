@@ -19,11 +19,11 @@ sss_oracle = "7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 tests/anchor/**/*.ts"
+test = "pnpm ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'"
 
 [workspace]
 members = [
