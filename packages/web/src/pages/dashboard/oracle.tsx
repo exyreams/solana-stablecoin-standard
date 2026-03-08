@@ -1,10 +1,4 @@
 import type { FC } from "react";
-import {
-  DashboardLayout,
-  DashboardTopBar,
-  DashboardSidebar,
-  DashboardFooter,
-} from "../../components/layout";
 import { Badge } from "../../components/ui/Badge";
 import {
   OracleStatus,
@@ -15,36 +9,29 @@ import {
 
 const Oracle: FC = () => {
   return (
-    <DashboardLayout>
-      <DashboardTopBar />
-      <DashboardSidebar />
+    <>
+      <div className="font-mono text-[10px] text-[#777777] mb-2">
+        DASHBOARD <span className="text-[#444444]">&gt;</span> USDC-SOL{" "}
+        <span className="text-[#444444]">&gt;</span> ORACLE
+      </div>
 
-      <main className="col-start-2 row-start-2 overflow-y-auto p-6 flex flex-col gap-6 bg-(--bg-body)">
-        <div className="font-mono text-[10px] text-(--text-dim) mb-2">
-          DASHBOARD <span className="text-(--text-dark)">&gt;</span> USDC-SOL{" "}
-          <span className="text-(--text-dark)">&gt;</span> ORACLE
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-light tracking-wider">
+          ORACLE MANAGEMENT
+        </h1>
+        <Badge variant="accent">PRICE FEEDS</Badge>
+      </div>
+
+      <OracleStatus />
+
+      <div className="grid grid-cols-[1fr_380px] gap-6">
+        <PriceFeedsTable />
+        <div className="space-y-6">
+          <ManualPriceOverride />
+          <OracleConfig />
         </div>
-
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-light tracking-wider">
-            ORACLE MANAGEMENT
-          </h1>
-          <Badge variant="accent">PRICE FEEDS</Badge>
-        </div>
-
-        <OracleStatus />
-
-        <div className="grid grid-cols-[1fr_380px] gap-6">
-          <PriceFeedsTable />
-          <div className="space-y-6">
-            <ManualPriceOverride />
-            <OracleConfig />
-          </div>
-        </div>
-      </main>
-
-      <DashboardFooter />
-    </DashboardLayout>
+      </div>
+    </>
   );
 };
 

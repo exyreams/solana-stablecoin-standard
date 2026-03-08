@@ -1,11 +1,5 @@
 import type { FC } from "react";
 import { useState } from "react";
-import {
-  DashboardLayout,
-  DashboardTopBar,
-  DashboardSidebar,
-  DashboardFooter,
-} from "../components/layout";
 import { PresetCard, Stepper } from "../components/create-stablecoin";
 import { Button } from "../components/ui/Button";
 
@@ -593,60 +587,53 @@ const Create: FC = () => {
   );
 
   return (
-    <DashboardLayout>
-      <DashboardTopBar />
-      <DashboardSidebar />
-
-      <main className="col-start-2 row-start-2 overflow-y-auto flex flex-col bg-(--bg-body)">
-        {currentStep < 7 && (
-          <header className="px-8 pt-6 pb-0">
-            <div className="font-mono text-[10px] text-(--text-dim) mb-2">
-              OPERATIONS <span className="text-(--text-dark)">/</span> NEW STABLECOIN
-            </div>
-            <h1 className="text-2xl font-light tracking-[0.2em] text-(--text-main) mb-6 flex items-center gap-4">
-              CREATE STABLECOIN{" "}
-              <span className="text-[11px] text-(--text-dark) tracking-normal">
-                STEP {currentStep} OF 6
-              </span>
-            </h1>
-            <Stepper steps={steps} />
-          </header>
-        )}
-
-        {currentStep === 1 && renderStep1()}
-        {currentStep === 2 && renderStep2()}
-        {currentStep === 3 && renderStep3()}
-        {currentStep === 4 && renderStep4()}
-        {currentStep === 5 && renderStep5()}
-        {currentStep === 6 && renderStep6()}
-        {currentStep === 7 && renderStep7()}
-
-        {currentStep < 7 && (
-          <div className="fixed bottom-8 right-0 left-[300px] px-8 py-6 bg-linear-to-t from-(--bg-body) via-(--bg-body)/60 to-transparent border-t border-(--border-dim) flex justify-end gap-4 z-10">
-            {currentStep > 1 && (
-              <Button variant="secondary" size="md" onClick={prevStep}>
-                ← PREVIOUS
-              </Button>
-            )}
-            {currentStep === 5 && (
-              <Button variant="ghost" size="md" onClick={nextStep}>
-                SKIP
-              </Button>
-            )}
-            <Button
-              variant="primary"
-              size="md"
-              className="flex items-center gap-3"
-              onClick={nextStep}
-            >
-              NEXT STEP <span>→</span>
-            </Button>
+    <div className="flex flex-col h-full -m-6">
+      {currentStep < 7 && (
+        <header className="px-8 pt-6 pb-0">
+          <div className="font-mono text-[10px] text-[#777777] mb-2">
+            OPERATIONS <span className="text-[#444444]">/</span> NEW STABLECOIN
           </div>
-        )}
-      </main>
+          <h1 className="text-2xl font-light tracking-[0.2em] text-[#EAEAEA] mb-6 flex items-center gap-4">
+            CREATE STABLECOIN{" "}
+            <span className="text-[11px] text-[#444444] tracking-normal">
+              STEP {currentStep} OF 6
+            </span>
+          </h1>
+          <Stepper steps={steps} />
+        </header>
+      )}
 
-      <DashboardFooter />
-    </DashboardLayout>
+      {currentStep === 1 && renderStep1()}
+      {currentStep === 2 && renderStep2()}
+      {currentStep === 3 && renderStep3()}
+      {currentStep === 4 && renderStep4()}
+      {currentStep === 5 && renderStep5()}
+      {currentStep === 6 && renderStep6()}
+      {currentStep === 7 && renderStep7()}
+
+      {currentStep < 7 && (
+        <div className="fixed bottom-8 right-0 left-[300px] px-8 py-6 bg-linear-to-t from-[#080808] via-[#080808]/60 to-transparent border-t border-[#222222] flex justify-end gap-4 z-10">
+          {currentStep > 1 && (
+            <Button variant="secondary" size="md" onClick={prevStep}>
+              ← PREVIOUS
+            </Button>
+          )}
+          {currentStep === 5 && (
+            <Button variant="ghost" size="md" onClick={nextStep}>
+              SKIP
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            size="md"
+            className="flex items-center gap-3"
+            onClick={nextStep}
+          >
+            NEXT STEP <span>→</span>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 
