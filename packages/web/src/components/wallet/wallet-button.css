@@ -1,0 +1,158 @@
+/* Custom wallet button styles to match SSS design system */
+.wallet-button-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.wallet-adapter-button-custom {
+  background-color: #CCA352 !important;
+  color: #0a0a0a !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-transform: uppercase !important;
+  height: auto !important;
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-button-custom:hover:not([disabled]) {
+  background-color: #d4b366 !important;
+  transform: translateY(-1px);
+}
+
+.wallet-adapter-button-custom:active {
+  transform: translateY(0);
+}
+
+.wallet-adapter-button-custom[disabled] {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Modal styles */
+.wallet-adapter-modal-wrapper {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+.wallet-adapter-modal {
+  background-color: #0f0f0f !important;
+  border: 1px solid #333333 !important;
+  border-radius: 0 !important;
+  max-width: 400px !important;
+}
+
+.wallet-adapter-modal-title {
+  color: #EAEAEA !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+.wallet-adapter-modal-list {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.wallet-adapter-modal-list-more {
+  border-top: 1px solid #333333 !important;
+}
+
+.wallet-adapter-button {
+  background-color: transparent !important;
+  border: 1px solid #333333 !important;
+  color: #EAEAEA !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 11px !important;
+  padding: 12px 16px !important;
+  margin: 4px 0 !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.wallet-adapter-button:hover:not([disabled]) {
+  border-color: #CCA352 !important;
+  background-color: rgba(204, 163, 82, 0.05) !important;
+}
+
+.wallet-adapter-button-start-icon {
+  margin-right: 12px !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background-color: transparent !important;
+  border: none !important;
+  color: #777777 !important;
+  padding: 8px !important;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  color: #CCA352 !important;
+}
+
+.wallet-adapter-modal-button-close svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Dropdown menu styles */
+.wallet-adapter-dropdown {
+  position: relative;
+}
+
+.wallet-adapter-dropdown-list {
+  background-color: #0f0f0f !important;
+  border: 1px solid #333333 !important;
+  border-radius: 0 !important;
+  padding: 4px !important;
+  margin-top: 4px !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  background-color: transparent !important;
+  color: #EAEAEA !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 11px !important;
+  padding: 8px 12px !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.wallet-adapter-dropdown-list-item:hover {
+  background-color: rgba(204, 163, 82, 0.1) !important;
+  color: #CCA352 !important;
+}
+
+/* Collapse button */
+.wallet-adapter-collapse {
+  background-color: transparent !important;
+  border: 1px solid #333333 !important;
+  color: #777777 !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 10px !important;
+  padding: 8px 12px !important;
+  margin-top: 8px !important;
+  border-radius: 0 !important;
+}
+
+.wallet-adapter-collapse:hover {
+  border-color: #CCA352 !important;
+  color: #CCA352 !important;
+}
+
+
+/* Hero section wallet button - larger size */
+.wallet-adapter-button-hero {
+  padding: 12px 24px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+}

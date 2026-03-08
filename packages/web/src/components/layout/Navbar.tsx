@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "../ui/Button";
+import { WalletModal } from "../wallet";
 
 type MenuCategory = "dashboard" | "operations" | "resources" | null;
 
@@ -16,6 +18,8 @@ type MenuItem = {
 
 export const Navbar: FC = () => {
   const [activeMenu, setActiveMenu] = useState<MenuCategory>(null);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const { connected, publicKey } = useWallet();
 
   const dashboardMenu: MenuItem[] = [
     { path: "/dashboard", label: "Overview", desc: "Main dashboard with metrics and quick actions" },
@@ -92,7 +96,7 @@ export const Navbar: FC = () => {
   );
 
   return (
-    <nav className="h-16 flex items-center justify-between px-20 bg-[rgba(15,15,15,0.95)] backdrop-blur-[10px] sticky top-0 z-50" style={{ borderBottom: '1px solid rgba(204, 163, 82, 0.4)' }}>
+    <nav className="h-16 flex items-center justify-between px-20 bg-[rgba(15,15,15,0.95)] backdrop-blur-[10px] sticky top-0 z-40" style={{ borderBottom: '1px solid rgba(204, 163, 82, 0.4)' }}>
       <div className="flex items-center gap-3 font-bold font-mono">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity text-(--accent-primary)">
           <img src="/logo.svg" alt="SSS Logo" className="h-8 w-auto" />
@@ -159,11 +163,33 @@ export const Navbar: FC = () => {
         </div>
       </div>
 
-      <Link to="/dashboard">
-        <Button variant="secondary" size="sm">
-          Launch Dashboard
-        </Button>
-      </Link>
+      <div className="flex gap-3 items-center">
+        {connected && publicKey ? (
+          <button
+            onClick={() => setIsWalletModalOpen(true)}
+            className="bg-[#CCA352] text-[#0a0a0a] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[#d4b366] transition-colors"
+          >
+            {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsWalletModalOpen(true)}
+            className="bg-transparent border border-[#CCA352] text-[#CCA352] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[rgba(204,163,82,0.1)] transition-colors"
+          >
+            CONNECT WALLET
+          </button>
+        )}
+        <Link to="/dashboard">
+          <Button variant="secondary" size="sm">
+            Launch Dashboard
+          </Button>
+        </Link>
+      </div>
+
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+      />
     </nav>
   );
 };

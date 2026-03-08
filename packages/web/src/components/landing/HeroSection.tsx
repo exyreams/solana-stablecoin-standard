@@ -1,8 +1,15 @@
 import type { FC } from "react";
-import { ArrowRight, BookOpen, Github } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, BookOpen, Github, Wallet } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "../ui/Button";
+import { WalletModal } from "../wallet/WalletModal";
 
 export const HeroSection: FC = () => {
+  const { connected } = useWallet();
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+
   return (
     <section className="py-[120px] pb-20 text-center max-w-[900px] mx-auto px-8">
       <div className="mono label-amber mb-4">
@@ -19,25 +26,49 @@ export const HeroSection: FC = () => {
         SSS-3 preset compliance tiers for every use case.
       </p>
       <div className="flex justify-center gap-4 mt-12">
-        <Button variant="primary" size="md">
-          <span className="flex items-center gap-2">
-            LAUNCH DASHBOARD
-            <ArrowRight size={16} />
-          </span>
-        </Button>
-        <Button variant="secondary" size="md">
-          <span className="flex items-center gap-2">
-            VIEW DOCS
-            <BookOpen size={16} />
-          </span>
-        </Button>
-        <Button variant="ghost" size="md">
-          <span className="flex items-center gap-2">
-            GITHUB
-            <Github size={16} />
-          </span>
-        </Button>
+        {!connected ? (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setIsWalletModalOpen(true)}
+          >
+            <span className="flex items-center gap-2">
+              <Wallet size={16} />
+              CONNECT WALLET
+            </span>
+          </Button>
+        ) : (
+          <Link to="/dashboard">
+            <Button variant="primary" size="md">
+              <span className="flex items-center gap-2">
+                LAUNCH DASHBOARD
+                <ArrowRight size={16} />
+              </span>
+            </Button>
+          </Link>
+        )}
+        <Link to="/docs">
+          <Button variant="secondary" size="md">
+            <span className="flex items-center gap-2">
+              VIEW DOCS
+              <BookOpen size={16} />
+            </span>
+          </Button>
+        </Link>
+        <a href="https://github.com/superteam-brazil/solana-stablecoin-standard" target="_blank" rel="noopener noreferrer">
+          <Button variant="ghost" size="md">
+            <span className="flex items-center gap-2">
+              GITHUB
+              <Github size={16} />
+            </span>
+          </Button>
+        </a>
       </div>
+
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+      />
     </section>
   );
 };
