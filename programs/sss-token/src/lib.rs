@@ -10,6 +10,7 @@ pub use instructions::*;
 pub use instructions::{
     token_core::{
         initialize::Initialize,
+        initialize_metadata::InitializeMetadata,
         mint::MintTokens,
         burn::Burn,
         get_supply::GetSupply,
@@ -48,8 +49,22 @@ declare_id!("EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK");
 pub mod sss_token {
     use super::*;
 
+    // ── Core ─────────────────────────────────────────────────────────────────
+
     pub fn initialize(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()> {
         instructions::token_core::initialize::handler(ctx, config)
+    }
+
+    /// Initialize on-mint Token-2022 metadata.
+    ///
+    /// Must be called in a **separate transaction** after `initialize`.
+    /// Reads name/symbol/uri from the StablecoinState PDA so the caller
+    /// does not need to re-supply them.
+    ///
+    /// Can only be called once — Token-2022 rejects a second call with
+    /// an AlreadyInUse error.
+    pub fn initialize_metadata(ctx: Context<InitializeMetadata>) -> Result<()> {
+        instructions::token_core::initialize_metadata::handler(ctx)
     }
 
     pub fn mint(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
@@ -68,6 +83,8 @@ pub mod sss_token {
         instructions::token_core::close_mint::handler(ctx)
     }
 
+    // ── Account ───────────────────────────────────────────────────────────────
+
     pub fn freeze_account(ctx: Context<FreezeAccount>) -> Result<()> {
         instructions::account::freeze_account::handler(ctx)
     }
@@ -76,12 +93,35 @@ pub mod sss_token {
         instructions::account::thaw_account::handler(ctx)
     }
 
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
     pub fn pause(ctx: Context<Pause>, reason: Option<String>) -> Result<()> {
         instructions::admin::pause::handler(ctx, reason)
     }
 
     pub fn unpause(ctx: Context<Unpause>) -> Result<()> {
         instructions::admin::unpause::handler(ctx)
+    }
+
+    pub fn update_roles(ctx: Context<UpdateRoles>, new_roles: RolesUpdate) -> Result<()> {
+        instructions::admin::update_roles::handler(ctx, new_roles)
+    }
+
+    pub fn transfer_authority(
+        ctx: Context<TransferAuthority>,
+        new_master: Option<Pubkey>,
+    ) -> Result<()> {
+        instructions::admin::transfer_authority::handler(ctx, new_master)
+    }
+
+    // ── Minter ────────────────────────────────────────────────────────────────
+
+    pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
+        instructions::minter::add_minter::handler(ctx, quota)
+    }
+
+    pub fn remove_minter(ctx: Context<RemoveMinter>) -> Result<()> {
+        instructions::minter::remove_minter::handler(ctx)
     }
 
     pub fn update_minter(
@@ -93,37 +133,24 @@ pub mod sss_token {
         instructions::minter::update_minter::handler(ctx, quota, active, reset_minted)
     }
 
-    pub fn add_minter(ctx: Context<AddMinter>, quota: u64) -> Result<()> {
-        instructions::minter::add_minter::handler(ctx, quota)
-    }
+    // ── SSS-2 ─────────────────────────────────────────────────────────────────
 
-    pub fn remove_minter(ctx: Context<RemoveMinter>) -> Result<()> {
-        instructions::minter::remove_minter::handler(ctx)
-    }
-
-    pub fn update_roles(ctx: Context<UpdateRoles>, new_roles: RolesUpdate) -> Result<()> {
-        instructions::admin::update_roles::handler(ctx, new_roles)
-    }
-
-    pub fn transfer_authority(ctx: Context<TransferAuthority>,new_master: Option<Pubkey>,) -> Result<()> {
-        instructions::admin::transfer_authority::handler(ctx, new_master)
-    }
-
-    pub fn add_to_blacklist(
-        ctx: Context<AddToBlacklist>,
-        reason: String,
-    ) -> Result<()> {
+    pub fn add_to_blacklist(ctx: Context<AddToBlacklist>, reason: String) -> Result<()> {
         instructions::sss2::add_to_blacklist::handler(ctx, reason)
     }
 
     pub fn remove_from_blacklist(ctx: Context<RemoveFromBlacklist>) -> Result<()> {
         instructions::sss2::remove_from_blacklist::handler(ctx)
     }
-    
-    pub fn seize<'info>(ctx: Context<'_, '_, '_, 'info, Seize<'info>>, amount: u64) -> Result<()> {
+
+    pub fn seize<'info>(
+        ctx: Context<'_, '_, '_, 'info, Seize<'info>>,
+        amount: u64,
+    ) -> Result<()> {
         instructions::sss2::seize::handler(ctx, amount)
     }
-    // ========== SSS-3: Privacy Features ==========
+
+    // ── SSS-3 ─────────────────────────────────────────────────────────────────
 
     pub fn approve_account(ctx: Context<ApproveAccount>) -> Result<()> {
         instructions::sss3::approve_account::handler(ctx)

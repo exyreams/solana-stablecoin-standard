@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, solana_program::program::{invoke, invoke_signed}};
+use anchor_lang::{prelude::*, solana_program::program::invoke};
 use anchor_spl::token_2022::Token2022;
 use spl_token_2022::{
     extension::{
@@ -88,17 +88,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     let mint_key = ctx.accounts.mint.key();
     let token_program_id = Token2022::id();
     let state_pda = ctx.accounts.stablecoin_state.key();
-
-    // PDA signer seeds — the stablecoin_state PDA was already created by
-    // Anchor's `init` constraint, so the address is valid.  We need these
-    // seeds for invoke_signed calls where the PDA must act as a signer
-    // (e.g. metadata initialization requires the mint authority to sign).
     let stablecoin_bump = ctx.bumps.stablecoin_state;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[stablecoin_bump],
-    ]];
 
     // ── Build extension list ─────────────────────────────────────────────
     let mut extensions = vec![ExtensionType::MintCloseAuthority];
@@ -229,31 +219,30 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
         &[ctx.accounts.mint.to_account_info()],
     )?;
 
-    // ── Token metadata (can come after mint init) ────────────────────────
-    // Both update_authority and mint_authority are set to the PDA.
-    // The PDA is the mint authority (set above in initialize_mint2),
-    // so it must sign this instruction via invoke_signed.
-    let metadata_ix = spl_token_metadata_interface::instruction::initialize(
-        &token_program_id,
-        &mint_key,
-        &state_pda,         // update_authority = PDA
-        &mint_key,
-        &state_pda,         // mint_authority = PDA (signer)
-        config.name.clone(),
-        config.symbol.clone(),
-        config.uri.clone(),
-    );
+    // ── Token metadata initialization ─────────────────────────────────────
+    // NOTE: On-mint Token-2022 metadata initialization via CPI is not supported
+    // due to Solana's realloc limitations in CPI context. The MetadataPointer
+    // extension is configured to point to the mint, but the actual metadata
+    // fields remain uninitialized.
+    //
+    // Metadata is stored in the StablecoinState PDA and can be queried from there.
+    // Wallets and explorers that need to display token information should read
+    // from the StablecoinState account.
+    //
+    // The separate `initialize_metadata` instruction exists for API compatibility
+    // but is currently a no-op due to this Solana limitation.
 
-    invoke_signed(
-        &metadata_ix,
-        &[
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.stablecoin_state.to_account_info(),
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.stablecoin_state.to_account_info(),
-        ],
-        signer_seeds,
-    )?;
+    // ── Token metadata initialization ─────────────────────────────────────
+    // Metadata is NOT initialized here to avoid the "Failed to reallocate
+    // account data" error that occurs when reallocating within the same
+    // transaction as mint creation.
+    //
+    // Instead, call the separate `initialize_metadata` instruction in a
+    // subsequent transaction after this `initialize` completes.
+    //
+    // The MetadataPointer extension (initialized above) points to the mint
+    // account, but the actual metadata fields remain empty until
+    // `initialize_metadata` is called.
 
     // ── Persist state ────────────────────────────────────────────────────
     let state = &mut ctx.accounts.stablecoin_state;
@@ -294,4 +283,4 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     });
 
     Ok(())
-}
+}  

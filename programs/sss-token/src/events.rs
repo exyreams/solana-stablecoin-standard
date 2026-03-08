@@ -14,6 +14,17 @@ pub struct StablecoinInitialized {
     pub timestamp: i64,
 }
 
+/// Emitted when on-mint Token-2022 metadata is written via initialize_metadata.
+#[event]
+pub struct MetadataInitialized {
+    pub mint: Pubkey,
+    pub name: String,
+    pub symbol: String,
+    pub uri: String,
+    pub authority: Pubkey,
+    pub timestamp: i64,
+}
+
 /// Emitted when tokens are minted.
 #[event]
 pub struct TokensMinted {
