@@ -83,12 +83,15 @@ static async create(
 - `options.name` - Token name (e.g., "My Dollar")
 - `options.symbol` - Token symbol (e.g., "MYDOL")
 - `options.decimals` - Token decimals (default: 6)
-- `options.uri` - Metadata URI (optional)
+- `options.uri` - Metadata URI (optional, stored in StablecoinState PDA)
 - `options.authority` - Master authority keypair
 - `options.programId` - Custom program ID (optional)
 - `options.oracleProgramId` - Custom oracle program ID (optional)
 - `options.transferHookProgramId` - Transfer hook program ID (SSS-2)
 - `options.auditorElGamalPubkey` - Auditor public key (SSS-3)
+
+>[!NOTE]
+>**Note on Metadata:** Due to Solana runtime limitations, Token-2022 metadata cannot be initialized via CPI. Metadata is stored in the `StablecoinState` PDA. For wallet display compatibility, use `initializeMetaplexMetadata()` after token creation (see Metaplex Metadata section below).
 
 **Preset-specific options:**
 - `options.enablePermanentDelegate` - Enable permanent delegate (SSS-2)
@@ -458,6 +461,63 @@ async getTotalSupply(): Promise<bigint>
 const supply = await stablecoin.getTotalSupply();
 console.log(`Total supply: ${supply}`);
 ```
+
+---
+
+##### `getMetadata()`
+
+Retrieve token metadata from the StablecoinState PDA.
+
+```typescript
+async getMetadata(): Promise<{
+  name: string;
+  symbol: string;
+  uri: string;
+  decimals: number;
+}>
+```
+
+**Note:** Due to Solana runtime limitations, Token-2022 metadata cannot be initialized via CPI. This method retrieves metadata from the `StablecoinState` PDA, which is the canonical source. For wallet display compatibility, use Metaplex metadata (see below).
+
+**Example:**
+```typescript
+const metadata = await stablecoin.getMetadata();
+console.log(`Token: ${metadata.name} (${metadata.symbol})`);
+console.log(`Decimals: ${metadata.decimals}`);
+console.log(`URI: ${metadata.uri}`);
+```
+
+---
+
+### Wallet Display Compatibility
+
+For tokens to display properly in wallets (Phantom, Solflare, etc.), you need to create Metaplex metadata:
+
+```typescript
+// After creating your stablecoin, initialize Metaplex metadata
+// Note: This functionality will be available in a future SDK update
+// For now, refer to sss_design/TOKEN_INFO.md for implementation details
+
+// Future API (planned):
+// await stablecoin.initializeMetaplexMetadata({
+//   name: 'My USD Coin',
+//   symbol: 'MYUSD',
+//   uri: 'https://example.com/metadata.json',
+//   payer: authority,
+// });
+```
+
+**Metadata JSON Format:**
+```json
+{
+  "name": "My USD Coin",
+  "symbol": "MYUSD",
+  "description": "A compliant stablecoin on Solana",
+  "image": "https://example.com/logo.png"
+}
+```
+
+**Cost:** ~0.002 SOL per token for Metaplex metadata account creation.
 
 ---
 

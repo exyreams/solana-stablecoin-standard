@@ -204,6 +204,16 @@ The `stablecoin_state` PDA is the mint authority, freeze authority, mint close a
 
 Token name, symbol, and URI cannot be changed after initialization. The metadata update authority is the PDA, and no `update_metadata` instruction exists. This ensures brand identity immutability for stablecoins.
 
+> [!IMPORTANT]  
+> **Important Note on Token-2022 Metadata:** Due to a Solana runtime limitation, Token-2022 metadata cannot be initialized via CPI (cross-program invocation) because it requires reallocating the mint account, which is blocked in CPI context. As a result:
+> - Metadata is stored in the `StablecoinState` PDA (canonical source)
+> - The `initialize_metadata` instruction is a no-op that only emits an event for API compatibility
+> - On-mint Token-2022 metadata remains unpopulated
+> - For wallet display compatibility, use Metaplex metadata (see SDK documentation)
+> - The SDK provides a `getMetadata()` method to retrieve metadata from the `StablecoinState` PDA
+> This limitation affects all Solana programs that attempt to initialize Token-2022 metadata via CPI and is not specific to this implementation.
+
+
 ### Supply Sync
 
 Rather than maintaining an independent supply counter (which can desynchronize if tokens are burned directly via Token-2022), the program syncs `total_supply` from the actual `mint.supply` after every program-mediated mint or burn. The `get_supply` instruction reads directly from the mint account.
