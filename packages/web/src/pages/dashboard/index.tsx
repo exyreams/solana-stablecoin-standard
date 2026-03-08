@@ -52,30 +52,44 @@ const Dashboard: FC = () => {
         <div className="grid grid-cols-3 gap-4 flex-2">
           <ActionCard
             label="Mint Tokens"
-            description="CREATE NEW SUPPLY • LAST: 2H AGO"
+            description="CREATE NEW SUPPLY"
             variant="mint"
+            amount="+500,000 USDC"
+            count="1,247 OPERATIONS"
+            lastAction="LAST: 2H AGO"
           />
           <ActionCard
             label="Burn Tokens"
-            description="REDUCE CIRCULATION • LAST: 5H AGO"
+            description="REDUCE CIRCULATION"
             variant="burn"
+            amount="-25,000 USDC"
+            count="342 OPERATIONS"
+            lastAction="LAST: 5H AGO"
           />
           <ActionCard
             label="Freeze Account"
-            description="SUSPEND TRANSFERS • 3 FROZEN"
+            description="SUSPEND TRANSFERS"
+            count="3 FROZEN"
+            lastAction="LAST: 13H AGO"
           />
           <ActionCard
             label="Blacklist Address"
-            description="COMPLIANCE ENFORCEMENT • 12 LISTED"
+            description="COMPLIANCE ENFORCEMENT"
             badge="SSS-2 ONLY"
+            count="12 LISTED"
+            lastAction="LAST: 11H AGO"
           />
           <ActionCard
             label="Manage Minters"
-            description="ROLE PERMISSIONS • 8 ACTIVE"
+            description="ROLE PERMISSIONS"
+            count="8 ACTIVE MINTERS"
+            lastAction="QUOTA: 100M USDC"
           />
           <ActionCard
             label="View Audit Log"
-            description="TRANSACTION HISTORY • 1,247 EVENTS"
+            description="TRANSACTION HISTORY"
+            count="1,247 EVENTS"
+            lastAction="LAST EVENT: 2S AGO"
           />
         </div>
 

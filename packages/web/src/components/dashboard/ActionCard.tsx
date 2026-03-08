@@ -6,6 +6,9 @@ interface ActionCardProps {
   description: string;
   variant?: "default" | "mint" | "burn";
   badge?: string;
+  amount?: string;
+  count?: string;
+  lastAction?: string;
   onClick?: () => void;
 }
 
@@ -14,6 +17,9 @@ export const ActionCard: FC<ActionCardProps> = ({
   description,
   variant = "default",
   badge,
+  amount,
+  count,
+  lastAction,
   onClick,
 }) => {
   const borderClass =
@@ -27,10 +33,10 @@ export const ActionCard: FC<ActionCardProps> = ({
 
   return (
     <div
-      className={`bg-(--bg-panel) border border-(--border-mid) p-4 cursor-pointer transition-all hover:border-(--accent-primary) hover:bg-(--bg-surface) flex flex-col justify-between min-h-[100px] ${borderClass}`}
+      className={`bg-(--bg-panel) border border-(--border-mid) p-4 cursor-pointer transition-all hover:border-(--accent-primary) hover:bg-(--bg-surface) flex flex-col justify-between min-h-[120px] ${borderClass}`}
       onClick={onClick}
     >
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start mb-2">
         <div
           className={`text-[10px] uppercase text-(--text-dim) font-semibold tracking-wider ${labelColor}`}
         >
@@ -42,7 +48,26 @@ export const ActionCard: FC<ActionCardProps> = ({
           </Badge>
         )}
       </div>
+
+      {amount && (
+        <div className="font-mono text-lg text-(--text-main) mb-1">
+          {amount}
+        </div>
+      )}
+
+      {count && (
+        <div className="font-mono text-[10px] text-(--text-dim) mb-2">
+          {count}
+        </div>
+      )}
+
       <div className="font-mono text-[9px] text-(--text-dim)">{description}</div>
+
+      {lastAction && (
+        <div className="font-mono text-[8px] text-(--text-dark) mt-2 pt-2 border-t border-(--border-dim)">
+          {lastAction}
+        </div>
+      )}
     </div>
   );
 };
