@@ -127,6 +127,8 @@ export interface TokenTestContext {
 
 /**
  * Initialize an SSS-1 stablecoin and return all context.
+ * Does NOT call initialize_metadata — use initializeMetadata() separately
+ * if you need on-mint metadata for wallet/explorer display.
  */
 export async function setupSss1Token(
   program: Program<SssToken>,
@@ -174,6 +176,32 @@ export async function setupSss1Token(
 }
 
 /**
+ * Initialize on-mint Token-2022 metadata for an already-initialized stablecoin.
+ *
+ * Call this in a separate transaction after setupSss1Token / initialize.
+ * After this call the token will display its name/symbol in wallets and explorers.
+ *
+ * Reads name/symbol/uri from the on-chain StablecoinState PDA — no need to
+ * re-supply them here.
+ */
+export async function initializeMetadata(
+  ctx: TokenTestContext
+): Promise<void> {
+  await ctx.program.methods
+    .initializeMetadata()
+    .accountsStrict({
+      authority: ctx.authority.publicKey,
+      mint: ctx.mint.publicKey,
+      stablecoinState: ctx.stablecoinState,
+      rolesConfig: ctx.rolesConfig,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([ctx.authority])
+    .rpc();
+}
+
+/**
  * Create an associated token account for Token-2022.
  */
 export async function createTokenAccount(
@@ -201,6 +229,29 @@ export async function createTokenAccount(
   const tx = new Transaction().add(ix);
   await provider.sendAndConfirm(tx, [payer]);
   return ata;
+}
+
+/**
+ * Create a token account with confidential transfer extension configured.
+ * Note: This is a simplified version that creates the account but does NOT
+ * configure the confidential transfer extension (which requires ElGamal keypairs
+ * and proof generation). The account can still be used for testing authorization
+ * checks, but actual confidential transfer operations will fail.
+ */
+export async function createConfidentialTokenAccount(
+  provider: anchor.AnchorProvider,
+  mint: PublicKey,
+  owner: PublicKey,
+  payer: Keypair
+): Promise<PublicKey> {
+  // For now, just create a regular token account
+  // Full confidential transfer setup requires:
+  // 1. ElGamal keypair generation
+  // 2. AES key generation  
+  // 3. Proof data generation
+  // 4. configure_account instruction with proof
+  // This is complex and requires additional dependencies
+  return createTokenAccount(provider, mint, owner, payer);
 }
 
 /**

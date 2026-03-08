@@ -37,14 +37,14 @@ describe("integration tests", () => {
   // Full lifecycle: Create oracle → feed → price → mint → burn → close
   // ════════════════════════════════════════════════════════════
   describe("full stablecoin lifecycle", () => {
-    let oracleCtx: OracleTestContext;
-    let tokenCtx: TokenTestContext;
+    let oracleCtx: OracleTestContext | undefined;
+    let tokenCtx: TokenTestContext | undefined;
 
-    it("step 1: initialize oracle for the stablecoin mint", async () => {
-      // First create the token
+    before(async () => {
+      // Setup token and oracle once for all tests in this suite
       tokenCtx = await setupSss1Token(tokenProgram, provider);
 
-      // Then create oracle for that mint
+      // Create oracle for that mint
       const cranker = Keypair.generate();
       const [oracleConfig] = findOracleConfigPda(
         tokenCtx.mint.publicKey,
@@ -83,7 +83,7 @@ describe("integration tests", () => {
         cranker,
         mint: tokenCtx.mint,
         oracleConfig,
-        oracleConfigBump: 0, // fetched below
+        oracleConfigBump: 0,
       };
 
       const config = await oracleProgram.account.oracleConfig.fetch(
@@ -93,13 +93,24 @@ describe("integration tests", () => {
       assert.equal(config.baseCurrency, "EUR");
     });
 
+    it("step 1: verify oracle initialization", async () => {
+      assert.isDefined(oracleCtx);
+      assert.isDefined(tokenCtx);
+      const config = await oracleProgram.account.oracleConfig.fetch(
+        oracleCtx!.oracleConfig
+      );
+      assert.ok(config.mint.equals(tokenCtx!.mint.publicKey));
+      assert.equal(config.baseCurrency, "EUR");
+    });
+
     it("step 2: add feeds and crank prices", async () => {
-      const feed0 = await addFeed(oracleCtx, {
+      assert.isDefined(oracleCtx);
+      const feed0 = await addFeed(oracleCtx!, {
         feedIndex: 0,
         label: "primary-eur-usd",
         weight: 20000,
       });
-      const feed1 = await addFeed(oracleCtx, {
+      const feed1 = await addFeed(oracleCtx!, {
         feedIndex: 1,
         label: "backup-eur-usd",
         weight: 10000,
@@ -107,13 +118,13 @@ describe("integration tests", () => {
 
       // Crank both feeds
       await crankFeed(
-        oracleCtx,
+        oracleCtx!,
         feed0.feedPda,
         toFixedPoint(1.085),
         toFixedPoint(0.001)
       );
       await crankFeed(
-        oracleCtx,
+        oracleCtx!,
         feed1.feedPda,
         toFixedPoint(1.087),
         toFixedPoint(0.002)
@@ -137,16 +148,17 @@ describe("integration tests", () => {
     });
 
     it("step 3: aggregate price from feeds", async () => {
+      assert.isDefined(oracleCtx);
       const feed0Pda = (
-        await addFeed(oracleCtx, {
+        await addFeed(oracleCtx!, {
           feedIndex: 2,
           label: "agg-test",
         })
       ).feedPda;
-      await crankFeed(oracleCtx, feed0Pda, toFixedPoint(1.1));
+      await crankFeed(oracleCtx!, feed0Pda, toFixedPoint(1.1));
 
       // Update min_feeds to allow aggregation with available feeds
-      await oracleCtx.program.methods
+      await oracleCtx!.program.methods
         .updateOracleConfig({
           maxStalenessSeconds: null,
           maxConfidenceIntervalBps: null,
@@ -160,18 +172,18 @@ describe("integration tests", () => {
           paused: null,
         })
         .accountsStrict({
-          authority: oracleCtx.authority.publicKey,
-          oracleConfig: oracleCtx.oracleConfig,
+          authority: oracleCtx!.authority.publicKey,
+          oracleConfig: oracleCtx!.oracleConfig,
         })
-        .signers([oracleCtx.authority])
+        .signers([oracleCtx!.authority])
         .rpc();
 
-      await airdrop(provider, oracleCtx.cranker.publicKey);
-      await oracleCtx.program.methods
+      await airdrop(provider, oracleCtx!.cranker.publicKey);
+      await oracleCtx!.program.methods
         .aggregate()
         .accountsStrict({
-          cranker: oracleCtx.cranker.publicKey,
-          oracleConfig: oracleCtx.oracleConfig,
+          cranker: oracleCtx!.cranker.publicKey,
+          oracleConfig: oracleCtx!.oracleConfig,
         })
         .remainingAccounts([
           {
@@ -180,33 +192,35 @@ describe("integration tests", () => {
             isSigner: false,
           },
         ])
-        .signers([oracleCtx.cranker])
+        .signers([oracleCtx!.cranker])
         .rpc();
 
       const config = await oracleProgram.account.oracleConfig.fetch(
-        oracleCtx.oracleConfig
+        oracleCtx!.oracleConfig
       );
       assert.isAbove(config.lastAggregatedPrice.toNumber(), 0);
     });
 
     it("step 4: mint tokens using the stablecoin program", async () => {
+      assert.isDefined(tokenCtx);
+      assert.isDefined(tokenCtx);
       const minter = Keypair.generate();
       await airdrop(provider, minter.publicKey);
 
       const minterQuota = await addMinter(
-        tokenCtx,
+        tokenCtx!,
         minter.publicKey,
         100_000_000
       );
 
       const ata = await createTokenAccount(
         provider,
-        tokenCtx.mint.publicKey,
+        tokenCtx!.mint.publicKey,
         minter.publicKey,
-        tokenCtx.authority
+        tokenCtx!.authority
       );
 
-      await mintTokens(tokenCtx, minter, minterQuota, ata, 50_000_000);
+      await mintTokens(tokenCtx!, minter, minterQuota, ata, 50_000_000);
 
       const account = await getAccount(
         provider.connection,
@@ -218,8 +232,9 @@ describe("integration tests", () => {
     });
 
     it("step 5: burn tokens", async () => {
+      assert.isDefined(tokenCtx);
       const state = await tokenProgram.account.stablecoinState.fetch(
-        tokenCtx.stablecoinState
+        tokenCtx!.stablecoinState
       );
       const currentSupply = state.totalSupply.toNumber();
 
@@ -227,20 +242,20 @@ describe("integration tests", () => {
         // Authority is the burner
         const authorityAta = await createTokenAccount(
           provider,
-          tokenCtx.mint.publicKey,
-          tokenCtx.authority.publicKey,
-          tokenCtx.authority
+          tokenCtx!.mint.publicKey,
+          tokenCtx!.authority.publicKey,
+          tokenCtx!.authority
         );
 
         // Need to mint to authority first to burn
         const minterQuota = await addMinter(
-          tokenCtx,
-          tokenCtx.authority.publicKey,
+          tokenCtx!,
+          tokenCtx!.authority.publicKey,
           10_000
         );
         await mintTokens(
-          tokenCtx,
-          tokenCtx.authority,
+          tokenCtx!,
+          tokenCtx!.authority,
           minterQuota,
           authorityAta,
           5_000
@@ -249,14 +264,14 @@ describe("integration tests", () => {
         await tokenProgram.methods
           .burn(new anchor.BN(5_000))
           .accountsStrict({
-            burner: tokenCtx.authority.publicKey,
-            stablecoinState: tokenCtx.stablecoinState,
-            rolesConfig: tokenCtx.rolesConfig,
-            mint: tokenCtx.mint.publicKey,
+            burner: tokenCtx!.authority.publicKey,
+            stablecoinState: tokenCtx!.stablecoinState,
+            rolesConfig: tokenCtx!.rolesConfig,
+            mint: tokenCtx!.mint.publicKey,
             fromTokenAccount: authorityAta,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
           })
-          .signers([tokenCtx.authority])
+          .signers([tokenCtx!.authority])
           .rpc();
       }
     });
@@ -465,6 +480,13 @@ describe("integration tests", () => {
         .rpc();
 
       // Old master should NOT be able to
+      const anotherMinter = Keypair.generate();
+      const [anotherMinterQuota] = findMinterQuotaPda(
+        tokenCtx.mint.publicKey,
+        anotherMinter.publicKey,
+        tokenProgram.programId
+      );
+
       await expectError(
         tokenProgram.methods
           .addMinter(new anchor.BN(1_000_000))
@@ -472,8 +494,8 @@ describe("integration tests", () => {
             authority: tokenCtx.authority.publicKey,
             stablecoinState: tokenCtx.stablecoinState,
             rolesConfig: tokenCtx.rolesConfig,
-            minter: Keypair.generate().publicKey,
-            minterQuota: Keypair.generate().publicKey, // won't matter, should fail auth
+            minter: anotherMinter.publicKey,
+            minterQuota: anotherMinterQuota,
             systemProgram: SystemProgram.programId,
           })
           .signers([tokenCtx.authority])

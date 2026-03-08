@@ -15,6 +15,7 @@ import {
   airdrop,
   expectError,
   setupSss1Token,
+  initializeMetadata,
   sss1Config,
   createTokenAccount,
   addMinter,
@@ -221,7 +222,79 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 2. Minter Management
+  // 2. Initialize Metadata
+  // ════════════════════════════════════════════════════════════
+  describe("initialize_metadata", () => {
+    it("writes on-mint metadata after initialize", async () => {
+      const ctx = await setupSss1Token(program, provider);
+      // Should not throw — separate tx from initialize
+      await initializeMetadata(ctx);
+
+      // State values are unchanged (metadata was read from there)
+      const state = await program.account.stablecoinState.fetch(
+        ctx.stablecoinState
+      );
+      assert.equal(state.name, "Test Stablecoin");
+      assert.equal(state.symbol, "TUSD");
+      assert.equal(state.uri, "https://example.com/metadata.json");
+    });
+
+    it("rejects non-master-authority caller", async () => {
+      const ctx = await setupSss1Token(program, provider);
+      const imposter = Keypair.generate();
+      await airdrop(provider, imposter.publicKey);
+
+      await expectError(
+        program.methods
+          .initializeMetadata()
+          .accountsStrict({
+            authority: imposter.publicKey,
+            mint: ctx.mint.publicKey,
+            stablecoinState: ctx.stablecoinState,
+            rolesConfig: ctx.rolesConfig,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([imposter])
+          .rpc(),
+        "Unauthorized"
+      );
+    });
+
+    it("rejects wrong mint", async () => {
+      const ctx = await setupSss1Token(program, provider);
+      const wrongMint = Keypair.generate();
+
+      await expectError(
+        program.methods
+          .initializeMetadata()
+          .accountsStrict({
+            authority: ctx.authority.publicKey,
+            mint: wrongMint.publicKey,
+            stablecoinState: ctx.stablecoinState,
+            rolesConfig: ctx.rolesConfig,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([ctx.authority])
+          .rpc(),
+        "AccountNotInitialized"  // Anchor checks if mint account is initialized
+      );
+    });
+
+    it("rejects double call (already initialized)", async () => {
+      const ctx = await setupSss1Token(program, provider);
+      await initializeMetadata(ctx);
+
+      await expectError(
+        initializeMetadata(ctx),
+        "Error"
+      );
+    });
+  });
+
+  // ════════════════════════════════════════════════════════════
+  // 3. Minter Management
   // ════════════════════════════════════════════════════════════
   describe("minter management", () => {
     let ctx: TokenTestContext;
@@ -370,7 +443,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 3. Mint
+  // 4. Mint
   // ════════════════════════════════════════════════════════════
   describe("mint", () => {
     let ctx: TokenTestContext;
@@ -408,7 +481,6 @@ describe("sss-token", () => {
         amount
       );
 
-      // Check token account balance
       const account = await getAccount(
         provider.connection,
         recipientAta,
@@ -417,11 +489,9 @@ describe("sss-token", () => {
       );
       assert.equal(Number(account.amount), amount);
 
-      // Check minter quota tracking
       const q = await program.account.minterQuota.fetch(minterQuotaPda);
       assert.equal(q.minted.toNumber(), amount);
 
-      // Check total supply
       const state = await program.account.stablecoinState.fetch(
         ctx.stablecoinState
       );
@@ -438,7 +508,6 @@ describe("sss-token", () => {
     });
 
     it("rejects mint exceeding quota", async () => {
-      // Quota is 10M
       await expectError(
         mintTokens(
           ctx,
@@ -468,7 +537,6 @@ describe("sss-token", () => {
         ctx.authority
       );
 
-      // Large mint should succeed
       await mintTokens(ctx, unlimitedMinter, quotaPda, ata, 999_999_999);
 
       const q = await program.account.minterQuota.fetch(quotaPda);
@@ -483,7 +551,6 @@ describe("sss-token", () => {
     });
 
     it("rejects when paused", async () => {
-      // Pause
       await program.methods
         .pause(null)
         .accountsStrict({
@@ -501,7 +568,6 @@ describe("sss-token", () => {
     });
 
     it("rejects inactive minter", async () => {
-      // Deactivate
       await program.methods
         .updateMinter(new anchor.BN(10_000_000), false, false)
         .accountsStrict({
@@ -519,10 +585,30 @@ describe("sss-token", () => {
         "MinterInactive"
       );
     });
+
+    // ── initialize_metadata does not affect minting ───────────────────────
+    it("minting works the same whether or not initialize_metadata was called", async () => {
+      // Without metadata
+      await mintTokens(ctx, minter, minterQuotaPda, recipientAta, 500);
+
+      // Now set metadata
+      await initializeMetadata(ctx);
+
+      // Still works
+      await mintTokens(ctx, minter, minterQuotaPda, recipientAta, 500);
+
+      const account = await getAccount(
+        provider.connection,
+        recipientAta,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      assert.equal(Number(account.amount), 1000);
+    });
   });
 
   // ════════════════════════════════════════════════════════════
-  // 4. Burn
+  // 5. Burn
   // ════════════════════════════════════════════════════════════
   describe("burn", () => {
     let ctx: TokenTestContext;
@@ -531,7 +617,6 @@ describe("sss-token", () => {
     beforeEach(async () => {
       ctx = await setupSss1Token(program, provider);
 
-      // Authority is the default burner, add them as minter too
       const minterQuota = await addMinter(
         ctx,
         ctx.authority.publicKey,
@@ -653,7 +738,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 5. Pause / Unpause
+  // 6. Pause / Unpause
   // ════════════════════════════════════════════════════════════
   describe("pause / unpause", () => {
     let ctx: TokenTestContext;
@@ -697,7 +782,6 @@ describe("sss-token", () => {
     });
 
     it("unpauses successfully", async () => {
-      // Pause first
       await program.methods
         .pause(null)
         .accountsStrict({
@@ -708,7 +792,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Unpause
       await program.methods
         .unpause()
         .accountsStrict({
@@ -787,7 +870,6 @@ describe("sss-token", () => {
       const pauser = Keypair.generate();
       await airdrop(provider, pauser.publicKey);
 
-      // Set pauser role
       await program.methods
         .updateRoles({
           burner: null,
@@ -818,10 +900,32 @@ describe("sss-token", () => {
       );
       assert.equal(state.paused, true);
     });
+
+    // initialize_metadata is NOT blocked by pause
+    it("initialize_metadata succeeds even when stablecoin is paused", async () => {
+      await program.methods
+        .pause(null)
+        .accountsStrict({
+          pauser: ctx.authority.publicKey,
+          stablecoinState: ctx.stablecoinState,
+          rolesConfig: ctx.rolesConfig,
+        })
+        .signers([ctx.authority])
+        .rpc();
+
+      // Should still succeed — metadata init has no pause guard
+      await initializeMetadata(ctx);
+
+      const state = await program.account.stablecoinState.fetch(
+        ctx.stablecoinState
+      );
+      assert.equal(state.paused, true); // still paused
+      assert.equal(state.name, "Test Stablecoin"); // metadata unchanged
+    });
   });
 
   // ════════════════════════════════════════════════════════════
-  // 6. Update Roles
+  // 7. Update Roles
   // ════════════════════════════════════════════════════════════
   describe("update_roles", () => {
     let ctx: TokenTestContext;
@@ -854,7 +958,6 @@ describe("sss-token", () => {
       );
       assert.ok(roles.burner.equals(newBurner.publicKey));
       assert.ok(roles.pauser.equals(newPauser.publicKey));
-      // Unchanged
       assert.ok(roles.blacklister.equals(ctx.authority.publicKey));
       assert.ok(roles.seizer.equals(ctx.authority.publicKey));
     });
@@ -916,7 +1019,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 7. Transfer Authority
+  // 8. Transfer Authority
   // ════════════════════════════════════════════════════════════
   describe("transfer_authority", () => {
     let ctx: TokenTestContext;
@@ -929,7 +1032,6 @@ describe("sss-token", () => {
       const newMaster = Keypair.generate();
       await airdrop(provider, newMaster.publicKey);
 
-      // Step 1: Initiate
       await program.methods
         .transferAuthority(newMaster.publicKey)
         .accountsStrict({
@@ -948,7 +1050,6 @@ describe("sss-token", () => {
         new PublicKey(roles.pendingMaster).equals(newMaster.publicKey)
       );
 
-      // Step 2: Accept
       await program.methods
         .transferAuthority(null)
         .accountsStrict({
@@ -967,7 +1068,6 @@ describe("sss-token", () => {
     it("allows cancel by current master", async () => {
       const newMaster = Keypair.generate();
 
-      // Initiate
       await program.methods
         .transferAuthority(newMaster.publicKey)
         .accountsStrict({
@@ -978,7 +1078,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Cancel
       await program.methods
         .transferAuthority(null)
         .accountsStrict({
@@ -1001,7 +1100,6 @@ describe("sss-token", () => {
       const imposter = Keypair.generate();
       await airdrop(provider, imposter.publicKey);
 
-      // Initiate
       await program.methods
         .transferAuthority(newMaster.publicKey)
         .accountsStrict({
@@ -1012,7 +1110,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Imposter tries to accept
       await expectError(
         program.methods
           .transferAuthority(null)
@@ -1029,7 +1126,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 8. Freeze / Thaw Account
+  // 9. Freeze / Thaw Account
   // ════════════════════════════════════════════════════════════
   describe("freeze / thaw account", () => {
     let ctx: TokenTestContext;
@@ -1073,7 +1170,6 @@ describe("sss-token", () => {
     });
 
     it("thaws a frozen account", async () => {
-      // Freeze first
       await program.methods
         .freezeAccount()
         .accountsStrict({
@@ -1087,7 +1183,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Thaw
       await program.methods
         .thawAccount()
         .accountsStrict({
@@ -1133,19 +1228,18 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 9. Blacklist (SSS-2)
+  // 10. Blacklist (SSS-2)
   // ════════════════════════════════════════════════════════════
   describe("blacklist (SSS-2)", () => {
     let ctx: TokenTestContext;
 
     beforeEach(async () => {
-      // Need transfer hook enabled for blacklist
       ctx = await setupSss1Token(program, provider, {
         enablePermanentDelegate: true,
         enableTransferHook: true,
         transferHookProgramId: anchor.workspace.TransferHook
           ? anchor.workspace.TransferHook.programId
-          : Keypair.generate().publicKey, // fallback if hook not in workspace
+          : Keypair.generate().publicKey,
       });
     });
 
@@ -1189,7 +1283,6 @@ describe("sss-token", () => {
         program.programId
       );
 
-      // Add
       await program.methods
         .addToBlacklist("test")
         .accountsStrict({
@@ -1203,7 +1296,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Remove
       await program.methods
         .removeFromBlacklist()
         .accountsStrict({
@@ -1253,7 +1345,6 @@ describe("sss-token", () => {
     });
 
     it("rejects blacklist when compliance not enabled", async () => {
-      // SSS-1 (no hooks)
       const sss1Ctx = await setupSss1Token(program, provider);
       const target = Keypair.generate();
 
@@ -1312,7 +1403,6 @@ describe("sss-token", () => {
       const blacklister = Keypair.generate();
       await airdrop(provider, blacklister.publicKey);
 
-      // Assign blacklister role
       await program.methods
         .updateRoles({
           burner: null,
@@ -1356,13 +1446,9 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 10. Seize (SSS-2)
+  // 11. Seize (SSS-2)
   // ════════════════════════════════════════════════════════════
   describe("seize (SSS-2)", () => {
-    // Seize requires permanent delegate which is set up during init.
-    // Full transfer hook interaction testing is in integration tests.
-    // Here we test the guard logic.
-
     it("rejects seize when permanent delegate not enabled", async () => {
       const sss1Ctx = await setupSss1Token(program, provider);
       const from = Keypair.generate();
@@ -1443,7 +1529,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 11. Get Supply
+  // 12. Get Supply
   // ════════════════════════════════════════════════════════════
   describe("get_supply", () => {
     it("returns zero initially", async () => {
@@ -1492,7 +1578,7 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 12. Close Mint
+  // 13. Close Mint
   // ════════════════════════════════════════════════════════════
   describe("close_mint", () => {
     it("closes mint, stablecoin_state, and roles_config when supply is zero", async () => {
@@ -1510,7 +1596,6 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // All three accounts should be closed
       const mintAcc = await provider.connection.getAccountInfo(
         ctx.mint.publicKey
       );
@@ -1526,10 +1611,32 @@ describe("sss-token", () => {
       assert.isNull(rolesAcc);
     });
 
+    it("closes successfully even when initialize_metadata was called", async () => {
+      const ctx = await setupSss1Token(program, provider);
+      // Write metadata first, then close — should still work
+      await initializeMetadata(ctx);
+
+      await program.methods
+        .closeMint()
+        .accountsStrict({
+          authority: ctx.authority.publicKey,
+          stablecoinState: ctx.stablecoinState,
+          rolesConfig: ctx.rolesConfig,
+          mint: ctx.mint.publicKey,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([ctx.authority])
+        .rpc();
+
+      const mintAcc = await provider.connection.getAccountInfo(
+        ctx.mint.publicKey
+      );
+      assert.isNull(mintAcc);
+    });
+
     it("rejects close when supply > 0", async () => {
       const ctx = await setupSss1Token(program, provider);
 
-      // Mint some tokens
       const minter = Keypair.generate();
       await airdrop(provider, minter.publicKey);
       const quotaPda = await addMinter(ctx, minter.publicKey, 1000);
