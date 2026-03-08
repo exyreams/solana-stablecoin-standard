@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { Button } from "../ui/Button";
 
@@ -45,7 +46,13 @@ export const Navbar: FC = () => {
   ];
 
   const renderMegaMenu = (items: MenuItem[]) => (
-    <div className="absolute top-full left-0 mt-0 bg-(--bg-panel) border border-(--border-mid) shadow-xl z-50 min-w-[600px]">
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="absolute top-full left-0 mt-0 bg-(--bg-panel) border border-(--border-mid) shadow-xl z-50 min-w-[600px]"
+    >
       <div className="grid grid-cols-2 gap-px bg-(--border-dim) p-px">
         {items.map((item) => (
           item.path ? (
@@ -55,10 +62,10 @@ export const Navbar: FC = () => {
               onClick={() => setActiveMenu(null)}
               className="bg-(--bg-panel) px-4 py-3 hover:bg-white/5 transition-colors group"
             >
-              <div className="font-mono text-[11px] text-(--text-main) group-hover:text-(--accent-primary) font-bold mb-1">
+              <div className="font-mono text-[11px] text-(--text-main) group-hover:text-[#CCA352] font-bold mb-1">
                 {item.label}
               </div>
-              <div className="text-[10px] text-(--text-dark) leading-relaxed">
+              <div className="text-[10px] text-white/60 leading-relaxed">
                 {item.desc}
               </div>
             </Link>
@@ -71,23 +78,23 @@ export const Navbar: FC = () => {
               onClick={() => setActiveMenu(null)}
               className="bg-(--bg-panel) px-4 py-3 hover:bg-white/5 transition-colors group"
             >
-              <div className="font-mono text-[11px] text-(--text-main) group-hover:text-(--accent-primary) font-bold mb-1">
+              <div className="font-mono text-[11px] text-(--text-main) group-hover:text-[#CCA352] font-bold mb-1">
                 {item.label}
               </div>
-              <div className="text-[10px] text-(--text-dark) leading-relaxed">
+              <div className="text-[10px] text-white/60 leading-relaxed">
                 {item.desc}
               </div>
             </a>
           )
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
     <nav className="h-16 flex items-center justify-between px-20 bg-[rgba(15,15,15,0.95)] backdrop-blur-[10px] sticky top-0 z-50" style={{ borderBottom: '1px solid rgba(204, 163, 82, 0.4)' }}>
       <div className="flex items-center gap-3 font-bold font-mono">
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity text-[var(--accent-primary)]">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity text-(--accent-primary)">
           <img src="/logo.svg" alt="SSS Logo" className="h-8 w-auto" />
           <span>SSS MANAGER</span>
         </Link>
@@ -100,15 +107,17 @@ export const Navbar: FC = () => {
           onMouseEnter={() => setActiveMenu("dashboard")}
           onMouseLeave={() => setActiveMenu(null)}
         >
-          <button className="text-white/70 hover:text-(--accent-primary) transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
+          <button className="text-white/70 hover:text-[#CCA352] transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
             Dashboard
             <ChevronDown size={14} />
           </button>
-          {activeMenu === "dashboard" && (
-            <div className="absolute top-full left-0 pt-2 -ml-4">
-              {renderMegaMenu(dashboardMenu)}
-            </div>
-          )}
+          <AnimatePresence>
+            {activeMenu === "dashboard" && (
+              <div className="absolute top-full left-0 pt-2 -ml-4">
+                {renderMegaMenu(dashboardMenu)}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Operations Dropdown */}
@@ -117,15 +126,17 @@ export const Navbar: FC = () => {
           onMouseEnter={() => setActiveMenu("operations")}
           onMouseLeave={() => setActiveMenu(null)}
         >
-          <button className="text-white/70 hover:text-(--accent-primary) transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
+          <button className="text-white/70 hover:text-[#CCA352] transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
             Operations
             <ChevronDown size={14} />
           </button>
-          {activeMenu === "operations" && (
-            <div className="absolute top-full left-0 pt-2 -ml-4">
-              {renderMegaMenu(operationsMenu)}
-            </div>
-          )}
+          <AnimatePresence>
+            {activeMenu === "operations" && (
+              <div className="absolute top-full left-0 pt-2 -ml-4">
+                {renderMegaMenu(operationsMenu)}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Resources Dropdown */}
@@ -134,15 +145,17 @@ export const Navbar: FC = () => {
           onMouseEnter={() => setActiveMenu("resources")}
           onMouseLeave={() => setActiveMenu(null)}
         >
-          <button className="text-white/70 hover:text-(--accent-primary) transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
+          <button className="text-white/70 hover:text-[#CCA352] transition-colors text-[13px] flex items-center gap-1 py-2 font-medium">
             Resources
             <ChevronDown size={14} />
           </button>
-          {activeMenu === "resources" && (
-            <div className="absolute top-full left-0 pt-2 -ml-4">
-              {renderMegaMenu(resourcesMenu)}
-            </div>
-          )}
+          <AnimatePresence>
+            {activeMenu === "resources" && (
+              <div className="absolute top-full left-0 pt-2 -ml-4">
+                {renderMegaMenu(resourcesMenu)}
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
