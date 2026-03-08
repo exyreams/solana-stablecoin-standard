@@ -10,6 +10,7 @@ import {
   pauseCommand,
   unpauseCommand,
   closeMintCommand,
+  metadataCommand,
   // Admin & management
   mintersCommand,
   rolesCommand,
@@ -51,6 +52,7 @@ program.addCommand(unpauseCommand());
 program.addCommand(statusCommand());
 program.addCommand(supplyCommand());
 program.addCommand(closeMintCommand());
+program.addCommand(metadataCommand);
 
 // ── Management ───────────────────────────────────────────────────────────────
 program.addCommand(mintersCommand());

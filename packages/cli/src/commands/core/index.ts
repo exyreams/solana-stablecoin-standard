@@ -4,3 +4,4 @@ export { burnCommand } from './burn';
 export { freezeCommand, thawCommand } from './freeze';
 export { pauseCommand, unpauseCommand } from './pause';
 export { closeMintCommand } from './close-mint';
+export { metadataCommand } from './metadata';

@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { SolanaStablecoin } from 'sss-token-sdk';
+import { SolanaStablecoin } from '@stbr/sss-token-sdk';
 import { loadKeypair } from '../../utils/keypair';
 import { error } from '../../utils/display';
 

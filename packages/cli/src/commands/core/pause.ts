@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { Connection, PublicKey } from '@solana/web3.js';
 import ora from 'ora';
-import { SolanaStablecoin } from 'sss-token-sdk';
+import { SolanaStablecoin } from '@stbr/sss-token-sdk';
 import { loadKeypair } from '../../utils/keypair';
 import { printTxLink, error } from '../../utils/display';
 
