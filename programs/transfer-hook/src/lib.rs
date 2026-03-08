@@ -8,7 +8,7 @@ pub mod initialize_extra_account_meta_list;
 pub use execute::*;
 pub use initialize_extra_account_meta_list::*;
 
-declare_id!("F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf");
+declare_id!("BkHdkRKQGphK1JEdqXMq3TsEevEmHmUADik8xwRsc8hF");
 
 #[program]
 pub mod transfer_hook {

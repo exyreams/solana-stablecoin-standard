@@ -8,7 +8,7 @@ pub mod state;
 
 pub use instructions::*;
 
-declare_id!("7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd");
+declare_id!("A3FwdZsxaNnXHkuTUcpRBGgNxonoypw5uz7CJkffDJXU");
 
 #[program]
 pub mod sss_oracle {
