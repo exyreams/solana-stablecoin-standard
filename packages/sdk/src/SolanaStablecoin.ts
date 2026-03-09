@@ -28,7 +28,7 @@ const IDL = require("./idl/sss_token.json");
 
 /** Default transfer hook program ID from the SSS project's declare_id. */
 export const DEFAULT_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  "BkHdkRKQGphK1JEdqXMq3TsEevEmHmUADik8xwRsc8hF",
+  "HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig",
 );
 
 export class SolanaStablecoin {
@@ -131,6 +131,7 @@ export class SolanaStablecoin {
     const mintKeypair = options.mintKeypair ?? Keypair.generate();
 
     // Resolve config: explicit options > extensions > preset
+    const enableMintCloseAuthority = options.enableMintCloseAuthority ?? false; // Default false for Metaplex compatibility
     const enablePermanentDelegate =
       options.enablePermanentDelegate ??
       ext.permanentDelegate ??
@@ -159,6 +160,7 @@ export class SolanaStablecoin {
       symbol: options.symbol,
       uri: options.uri ?? "",
       decimals: options.decimals ?? 6,
+      enableMintCloseAuthority,
       enablePermanentDelegate,
       enableTransferHook,
       defaultAccountFrozen,
@@ -246,27 +248,77 @@ export class SolanaStablecoin {
   // ── Administrative Operations ──────────────────────────────────────────────
 
   /**
-   * Initialize on-mint Token-2022 metadata.
-   * After this call, the token's name and symbol will be stored in the mint extension,
-   * making it visible to wallets and explorers without requiring external metadata trackers.
-   *
-   * Note: This is different from Metaplex metadata.
+   * Initialize Metaplex Token Metadata for wallet and explorer display.
+   * 
+   * This creates a Metaplex metadata PDA that makes your token visible in all
+   * Solana wallets (Phantom, Solflare, etc.) and explorers (Solscan, Solana FM).
+   * 
+   * IMPORTANT: The mint keypair must sign this transaction. This is a Metaplex
+   * requirement for Token-2022 mints with PDA authority.
+   * 
+   * NOTE: Metaplex metadata is incompatible with MintCloseAuthority. If you
+   * initialized your token with enableMintCloseAuthority: true, this will fail.
+   * 
+   * @param options - Metadata configuration
+   * @param options.name - Token name (max 32 bytes, e.g., "My Stablecoin")
+   * @param options.symbol - Token symbol (max 10 bytes, e.g., "MYUSD")
+   * @param options.uri - Metadata JSON URI (Arweave, IPFS, or HTTPS)
+   * @param options.sellerFeeBasisPoints - Royalty fee in basis points (default: 0, stablecoins don't need royalties)
+   * @param mintKeypair - The mint keypair (required to sign)
+   * 
+   * @returns The Metaplex metadata PDA address
+   * 
+   * @example
+   * const metadataPda = await stablecoin.initializeMetaplexMetadata({
+   *   name: "My Stablecoin",
+   *   symbol: "MYUSD",
+   *   uri: "https://arweave.net/...",
+   *   sellerFeeBasisPoints: 0,
+   * }, mintKeypair);
+   * 
+   * console.log("Metadata created at:", metadataPda.toBase58());
+   * console.log("Your token will now display in wallets!");
    */
-  async initializeMetadata(): Promise<string> {
+  async initializeMetaplexMetadata(
+    options: {
+      name: string;
+      symbol: string;
+      uri: string;
+      sellerFeeBasisPoints?: number;
+    },
+    mintKeypair: Keypair,
+  ): Promise<PublicKey> {
     const [statePda] = deriveStablecoinState(this.mint, this.program.programId);
-    const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
 
-    return (this.program.methods as any)
-      .initializeMetadata()
+    // Derive Metaplex metadata PDA
+    const METAPLEX_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+    const [metadataPda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("metadata"),
+        METAPLEX_PROGRAM_ID.toBuffer(),
+        this.mint.toBuffer(),
+      ],
+      METAPLEX_PROGRAM_ID,
+    );
+
+    await (this.program.methods as any)
+      .metaplexMetadata({
+        name: options.name,
+        symbol: options.symbol,
+        uri: options.uri,
+      })
       .accounts({
         authority: this.authority.publicKey,
         mint: this.mint,
         stablecoinState: statePda,
-        rolesConfig: rolesPda,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        metadata: metadataPda,
+        tokenMetadataProgram: METAPLEX_PROGRAM_ID,
+        sysvarInstructions: new PublicKey("Sysvar1nstructions1111111111111111111111111"),
       })
-      .signers([this.authority])
+      .signers([this.authority, mintKeypair])
       .rpc();
+
+    return metadataPda;
   }
 
   // ── Core Operations ────────────────────────────────────────────────────────
