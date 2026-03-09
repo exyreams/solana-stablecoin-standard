@@ -28,8 +28,6 @@ All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: applica
 | `GET` | `/admin/status` | — | High-level state, metadata, and roles |
 | `GET` | `/admin/on-chain-status` | — | Raw blockchain account data (audit source) |
 | `GET` | `/admin/supply` | — | Canonical on-chain total supply |
-| `POST` | `/admin/metadata/initialize` | — | Write Token-2022 metadata to mint extension |
-| `POST` | `/admin/metadata/metaplex` | — | Initialize Metaplex Metadata PDA (Standard visibility) |
 | `DELETE` | `/admin/close-mint` | — | Permanently close mint (supply must be zero) |
 
 ## Admin — Roles
@@ -100,16 +98,8 @@ All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: applica
 | Method | Path | Body | Description |
 |---|---|---|---|
 | `POST` | `/privacy/approve` | `{ tokenAccount, reason? }` | Approve account for confidential transfers |
-| `POST` | `/privacy/enable-credits` | `{ tokenAccount }` | Enable confidential credits |
-| `POST` | `/privacy/disable-credits` | `{ tokenAccount }` | Disable confidential credits |
-
----
-
-## Events
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/events` | Last 100 indexed on-chain events |
+| `POST` | `/privacy/enable-credits` | `{ tokenAccount, reason? }` | Enable confidential credits |
+| `POST` | `/privacy/disable-credits` | `{ tokenAccount, reason? }` | Disable confidential credits |
 
 ---
 
