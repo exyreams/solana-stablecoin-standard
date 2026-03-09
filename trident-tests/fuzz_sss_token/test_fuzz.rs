@@ -37,13 +37,14 @@ impl FuzzTest {
             "MIN".to_string(),
             "https://example.com/minimal.json".to_string(),
             6,
-            false,
-            false,
-            false,
-            None,
-            false,
-            false,
-            None,
+            false, // enable_mint_close_authority (default false for Metaplex compatibility)
+            false, // enable_permanent_delegate
+            false, // enable_transfer_hook
+            false, // default_account_frozen
+            None,  // transfer_hook_program_id
+            false, // enable_confidential_transfers
+            false, // confidential_transfer_auto_approve
+            None,  // auditor_elgamal_pubkey
         );
 
         let accounts = sss_token::InitializeInstructionAccounts {
