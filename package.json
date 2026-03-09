@@ -9,24 +9,36 @@
     "test": "anchor test",
     "test:sdk": "pnpm --filter @stbr/sss-token-sdk test",
     "test:cli": "pnpm --filter @stbr/sss-token-cli test",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
     "services:up": "docker compose up -d",
     "services:down": "docker compose down"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
-    "@solana/spl-token": "^0.4.9",
-    "@solana/web3.js": "^1.95.8"
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.12",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.11.5",
-    "chai": "^4.4.1",
-    "mocha": "^10.3.0",
-    "prettier": "^3.2.5",
-    "ts-mocha": "^10.0.0",
-    "typescript": "^5.3.3"
+    "@biomejs/biome": "2.4.6",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.3.5",
+    "chai": "^6.2.2",
+    "mocha": "^11.7.5",
+    "prettier": "^3.8.1",
+    "ts-mocha": "^11.1.0",
+    "typescript": "^5.9.3"
+  },
+  "workspaces": [
+    "packages/*",
+    "services"
+  ],
+  "pnpm": {
+    "overrides": {
+      "ioredis": "5.10.0"
+    }
   }
 }
