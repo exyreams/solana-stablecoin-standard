@@ -28,7 +28,7 @@ export const EXTRA_ACCOUNT_META_LIST_SEED = Buffer.from('extra-account-metas');
 export const ORACLE_CONFIG_SEED = Buffer.from('oracle_config');
 
 /** Seed for deriving PriceFeedEntry PDAs */
-export const PRICE_FEED_SEED = Buffer.from('price_feed_entry');
+export const PRICE_FEED_SEED = Buffer.from('price_feed');
 
 /**
  * Derive the StablecoinState PDA for a given mint.
@@ -205,11 +205,12 @@ export function derivePriceFeedEntry(
   feedIndex: number,
   oracleProgramId: PublicKey,
 ): [PublicKey, number] {
+  const [oracleConfig] = deriveOracleConfig(mint, oracleProgramId);
   const indexBuffer = Buffer.alloc(1);
   indexBuffer.writeUInt8(feedIndex, 0);
 
   return PublicKey.findProgramAddressSync(
-    [PRICE_FEED_SEED, mint.toBuffer(), indexBuffer],
+    [PRICE_FEED_SEED, oracleConfig.toBuffer(), indexBuffer],
     oracleProgramId,
   );
 }

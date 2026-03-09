@@ -1,5 +1,5 @@
 {
-  "address": "EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK",
+  "address": "8ikCeGrUHjWq8Nf998zTaRsvF5vrKhrDcitemXdof8H4",
   "metadata": {
     "name": "sss_token",
     "version": "0.1.0",
@@ -940,6 +940,125 @@
           }
         }
       ]
+    },
+    {
+      "name": "initialize_metadata",
+      "docs": [
+        "Initialize on-mint Token-2022 metadata.",
+        "",
+        "Must be called in a **separate transaction** after `initialize`.",
+        "Reads name/symbol/uri from the StablecoinState PDA so the caller",
+        "does not need to re-supply them.",
+        "",
+        "Can only be called once — Token-2022 rejects a second call with",
+        "an AlreadyInUse error."
+      ],
+      "discriminator": [
+        35,
+        215,
+        241,
+        156,
+        122,
+        208,
+        206,
+        212
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Must be master authority (validated against roles_config).",
+            "Also serves as payer for the mint account realloc."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The stablecoin mint — must already exist (created by `initialize`)."
+          ],
+          "writable": true
+        },
+        {
+          "name": "stablecoin_state",
+          "docs": [
+            "The stablecoin_state PDA — holds name/symbol/uri and signs the CPI."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  98,
+                  108,
+                  101,
+                  99,
+                  111,
+                  105,
+                  110,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "roles_config",
+          "docs": [
+            "roles_config PDA — used to verify master_authority."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  111,
+                  108,
+                  101,
+                  115,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "Required by Token-2022 metadata instruction for realloc."
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "mint",
@@ -2178,6 +2297,19 @@
       ]
     },
     {
+      "name": "MetadataInitialized",
+      "discriminator": [
+        94,
+        69,
+        122,
+        172,
+        146,
+        58,
+        183,
+        35
+      ]
+    },
+    {
       "name": "MintClosed",
       "discriminator": [
         221,
@@ -2717,6 +2849,41 @@
           },
           {
             "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MetadataInitialized",
+      "docs": [
+        "Emitted when on-mint Token-2022 metadata is written via initialize_metadata."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "authority",
             "type": "pubkey"
           },
           {

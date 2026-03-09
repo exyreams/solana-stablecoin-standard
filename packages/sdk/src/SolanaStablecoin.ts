@@ -13,9 +13,6 @@ import {
   TOKEN_2022_PROGRAM_ID,
   getOrCreateAssociatedTokenAccount,
 } from '@solana/spl-token';
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-import { createSignerFromKeypair, signerIdentity, publicKey as umiPublicKey } from '@metaplex-foundation/umi';
-import { createMetadataAccountV3 } from '@metaplex-foundation/mpl-token-metadata';
 
 import {
   CreateOptions,
@@ -41,7 +38,7 @@ const IDL = require('./idl/sss_token.json');
 
 /** Default transfer hook program ID from the SSS project's declare_id. */
 export const DEFAULT_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-  'F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf',
+  'BkHdkRKQGphK1JEdqXMq3TsEevEmHmUADik8xwRsc8hF',
 );
 
 export class SolanaStablecoin {
@@ -50,6 +47,9 @@ export class SolanaStablecoin {
   private authority: Keypair;
 
   public readonly mint: PublicKey;
+  public readonly programId: PublicKey;
+  public readonly stateAddress: PublicKey;
+  public readonly rolesAddress: PublicKey;
   public readonly compliance: ComplianceModule;
   public readonly privacy: PrivacyModule;
   public readonly oracle: OracleModule;
@@ -66,6 +66,11 @@ export class SolanaStablecoin {
     this.connection = connection;
     this.authority = authority;
     this.mint = mint;
+    this.programId = program.programId;
+    const [statePda] = deriveStablecoinState(mint, program.programId);
+    const [rolesPda] = deriveRolesConfig(mint, program.programId);
+    this.stateAddress = statePda;
+    this.rolesAddress = rolesPda;
     this.compliance = new ComplianceModule(
       program,
       connection,
@@ -112,7 +117,7 @@ export class SolanaStablecoin {
    */
   static async create(
     connection: Connection,
-    options: CreateOptions & { authority: Keypair; programId?: PublicKey; oracleProgramId?: PublicKey },
+    options: CreateOptions & { authority: Keypair; mintKeypair?: Keypair; programId?: PublicKey; oracleProgramId?: PublicKey },
   ): Promise<SolanaStablecoin> {
     const programId = options.programId ?? new PublicKey(IDL.address ?? IDL.metadata?.address);
     const wallet = new Wallet(options.authority);
@@ -122,7 +127,7 @@ export class SolanaStablecoin {
     const preset = options.preset ?? SSS_1;
     const ext = options.extensions ?? {};
 
-    const mintKeypair = Keypair.generate();
+    const mintKeypair = options.mintKeypair ?? Keypair.generate();
 
     // Resolve config: explicit options > extensions > preset
     const enablePermanentDelegate =
@@ -223,6 +228,32 @@ export class SolanaStablecoin {
       hookProgramId,
       options?.oracleProgramId,
     );
+  }
+
+  // ── Administrative Operations ──────────────────────────────────────────────
+
+  /**
+   * Initialize on-mint Token-2022 metadata.
+   * After this call, the token's name and symbol will be stored in the mint extension,
+   * making it visible to wallets and explorers without requiring external metadata trackers.
+   * 
+   * Note: This is different from Metaplex metadata.
+   */
+  async initializeMetadata(): Promise<string> {
+    const [statePda] = deriveStablecoinState(this.mint, this.program.programId);
+    const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
+
+    return (this.program.methods as any)
+      .initializeMetadata()
+      .accounts({
+        authority: this.authority.publicKey,
+        mint: this.mint,
+        stablecoinState: statePda,
+        rolesConfig: rolesPda,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .signers([this.authority])
+      .rpc();
   }
 
   // ── Core Operations ────────────────────────────────────────────────────────
@@ -640,100 +671,5 @@ export class SolanaStablecoin {
   async getTotalSupply(): Promise<bigint> {
     const info = await this.connection.getTokenSupply(this.mint);
     return BigInt(info.value.amount);
-  }
-
-  // ── Metaplex Metadata ──────────────────────────────────────────────────────
-
-  /**
-   * Initialize Metaplex metadata for the token.
-   * This makes the token display properly in all Solana wallets (Phantom, Solflare, etc.).
-   * 
-   * Metaplex metadata is the industry standard for token display. While Token-2022
-   * has built-in metadata extensions, they cannot be populated via CPI due to Solana
-   * runtime limitations. Metaplex metadata works around this by using a separate PDA.
-   * 
-   * @param options Metadata options
-   * @param options.name Token name (e.g., "My Stablecoin")
-   * @param options.symbol Token symbol (e.g., "MYUSD")
-   * @param options.uri URI pointing to off-chain metadata JSON (Arweave, IPFS, etc.)
-   * @param options.sellerFeeBasisPoints Royalty in basis points (default: 0 for stablecoins)
-   * @param options.creators Optional creator array with addresses and shares
-   * 
-   * @returns Metadata account public key
-   * 
-   * @example
-   * // After creating token
-   * const metadataAccount = await stablecoin.initializeMetaplexMetadata({
-   *   name: "My Stablecoin",
-   *   symbol: "MYUSD",
-   *   uri: "https://arweave.net/metadata.json",
-   * });
-   * 
-   * @example
-   * // With creators
-   * const metadataAccount = await stablecoin.initializeMetaplexMetadata({
-   *   name: "My Stablecoin",
-   *   symbol: "MYUSD",
-   *   uri: "https://arweave.net/metadata.json",
-   *   creators: [
-   *     { address: creatorPubkey, share: 100, verified: false }
-   *   ],
-   * });
-   */
-  async initializeMetaplexMetadata(options: {
-    name: string;
-    symbol: string;
-    uri: string;
-    sellerFeeBasisPoints?: number;
-    creators?: Array<{ address: PublicKey; share: number; verified: boolean }>;
-  }): Promise<PublicKey> {
-    // Create UMI instance
-    const umi = createUmi(this.connection.rpcEndpoint);
-
-    // Convert Keypair to UMI signer
-    const umiKeypair = umi.eddsa.createKeypairFromSecretKey(this.authority.secretKey);
-    const signer = createSignerFromKeypair(umi, umiKeypair);
-    umi.use(signerIdentity(signer));
-
-    // Convert mint to UMI public key
-    const mintPubkey = umiPublicKey(this.mint.toBase58());
-
-    // Convert creators if provided
-    const creators = options.creators?.map(c => ({
-      address: umiPublicKey(c.address.toBase58()),
-      share: c.share,
-      verified: c.verified,
-    }));
-
-    // Create metadata account
-    const result = await createMetadataAccountV3(umi, {
-      mint: mintPubkey,
-      mintAuthority: signer,
-      payer: signer,
-      updateAuthority: signer.publicKey,
-      data: {
-        name: options.name,
-        symbol: options.symbol,
-        uri: options.uri,
-        sellerFeeBasisPoints: options.sellerFeeBasisPoints ?? 0,
-        creators: creators ?? null,
-        collection: null,
-        uses: null,
-      },
-      isMutable: true,
-      collectionDetails: null,
-    }).sendAndConfirm(umi);
-
-    // Derive metadata PDA address
-    const [metadataPda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('metadata'),
-        new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s').toBuffer(),
-        this.mint.toBuffer(),
-      ],
-      new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'),
-    );
-
-    return metadataPda;
   }
 }
