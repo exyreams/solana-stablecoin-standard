@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ── Mint & Burn ──────────────────────────────────────────────────────────────
@@ -57,6 +56,23 @@ export const auditLogs = sqliteTable("audit_logs", {
 	reason: text("reason"),
 	signature: text("signature"),
 	timestamp: integer("timestamp", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});
+
+// ── Stablecoins ───────────────────────────────────────────────────────────────
+export const stablecoins = sqliteTable("stablecoins", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	mintAddress: text("mint_address").notNull().unique(),
+	preset: text("preset").notNull(), // sss1, sss2, sss3
+	name: text("name").notNull(),
+	symbol: text("symbol").notNull(),
+	decimals: integer("decimals").notNull().default(6),
+	uri: text("uri"),
+	signature: text("signature"), // Creation transaction signature
+	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),
 });

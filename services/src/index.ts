@@ -45,6 +45,9 @@ export async function getStable() {
 
 import adminRoutes from "./routes/admin.js";
 import complianceRoutes from "./routes/compliance.js";
+import createStablecoinRoutes from "./routes/create-stablecoin.js";
+import getStablecoinRoutes from "./routes/get-stablecoin.js";
+import listStablecoinsRoutes from "./routes/list-stablecoins.js";
 // Routes
 import mintBurnRoutes from "./routes/mint-burn.js";
 import privacyRoutes from "./routes/privacy.js";
@@ -68,6 +71,9 @@ app.get("/health", async (c) => {
 	}
 });
 
+app.route("/create-stablecoin", createStablecoinRoutes);
+app.route("/list-stablecoins", listStablecoinsRoutes);
+app.route("/get-stablecoin", getStablecoinRoutes);
 app.route("/mint-burn", mintBurnRoutes);
 app.route("/compliance", complianceRoutes);
 app.route("/privacy", privacyRoutes);

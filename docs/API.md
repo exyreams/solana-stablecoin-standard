@@ -12,6 +12,16 @@ All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: applica
 
 ---
 
+## Stablecoin Management
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| `POST` | `/create-stablecoin` | `{ preset, name, symbol, decimals?, uri?, extensions?, roles? }` | Create a new stablecoin |
+| `GET` | `/list-stablecoins` | `?limit=50&offset=0` | List all created stablecoins |
+| `GET` | `/get-stablecoin/:mintAddress` | — | Get a specific stablecoin by mint address |
+
+---
+
 ## Mint / Burn (SSS-1+)
 
 | Method | Path | Body | Description |

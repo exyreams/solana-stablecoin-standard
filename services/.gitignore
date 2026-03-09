@@ -28,3 +28,6 @@ lerna-debug.log*
 .DS_Store
 db/*.db
 db/*.db-journal
+
+# drizzle
+drizzle/meta/
