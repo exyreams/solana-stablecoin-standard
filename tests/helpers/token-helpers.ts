@@ -71,6 +71,7 @@ export interface StablecoinConfig {
   symbol: string;
   uri: string;
   decimals: number;
+  enableMintCloseAuthority: boolean;
   enablePermanentDelegate: boolean;
   enableTransferHook: boolean;
   defaultAccountFrozen: boolean;
@@ -86,6 +87,7 @@ export function sss1Config(): StablecoinConfig {
     symbol: "TUSD",
     uri: "https://example.com/metadata.json",
     decimals: 6,
+    enableMintCloseAuthority: false, // Disable for Metaplex compatibility
     enablePermanentDelegate: false,
     enableTransferHook: false,
     defaultAccountFrozen: false,
@@ -104,6 +106,7 @@ export function sss2Config(
     symbol: "CUSD",
     uri: "https://example.com/metadata.json",
     decimals: 6,
+    enableMintCloseAuthority: false, // Disable for Metaplex compatibility
     enablePermanentDelegate: true,
     enableTransferHook: true,
     defaultAccountFrozen: false,
@@ -175,31 +178,8 @@ export async function setupSss1Token(
   };
 }
 
-/**
- * Initialize on-mint Token-2022 metadata for an already-initialized stablecoin.
- *
- * Call this in a separate transaction after setupSss1Token / initialize.
- * After this call the token will display its name/symbol in wallets and explorers.
- *
- * Reads name/symbol/uri from the on-chain StablecoinState PDA — no need to
- * re-supply them here.
- */
-export async function initializeMetadata(
-  ctx: TokenTestContext
-): Promise<void> {
-  await ctx.program.methods
-    .initializeMetadata()
-    .accountsStrict({
-      authority: ctx.authority.publicKey,
-      mint: ctx.mint.publicKey,
-      stablecoinState: ctx.stablecoinState,
-      rolesConfig: ctx.rolesConfig,
-      tokenProgram: TOKEN_2022_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-    })
-    .signers([ctx.authority])
-    .rpc();
-}
+// initializeMetadata() removed - we now use Metaplex metadata instead of Token-2022 on-mint metadata
+// See tests/metaplex-metadata.ts for Metaplex metadata examples
 
 /**
  * Create an associated token account for Token-2022.

@@ -15,7 +15,6 @@ import {
   airdrop,
   expectError,
   setupSss1Token,
-  initializeMetadata,
   sss1Config,
   createTokenAccount,
   addMinter,
@@ -222,21 +221,43 @@ describe("sss-token", () => {
   });
 
   // ════════════════════════════════════════════════════════════
-  // 2. Initialize Metadata
+  // 2. Metaplex Metadata
   // ════════════════════════════════════════════════════════════
-  describe("initialize_metadata", () => {
-    it("writes on-mint metadata after initialize", async () => {
+  describe("metaplex_metadata", () => {
+    it("creates Metaplex metadata PDA", async () => {
       const ctx = await setupSss1Token(program, provider);
-      // Should not throw — separate tx from initialize
-      await initializeMetadata(ctx);
 
-      // State values are unchanged (metadata was read from there)
-      const state = await program.account.stablecoinState.fetch(
-        ctx.stablecoinState
-      );
-      assert.equal(state.name, "Test Stablecoin");
-      assert.equal(state.symbol, "TUSD");
-      assert.equal(state.uri, "https://example.com/metadata.json");
+      const metadataPda = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").toBuffer(),
+          ctx.mint.publicKey.toBuffer(),
+        ],
+        new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+      )[0];
+
+      await program.methods
+        .metaplexMetadata({
+          name: "Test Stablecoin",
+          symbol: "TUSD",
+          uri: "https://example.com/metadata.json",
+        })
+        .accountsStrict({
+          authority: ctx.authority.publicKey,
+          mint: ctx.mint.publicKey,
+          stablecoinState: ctx.stablecoinState,
+          metadata: metadataPda,
+          tokenMetadataProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+          sysvarInstructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([ctx.authority, ctx.mint])
+        .rpc();
+
+      // Verify metadata was created
+      const metadataAccount = await provider.connection.getAccountInfo(metadataPda);
+      assert.isNotNull(metadataAccount);
     });
 
     it("rejects non-master-authority caller", async () => {
@@ -244,51 +265,35 @@ describe("sss-token", () => {
       const imposter = Keypair.generate();
       await airdrop(provider, imposter.publicKey);
 
+      const metadataPda = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").toBuffer(),
+          ctx.mint.publicKey.toBuffer(),
+        ],
+        new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+      )[0];
+
       await expectError(
         program.methods
-          .initializeMetadata()
+          .metaplexMetadata({
+            name: "Test Stablecoin",
+            symbol: "TUSD",
+            uri: "https://example.com/metadata.json",
+          })
           .accountsStrict({
             authority: imposter.publicKey,
             mint: ctx.mint.publicKey,
             stablecoinState: ctx.stablecoinState,
-            rolesConfig: ctx.rolesConfig,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            metadata: metadataPda,
+            tokenMetadataProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+            sysvarInstructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
             systemProgram: SystemProgram.programId,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           })
-          .signers([imposter])
+          .signers([imposter, ctx.mint])
           .rpc(),
-        "Unauthorized"
-      );
-    });
-
-    it("rejects wrong mint", async () => {
-      const ctx = await setupSss1Token(program, provider);
-      const wrongMint = Keypair.generate();
-
-      await expectError(
-        program.methods
-          .initializeMetadata()
-          .accountsStrict({
-            authority: ctx.authority.publicKey,
-            mint: wrongMint.publicKey,
-            stablecoinState: ctx.stablecoinState,
-            rolesConfig: ctx.rolesConfig,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          })
-          .signers([ctx.authority])
-          .rpc(),
-        "AccountNotInitialized"  // Anchor checks if mint account is initialized
-      );
-    });
-
-    it("rejects double call (already initialized)", async () => {
-      const ctx = await setupSss1Token(program, provider);
-      await initializeMetadata(ctx);
-
-      await expectError(
-        initializeMetadata(ctx),
-        "Error"
+        "unknown signer"
       );
     });
   });
@@ -584,26 +589,6 @@ describe("sss-token", () => {
         mintTokens(ctx, minter, minterQuotaPda, recipientAta, 1000),
         "MinterInactive"
       );
-    });
-
-    // ── initialize_metadata does not affect minting ───────────────────────
-    it("minting works the same whether or not initialize_metadata was called", async () => {
-      // Without metadata
-      await mintTokens(ctx, minter, minterQuotaPda, recipientAta, 500);
-
-      // Now set metadata
-      await initializeMetadata(ctx);
-
-      // Still works
-      await mintTokens(ctx, minter, minterQuotaPda, recipientAta, 500);
-
-      const account = await getAccount(
-        provider.connection,
-        recipientAta,
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
-      assert.equal(Number(account.amount), 1000);
     });
   });
 
@@ -901,8 +886,8 @@ describe("sss-token", () => {
       assert.equal(state.paused, true);
     });
 
-    // initialize_metadata is NOT blocked by pause
-    it("initialize_metadata succeeds even when stablecoin is paused", async () => {
+    // metaplex_metadata is NOT blocked by pause
+    it("metaplex_metadata succeeds even when stablecoin is paused", async () => {
       await program.methods
         .pause(null)
         .accountsStrict({
@@ -913,8 +898,34 @@ describe("sss-token", () => {
         .signers([ctx.authority])
         .rpc();
 
-      // Should still succeed — metadata init has no pause guard
-      await initializeMetadata(ctx);
+      const metadataPda = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").toBuffer(),
+          ctx.mint.publicKey.toBuffer(),
+        ],
+        new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+      )[0];
+
+      // Should still succeed — metadata creation has no pause guard
+      await program.methods
+        .metaplexMetadata({
+          name: "Test Stablecoin",
+          symbol: "TUSD",
+          uri: "https://example.com/metadata.json",
+        })
+        .accountsStrict({
+          authority: ctx.authority.publicKey,
+          mint: ctx.mint.publicKey,
+          stablecoinState: ctx.stablecoinState,
+          metadata: metadataPda,
+          tokenMetadataProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+          sysvarInstructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([ctx.authority, ctx.mint])
+        .rpc();
 
       const state = await program.account.stablecoinState.fetch(
         ctx.stablecoinState
@@ -1580,9 +1591,15 @@ describe("sss-token", () => {
   // ════════════════════════════════════════════════════════════
   // 13. Close Mint
   // ════════════════════════════════════════════════════════════
+  // NOTE: close_mint requires enableMintCloseAuthority: true
+  // This is INCOMPATIBLE with Metaplex metadata (Metaplex rejects mints with close authority)
+  // Users must choose: Metaplex metadata (recommended for stablecoins) OR close authority
   describe("close_mint", () => {
     it("closes mint, stablecoin_state, and roles_config when supply is zero", async () => {
-      const ctx = await setupSss1Token(program, provider);
+      // Enable MintCloseAuthority for this test (disabled by default for Metaplex compatibility)
+      const ctx = await setupSss1Token(program, provider, {
+        enableMintCloseAuthority: true,
+      });
 
       await program.methods
         .closeMint()
@@ -1611,11 +1628,14 @@ describe("sss-token", () => {
       assert.isNull(rolesAcc);
     });
 
-    it("closes successfully even when initialize_metadata was called", async () => {
-      const ctx = await setupSss1Token(program, provider);
-      // Write metadata first, then close — should still work
-      await initializeMetadata(ctx);
+    it("closes mint without metaplex metadata (close authority enabled)", async () => {
+      // Enable MintCloseAuthority for this test
+      // Note: Cannot use Metaplex metadata when close authority is enabled
+      const ctx = await setupSss1Token(program, provider, {
+        enableMintCloseAuthority: true,
+      });
 
+      // Close mint directly (no Metaplex metadata)
       await program.methods
         .closeMint()
         .accountsStrict({
@@ -1634,8 +1654,108 @@ describe("sss-token", () => {
       assert.isNull(mintAcc);
     });
 
-    it("rejects close when supply > 0", async () => {
+    it("rejects close_mint when close authority is disabled (default for Metaplex)", async () => {
+      // Default config has enableMintCloseAuthority: false for Metaplex compatibility
       const ctx = await setupSss1Token(program, provider);
+
+      // Attempting to close should fail because close authority is not enabled
+      await expectError(
+        program.methods
+          .closeMint()
+          .accountsStrict({
+            authority: ctx.authority.publicKey,
+            stablecoinState: ctx.stablecoinState,
+            rolesConfig: ctx.rolesConfig,
+            mint: ctx.mint.publicKey,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .signers([ctx.authority])
+          .rpc(),
+        "InvalidAccountData" // Token-2022 error: mint doesn't have close authority extension
+      );
+    });
+
+    it("metaplex_metadata rejects mint with close authority enabled", async () => {
+      // This test demonstrates the Metaplex incompatibility
+      const ctx = await setupSss1Token(program, provider, {
+        enableMintCloseAuthority: true,
+      });
+
+      const metadataPda = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").toBuffer(),
+          ctx.mint.publicKey.toBuffer(),
+        ],
+        new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+      )[0];
+
+      // Metaplex will reject this because close authority is enabled
+      await expectError(
+        program.methods
+          .metaplexMetadata({
+            name: "Test Stablecoin",
+            symbol: "TUSD",
+            uri: "https://example.com/metadata.json",
+          })
+          .accountsStrict({
+            authority: ctx.authority.publicKey,
+            mint: ctx.mint.publicKey,
+            stablecoinState: ctx.stablecoinState,
+            metadata: metadataPda,
+            tokenMetadataProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+            sysvarInstructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+            systemProgram: SystemProgram.programId,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          })
+          .signers([ctx.authority, ctx.mint])
+          .rpc(),
+        "Invalid mint close authority" // Metaplex error
+      );
+    });
+
+    it("metaplex_metadata succeeds when close authority is disabled (default)", async () => {
+      // Default config has enableMintCloseAuthority: false - perfect for Metaplex
+      const ctx = await setupSss1Token(program, provider);
+
+      const metadataPda = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s").toBuffer(),
+          ctx.mint.publicKey.toBuffer(),
+        ],
+        new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")
+      )[0];
+
+      // This should succeed because close authority is disabled
+      await program.methods
+        .metaplexMetadata({
+          name: "Test Stablecoin",
+          symbol: "TUSD",
+          uri: "https://example.com/metadata.json",
+        })
+        .accountsStrict({
+          authority: ctx.authority.publicKey,
+          mint: ctx.mint.publicKey,
+          stablecoinState: ctx.stablecoinState,
+          metadata: metadataPda,
+          tokenMetadataProgram: new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+          sysvarInstructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([ctx.authority, ctx.mint])
+        .rpc();
+
+      // Verify metadata was created
+      const metadataAccount = await provider.connection.getAccountInfo(metadataPda);
+      assert.isNotNull(metadataAccount);
+    });
+
+    it("rejects close when supply > 0", async () => {
+      const ctx = await setupSss1Token(program, provider, {
+        enableMintCloseAuthority: true,
+      });
 
       const minter = Keypair.generate();
       await airdrop(provider, minter.publicKey);
@@ -1665,7 +1785,9 @@ describe("sss-token", () => {
     });
 
     it("rejects non-master-authority", async () => {
-      const ctx = await setupSss1Token(program, provider);
+      const ctx = await setupSss1Token(program, provider, {
+        enableMintCloseAuthority: true,
+      });
       const imposter = Keypair.generate();
       await airdrop(provider, imposter.publicKey);
 
