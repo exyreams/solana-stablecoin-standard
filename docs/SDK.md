@@ -91,7 +91,7 @@ static async create(
 - `options.auditorElGamalPubkey` - Auditor public key (SSS-3)
 
 >[!NOTE]
->**Note on Metadata:** Due to Solana runtime limitations, Token-2022 metadata cannot be initialized via CPI. Metadata is stored in the `StablecoinState` PDA. For wallet display compatibility, use `initializeMetaplexMetadata()` after token creation (see Metaplex Metadata section below).
+>**Note on Metadata:** Metadata is stored in the `StablecoinState` PDA as the canonical source of truth. For wallet and explorer display compatibility (Phantom, Solflare, Solscan, etc.), use `initializeMetaplexMetadata()` after token creation (see Metaplex Metadata section below).
 
 **Preset-specific options:**
 - `options.enablePermanentDelegate` - Enable permanent delegate (SSS-2)
@@ -489,28 +489,59 @@ console.log(`URI: ${metadata.uri}`);
 
 ---
 
-### Wallet Display Compatibility
+### Metaplex Metadata (Wallet Display)
 
-For tokens to display properly in wallets (Phantom, Solflare, etc.), you need to create Metaplex metadata:
+##### `initializeMetaplexMetadata()`
+
+Initialize Metaplex Token Metadata for wallet and explorer display. This makes your token visible in all Solana wallets (Phantom, Solflare, etc.) and explorers (Solscan, Solana FM).
 
 ```typescript
-// After creating your stablecoin, initialize Metaplex metadata
-// Note: This functionality will be available in a future SDK update
-// For now, refer to sss_design/TOKEN_INFO.md for implementation details
+async initializeMetaplexMetadata(
+  options: {
+    name: string;
+    symbol: string;
+    uri: string;
+    sellerFeeBasisPoints?: number;
+  },
+  mintKeypair: Keypair
+): Promise<PublicKey>
+```
 
-// Future API (planned):
-// await stablecoin.initializeMetaplexMetadata({
-//   name: 'My USD Coin',
-//   symbol: 'MYUSD',
-//   uri: 'https://example.com/metadata.json',
-//   payer: authority,
-// });
+**Parameters:**
+- `options.name` - Token name (max 32 bytes, e.g., "My Stablecoin")
+- `options.symbol` - Token symbol (max 10 bytes, e.g., "MYUSD")
+- `options.uri` - Metadata JSON URI (Arweave, IPFS, or HTTPS)
+- `options.sellerFeeBasisPoints` - Royalty fee in basis points (default: 0, stablecoins don't need royalties)
+- `mintKeypair` - The mint keypair (required to sign)
+
+**Returns:** The Metaplex metadata PDA address
+
+**Important Notes:**
+- The mint keypair must sign this transaction (Metaplex requirement for Token-2022 mints with PDA authority)
+- Metaplex metadata is incompatible with MintCloseAuthority. If you initialized your token with `enableMintCloseAuthority: true`, this will fail
+- Default config has `enableMintCloseAuthority: false` for Metaplex compatibility
+
+**Example:**
+```typescript
+// After creating your stablecoin
+const metadataPda = await stablecoin.initializeMetaplexMetadata(
+  {
+    name: "My Stablecoin",
+    symbol: "MYUSD",
+    uri: "https://arweave.net/...",
+    sellerFeeBasisPoints: 0,
+  },
+  mintKeypair
+);
+
+console.log("Metadata created at:", metadataPda.toBase58());
+console.log("Your token will now display in wallets!");
 ```
 
 **Metadata JSON Format:**
 ```json
 {
-  "name": "My USD Coin",
+  "name": "My Stablecoin",
   "symbol": "MYUSD",
   "description": "A compliant stablecoin on Solana",
   "image": "https://example.com/logo.png"
