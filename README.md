@@ -33,6 +33,14 @@ The Solana Stablecoin Standard is a modular SDK with opinionated presets for bui
 
 ## Quick Start
 
+### Prerequisites
+
+- Rust 1.75+
+- Solana CLI 1.18+
+- Anchor CLI 0.32.1
+- Node.js 18+
+- pnpm 8+
+
 ### Installation
 
 ```bash
@@ -43,8 +51,10 @@ cd solana-stablecoin-standard
 # Install dependencies
 pnpm install
 
-# Build programs and SDK
+# Build Anchor programs
 anchor build
+
+# Build TypeScript packages (SDK, CLI, Web)
 pnpm build
 ```
 
@@ -167,24 +177,81 @@ const redeemPrice = await stablecoin.oracle.getRedeemPrice();
 
 ### Packages
 
-| Package | Description |
-|---|---|
-| **sss-token-sdk** | TypeScript SDK for programmatic access |
-| **sss-token CLI** | Command-line tool for operators (40+ commands) |
+| Package | Description | Version |
+|---|---|---|
+| **@stbr/sss-token-sdk** | TypeScript SDK for programmatic access | 0.1.0 |
+| **@stbr/sss-token-cli** | Command-line interface (40+ commands) | 0.1.0 |
+| **@stbr/sss-token-web** | Web dashboard (React + Vite) | 0.1.0 |
 
 ### Project Structure
 
 ```
 programs/
   sss-token/          # Main stablecoin program (Rust/Anchor)
+    src/
+      lib.rs          # Program entry point
+      errors.rs       # Custom error codes
+      events.rs       # Event definitions
+      state/          # Account state structs (config, roles, quotas, blacklist)
+      instructions/   # Instruction handlers
+        token_core/   # Core operations (mint, burn, supply, close)
+        account/      # Account management (freeze, thaw)
+        admin/        # Admin operations (pause, roles, authority)
+        minter/       # Minter management (add, remove, update)
+        sss2/         # SSS-2 compliance (blacklist, seize)
+        sss3/         # SSS-3 privacy (approve, credits)
   transfer-hook/      # SSS-2 blacklist enforcement (Rust/Anchor)
+    src/
+      lib.rs          # Hook entry point
+      execute.rs      # Transfer validation logic
+      initialize_extra_account_meta_list.rs
+      errors.rs       # Hook-specific errors
   sss-oracle/         # Price feed aggregation (Rust/Anchor)
+    src/
+      lib.rs          # Oracle entry point
+      errors.rs       # Oracle errors
+      events.rs       # Oracle events
+      state/          # Oracle state (config, feeds)
+      instructions/   # Oracle operations (11 instructions)
+      math/           # Fixed-point arithmetic & aggregation
 packages/
-  sdk/                # TypeScript SDK
-  cli/                # Command-line interface
-docs/                 # Standard specifications and guides
-sss_design/           # Frontend design files and scope
+  sdk/                # TypeScript SDK (@stbr/sss-token-sdk)
+    src/
+      SolanaStablecoin.ts    # Core SDK class
+      presets.ts             # SSS-1, SSS-2, SSS-3 presets
+      types.ts               # Type definitions
+      client/                # Account fetching utilities
+      compliance/            # ComplianceModule (SSS-2)
+      privacy/               # PrivacyModule (SSS-3)
+      oracle/                # OracleModule
+      idl/                   # Program IDLs
+  cli/                # Command-line interface (sss-token)
+    src/
+      index.ts        # CLI entry point
+      commands/       # Command groups
+        core/         # init, mint, burn, pause, freeze, close-mint, metadata
+        admin/        # roles, minters
+        compliance/   # blacklist, seize, hook
+        privacy/      # privacy operations
+        oracle/       # oracle operations
+        info/         # status, supply, holders, audit-log
+        tui/          # Terminal UI
+      utils/          # config, display, keypair
+  web/                # Web dashboard (React + Vite)
+    src/
+      components/     # React components (dashboard, analytics, compliance, etc.)
+      pages/          # Page components (dashboard, create, docs, profile)
+      contexts/       # React contexts (WalletContextProvider)
+      hooks/          # Custom hooks (useWalletInfo)
+      lib/            # Utilities
+services/             # Backend services (Node.js + Express)
+  src/
+    routes/           # API routes (mint-burn, compliance, privacy, webhooks, admin)
+    workers/          # Background workers (indexer, crank, dispatcher, mint-burn-worker)
+    db/               # Database schema (Drizzle ORM)
 tests/                # Anchor integration tests
+trident-tests/        # Fuzz tests (Trident framework)
+docs/                 # Standard specifications and guides
 ```
 
 ---
@@ -199,13 +266,10 @@ tests/                # Anchor integration tests
 
 ### Developer Guides
 - [Architecture](./docs/ARCHITECTURE.md) — Layer model, data flows, security model
-- [SDK Reference](./docs/SDK-REFERENCE.md) — Complete TypeScript SDK API documentation
+- [SDK Reference](./docs/SDK.md) — Complete TypeScript SDK API documentation
 - [Operations Guide](./docs/OPERATIONS.md) — Operator runbook for production deployments
 - [Compliance Guide](./docs/COMPLIANCE.md) — Regulatory considerations and audit trails
 - [API Reference](./docs/API.md) — Backend service API documentation
-
-### Frontend
-- [Frontend Scope](./sss_design/FRONTEND-SCOPE.md) — Complete page specifications for admin dashboard
 
 ---
 
@@ -253,11 +317,13 @@ tests/                # Anchor integration tests
 # Build Rust programs
 anchor build
 
-# Build TypeScript packages
+# Build TypeScript packages (SDK, CLI, Web)
 pnpm build
 
-# Build everything
-pnpm build && anchor build
+# Build specific package
+pnpm --filter @stbr/sss-token-sdk build
+pnpm --filter @stbr/sss-token-cli build
+pnpm --filter @stbr/sss-token-web build
 ```
 
 ### Test
@@ -271,6 +337,25 @@ pnpm test:sdk
 
 # Run CLI tests
 pnpm test:cli
+
+# Run specific test file
+anchor test -- --grep "sss-token"
+```
+
+### Lint & Format
+
+```bash
+# Lint TypeScript with Biome
+pnpm lint
+
+# Fix linting issues
+pnpm lint:fix
+
+# Format all files
+pnpm format
+
+# Check and fix everything
+pnpm check
 ```
 
 ### Local Development
@@ -279,21 +364,27 @@ pnpm test:cli
 # Start local validator
 solana-test-validator
 
-# Deploy programs
+# Deploy programs to localnet
 anchor deploy
 
-# Start backend services
+# Start backend services (Docker)
 pnpm services:up
+
+# Stop backend services
+pnpm services:down
+
+# View service logs
+docker compose logs -f
 ```
 
 ---
 
 ## Program IDs
 
-### Devnet
-- **sss_token**: `EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK`
-- **transfer_hook**: `F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf`
-- **sss_oracle**: `7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd`
+### Localnet & Devnet
+- **sss_token**: `GQp6UgyhLZP6zXRf24JH2BiwuoSAfYZruJ3WUPkqgj8X`
+- **transfer_hook**: `HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig`
+- **sss_oracle**: `7nFqXZae9mzYP7LefmCe9C1V2zzPbrY3nLR9WVGorQee`
 
 ---
 
