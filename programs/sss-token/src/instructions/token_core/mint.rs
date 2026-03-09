@@ -56,10 +56,7 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     // Track the running total for audit purposes.
     // For unlimited minters (quota == 0) we still accumulate `minted`
     // so the off-chain event indexer has an accurate picture.
-    let new_minted = quota
-        .minted
-        .checked_add(amount)
-        .ok_or(SssError::Overflow)?;
+    let new_minted = quota.minted.checked_add(amount).ok_or(SssError::Overflow)?;
 
     // Quota ceiling check — only enforced when quota > 0.
     if quota.quota > 0 {
@@ -71,11 +68,7 @@ pub fn handler(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
     // ── Read values needed for PDA signing before any mutable borrow ────────
     let mint_key = ctx.accounts.mint.key();
     let bump = ctx.accounts.stablecoin_state.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[bump],
-    ]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"stablecoin_state", mint_key.as_ref(), &[bump]]];
 
     // ── Mint using PDA authority ─────────────────────────────────────────────
     let cpi_ctx = CpiContext::new_with_signer(

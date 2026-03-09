@@ -1,9 +1,9 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::PriceAggregated;
 use crate::math::aggregation::*;
 use crate::math::fixed_point::confidence_within_range;
 use crate::state::*;
+use anchor_lang::prelude::*;
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -17,7 +17,6 @@ pub struct Aggregate<'info> {
         constraint = !oracle_config.paused                    @ OracleError::OraclePaused,
     )]
     pub oracle_config: Account<'info, OracleConfig>,
-
     // Pass every PriceFeedEntry that belongs to this oracle as remaining accounts.
 }
 
@@ -85,11 +84,7 @@ pub fn handler(ctx: Context<Aggregate>) -> Result<()> {
         }
         // Confidence acceptable? (0 = disabled, accept all)
         if max_conf_bps > 0 {
-            let ok = confidence_within_range(
-                feed.last_price,
-                feed.last_confidence,
-                max_conf_bps,
-            )?;
+            let ok = confidence_within_range(feed.last_price, feed.last_confidence, max_conf_bps)?;
             if !ok {
                 continue;
             }

@@ -1,7 +1,7 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::OracleInitialized;
 use crate::state::*;
+use anchor_lang::prelude::*;
 
 // ── Params ─────────────────────────────────────────────────
 
@@ -57,10 +57,7 @@ pub struct InitializeOracle<'info> {
 
 // ── Handler ────────────────────────────────────────────────
 
-pub fn handler(
-    ctx: Context<InitializeOracle>,
-    params: InitializeOracleParams,
-) -> Result<()> {
+pub fn handler(ctx: Context<InitializeOracle>, params: InitializeOracleParams) -> Result<()> {
     // ── Validate inputs ────────────────────────────────────
     require!(
         params.base_currency.len() <= MAX_CURRENCY_LEN,
@@ -78,10 +75,7 @@ pub fn handler(
         params.aggregation_method <= 2,
         OracleError::InvalidAggregationMethod
     );
-    require!(
-        params.min_feeds_required > 0,
-        OracleError::InvalidParameter
-    );
+    require!(params.min_feeds_required > 0, OracleError::InvalidParameter);
 
     // ── Populate account ───────────────────────────────────
     let cfg = &mut ctx.accounts.oracle_config;

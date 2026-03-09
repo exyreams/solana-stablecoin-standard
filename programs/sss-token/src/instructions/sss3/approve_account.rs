@@ -53,11 +53,7 @@ pub fn handler(ctx: Context<ApproveAccount>) -> Result<()> {
 
     // The stablecoin_state PDA is the CT authority — it must sign.
     let bump = ctx.accounts.stablecoin_state.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[bump],
-    ]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"stablecoin_state", mint_key.as_ref(), &[bump]]];
 
     // Build the approve_account instruction.
     // The 5th argument is multisig signers — empty slice for PDA signing.
@@ -66,7 +62,7 @@ pub fn handler(ctx: Context<ApproveAccount>) -> Result<()> {
         &token_account_key,
         &mint_key,
         &ctx.accounts.stablecoin_state.key(), // CT authority = PDA
-        &[], // no multisig signers
+        &[],                                  // no multisig signers
     )?;
 
     invoke_signed(

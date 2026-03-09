@@ -5,7 +5,11 @@ use anchor_spl::{
     token_interface::{burn as spl_burn, Burn as SplBurn, Mint, TokenAccount},
 };
 
-use crate::{errors::SssError, events::TokensBurned, state::{RolesConfig, StablecoinState}};
+use crate::{
+    errors::SssError,
+    events::TokensBurned,
+    state::{RolesConfig, StablecoinState},
+};
 
 #[derive(Accounts)]
 pub struct Burn<'info> {

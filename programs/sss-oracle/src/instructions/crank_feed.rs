@@ -1,8 +1,8 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::FeedCranked;
 use crate::math::fixed_point::deviation_bps;
 use crate::state::*;
+use anchor_lang::prelude::*;
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -27,11 +27,7 @@ pub struct CrankFeed<'info> {
 
 // ── Handler ────────────────────────────────────────────────
 
-pub fn handler(
-    ctx: Context<CrankFeed>,
-    price: u64,
-    confidence: u64,
-) -> Result<()> {
+pub fn handler(ctx: Context<CrankFeed>, price: u64, confidence: u64) -> Result<()> {
     require!(price > 0, OracleError::InvalidPrice);
 
     let cfg = &ctx.accounts.oracle_config;

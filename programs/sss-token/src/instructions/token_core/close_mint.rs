@@ -2,7 +2,11 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::Mint;
 
-use crate::{errors::SssError, events::MintClosed, state::{RolesConfig, StablecoinState}};
+use crate::{
+    errors::SssError,
+    events::MintClosed,
+    state::{RolesConfig, StablecoinState},
+};
 
 /// Permanently close the mint account and reclaim all rent.
 ///
@@ -61,11 +65,7 @@ pub fn handler(ctx: Context<CloseMint>) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();
     let authority_key = ctx.accounts.authority.key();
     let bump = ctx.accounts.stablecoin_state.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[bump],
-    ]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"stablecoin_state", mint_key.as_ref(), &[bump]]];
 
     // Close the Token-2022 mint account via MintCloseAuthority (if enabled).
     // The stablecoin_state PDA is the MintCloseAuthority — it signs via PDA seeds.

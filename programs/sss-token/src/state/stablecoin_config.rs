@@ -68,7 +68,7 @@ impl StablecoinState {
         + 1                    // confidential_transfer_auto_approve
         + 1                    // paused
         + 8                    // total_supply
-        + 1;                   // bump
+        + 1; // bump
 
     /// Check if this is an SSS-3 (privacy-enabled) stablecoin.
     pub fn is_sss3(&self) -> bool {

@@ -1,13 +1,12 @@
-use anchor_lang::prelude::*;
 use crate::{
     errors::OracleError,
     events::{
-        OracleAuthorityTransferCancelled,
-        OracleAuthorityTransferCompleted,
+        OracleAuthorityTransferCancelled, OracleAuthorityTransferCompleted,
         OracleAuthorityTransferInitiated,
     },
     state::OracleConfig,
 };
+use anchor_lang::prelude::*;
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -29,10 +28,7 @@ pub struct TransferOracleAuthority<'info> {
 ///
 /// **Step 2 — Accept:** Pending authority calls (any `new_authority` value).
 ///   Finalizes the transfer.
-pub fn handler(
-    ctx: Context<TransferOracleAuthority>,
-    new_authority: Option<Pubkey>,
-) -> Result<()> {
+pub fn handler(ctx: Context<TransferOracleAuthority>, new_authority: Option<Pubkey>) -> Result<()> {
     let cfg = &mut ctx.accounts.oracle_config;
     let caller = ctx.accounts.caller.key();
     let clock = Clock::get()?;

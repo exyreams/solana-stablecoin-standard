@@ -1,9 +1,9 @@
-use anchor_lang::prelude::*;
 use crate::{
     errors::SssError,
     events::AddedToBlacklist,
     state::{BlacklistEntry, RolesConfig, StablecoinState},
 };
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 #[instruction(reason: String)]

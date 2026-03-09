@@ -1,7 +1,7 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::OracleClosed;
 use crate::state::OracleConfig;
+use anchor_lang::prelude::*;
 
 // ── Accounts ───────────────────────────────────────────────
 

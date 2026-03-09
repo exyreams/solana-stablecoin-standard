@@ -1,13 +1,10 @@
 use anchor_lang::prelude::*;
 use mpl_token_metadata::{
     instructions::CreateV1CpiBuilder,
-    types::{TokenStandard, PrintSupply},
+    types::{PrintSupply, TokenStandard},
 };
 
-use crate::{
-    errors::SssError,
-    state::StablecoinState,
-};
+use crate::{errors::SssError, state::StablecoinState};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct MetaplexMetadataConfig {
@@ -48,10 +45,7 @@ pub struct MetaplexMetadata<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(
-    ctx: Context<MetaplexMetadata>,
-    config: MetaplexMetadataConfig,
-) -> Result<()> {
+pub fn handler(ctx: Context<MetaplexMetadata>, config: MetaplexMetadataConfig) -> Result<()> {
     require!(config.name.len() <= 32, SssError::NameTooLong);
     require!(config.symbol.len() <= 10, SssError::SymbolTooLong);
     require!(config.uri.len() <= 200, SssError::UriTooLong);

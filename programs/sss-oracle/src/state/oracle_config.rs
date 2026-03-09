@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
+use anchor_lang::prelude::*;
 
 // ── Constants ──────────────────────────────────────────────
 pub const MAX_FEEDS: u8 = 16;
@@ -140,10 +140,7 @@ impl OracleConfig {
             return Ok(self.manual_price);
         }
 
-        require!(
-            self.last_aggregated_price > 0,
-            OracleError::InvalidPrice
-        );
+        require!(self.last_aggregated_price > 0, OracleError::InvalidPrice);
 
         let age = current_timestamp.saturating_sub(self.last_aggregated_timestamp);
         require!(

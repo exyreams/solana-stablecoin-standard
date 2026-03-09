@@ -29,5 +29,5 @@ impl RolesConfig {
         + 32                   // pauser
         + 32                   // blacklister
         + 32                   // seizer
-        + 1;                   // bump
+        + 1; // bump
 }

@@ -1,7 +1,7 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::{OracleConfigUpdated, OraclePauseStateChanged};
 use crate::state::OracleConfig;
+use anchor_lang::prelude::*;
 
 // ── Params ─────────────────────────────────────────────────
 
@@ -35,10 +35,7 @@ pub struct UpdateOracleConfig<'info> {
 
 // ── Handler ────────────────────────────────────────────────
 
-pub fn handler(
-    ctx: Context<UpdateOracleConfig>,
-    params: UpdateOracleConfigParams,
-) -> Result<()> {
+pub fn handler(ctx: Context<UpdateOracleConfig>, params: UpdateOracleConfigParams) -> Result<()> {
     let cfg = &mut ctx.accounts.oracle_config;
     let clock = Clock::get()?;
 

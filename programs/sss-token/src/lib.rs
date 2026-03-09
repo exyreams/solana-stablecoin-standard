@@ -8,38 +8,22 @@ pub mod state;
 pub use instructions::*;
 
 pub use instructions::{
-    token_core::{
-        initialize::Initialize,
-        metaplex_metadata::MetaplexMetadata,
-        mint::MintTokens,
-        burn::Burn,
-        get_supply::GetSupply,
-        close_mint::CloseMint,
-    },
-    account::{
-        freeze_account::FreezeAccount,
-        thaw_account::ThawAccount,
-    },
+    account::{freeze_account::FreezeAccount, thaw_account::ThawAccount},
     admin::{
-        pause::Pause,
-        unpause::Unpause,
+        pause::Pause, transfer_authority::TransferAuthority, unpause::Unpause,
         update_roles::UpdateRoles,
-        transfer_authority::TransferAuthority,
     },
-    minter::{
-        add_minter::AddMinter,
-        remove_minter::RemoveMinter,
-        update_minter::UpdateMinter,
-    },
+    minter::{add_minter::AddMinter, remove_minter::RemoveMinter, update_minter::UpdateMinter},
     sss2::{
-        add_to_blacklist::AddToBlacklist,
-        remove_from_blacklist::RemoveFromBlacklist,
-        seize::Seize,
+        add_to_blacklist::AddToBlacklist, remove_from_blacklist::RemoveFromBlacklist, seize::Seize,
     },
     sss3::{
-        approve_account::ApproveAccount,
+        approve_account::ApproveAccount, disable_confidential_credits::DisableConfidentialCredits,
         enable_confidential_credits::EnableConfidentialCredits,
-        disable_confidential_credits::DisableConfidentialCredits,
+    },
+    token_core::{
+        burn::Burn, close_mint::CloseMint, get_supply::GetSupply, initialize::Initialize,
+        metaplex_metadata::MetaplexMetadata, mint::MintTokens,
     },
 };
 
@@ -151,10 +135,7 @@ pub mod sss_token {
         instructions::sss2::remove_from_blacklist::handler(ctx)
     }
 
-    pub fn seize<'info>(
-        ctx: Context<'_, '_, '_, 'info, Seize<'info>>,
-        amount: u64,
-    ) -> Result<()> {
+    pub fn seize<'info>(ctx: Context<'_, '_, '_, 'info, Seize<'info>>, amount: u64) -> Result<()> {
         instructions::sss2::seize::handler(ctx, amount)
     }
 
@@ -173,6 +154,6 @@ pub mod sss_token {
     }
 }
 
+pub use instructions::admin::update_roles::RolesUpdate;
 pub use instructions::token_core::initialize::StablecoinConfig;
 pub use instructions::token_core::metaplex_metadata::MetaplexMetadataConfig;
-pub use instructions::admin::update_roles::RolesUpdate;

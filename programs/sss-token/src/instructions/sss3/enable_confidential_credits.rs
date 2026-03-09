@@ -3,11 +3,7 @@ use anchor_spl::token_2022::Token2022;
 use anchor_spl::token_interface::TokenAccount;
 use spl_token_2022::extension::confidential_transfer;
 
-use crate::{
-    errors::SssError,
-    events::ConfidentialCreditsEnabled,
-    state::StablecoinState,
-};
+use crate::{errors::SssError, events::ConfidentialCreditsEnabled, state::StablecoinState};
 
 /// Enable confidential credits for a token account.
 /// Allows the account to receive confidential transfers.

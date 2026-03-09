@@ -1,5 +1,9 @@
+use crate::{
+    errors::SssError,
+    events::RemovedFromBlacklist,
+    state::{BlacklistEntry, RolesConfig, StablecoinState},
+};
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, events::RemovedFromBlacklist, state::{BlacklistEntry, RolesConfig, StablecoinState}};
 
 #[derive(Accounts)]
 pub struct RemoveFromBlacklist<'info> {

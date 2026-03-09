@@ -27,7 +27,7 @@ impl MinterQuota {
         + 8                   // quota
         + 8                   // minted
         + 1                   // active
-        + 1;                  // bump
+        + 1; // bump
 
     pub const SEED: &'static [u8] = b"minter_quota";
 }

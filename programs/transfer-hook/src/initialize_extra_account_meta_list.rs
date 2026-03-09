@@ -1,9 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
 use spl_tlv_account_resolution::{
-    account::ExtraAccountMeta,
-    seeds::Seed,
-    state::ExtraAccountMetaList,
+    account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
 };
 
 use crate::errors::HookError;
@@ -66,10 +64,8 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
     let mint_key = ctx.accounts.mint.key();
 
     // Step 1: Verify roles_config PDA address
-    let (expected_roles_pda, _) = Pubkey::find_program_address(
-        &[b"roles_config", mint_key.as_ref()],
-        &sss_program_key,
-    );
+    let (expected_roles_pda, _) =
+        Pubkey::find_program_address(&[b"roles_config", mint_key.as_ref()], &sss_program_key);
     require!(
         ctx.accounts.roles_config.key() == expected_roles_pda,
         HookError::InvalidAuthority
@@ -119,7 +115,6 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
             false, // is_signer
             false, // is_writable
         )?,
-
         // Extra #1 (index 6): source blacklist entry.
         // PDA of sss-token program (at index 5): ["blacklist", mint, source_owner].
         // We read the owner from the source token account's data (offset 32)
@@ -128,35 +123,37 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
         ExtraAccountMeta::new_external_pda_with_seeds(
             5, // program at overall index 5 (sss-token)
             &[
-                Seed::Literal { bytes: b"blacklist".to_vec() },
-                Seed::AccountKey { index: 1 },       // mint
+                Seed::Literal {
+                    bytes: b"blacklist".to_vec(),
+                },
+                Seed::AccountKey { index: 1 }, // mint
                 Seed::AccountData {
-                    account_index: 0,  // source token account
-                    data_index: 32,    // owner field offset in TokenAccount
-                    length: 32,        // Pubkey size
+                    account_index: 0, // source token account
+                    data_index: 32,   // owner field offset in TokenAccount
+                    length: 32,       // Pubkey size
                 },
             ],
             false,
             false,
         )?,
-
         // Extra #2 (index 7): destination blacklist entry.
         // PDA of sss-token program (at index 5): ["blacklist", mint, dest_owner].
         ExtraAccountMeta::new_external_pda_with_seeds(
             5, // program at overall index 5 (sss-token)
             &[
-                Seed::Literal { bytes: b"blacklist".to_vec() },
-                Seed::AccountKey { index: 1 },       // mint
+                Seed::Literal {
+                    bytes: b"blacklist".to_vec(),
+                },
+                Seed::AccountKey { index: 1 }, // mint
                 Seed::AccountData {
-                    account_index: 2,  // destination token account
-                    data_index: 32,    // owner field offset
-                    length: 32,        // Pubkey size
+                    account_index: 2, // destination token account
+                    data_index: 32,   // owner field offset
+                    length: 32,       // Pubkey size
                 },
             ],
             false,
             false,
         )?,
-
         // Extra #3 (index 8): stablecoin_state PDA.
         // Used by the hook to identify permanent delegate (seize) operations.
         // When the authority at index 3 matches this PDA, the transfer is a
@@ -165,7 +162,9 @@ pub fn initialize_handler(ctx: Context<InitializeExtraAccountMetaList>) -> Resul
         ExtraAccountMeta::new_external_pda_with_seeds(
             5, // program at overall index 5 (sss-token)
             &[
-                Seed::Literal { bytes: b"stablecoin_state".to_vec() },
+                Seed::Literal {
+                    bytes: b"stablecoin_state".to_vec(),
+                },
                 Seed::AccountKey { index: 1 }, // mint
             ],
             false,

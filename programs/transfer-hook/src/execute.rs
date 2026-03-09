@@ -1,6 +1,6 @@
+use crate::errors::HookError;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount};
-use crate::errors::HookError;
 
 /// Transfer hook execution — called by Token-2022 on every transfer involving
 /// the associated mint.

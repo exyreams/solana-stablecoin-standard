@@ -4,7 +4,11 @@ use anchor_spl::{
     token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked},
 };
 
-use crate::{errors::SssError, events::TokensSeized, state::{RolesConfig, StablecoinState}};
+use crate::{
+    errors::SssError,
+    events::TokensSeized,
+    state::{RolesConfig, StablecoinState},
+};
 
 /// Seize tokens from any account using the permanent delegate authority.
 ///
@@ -72,23 +76,22 @@ pub struct Seize<'info> {
     pub to_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     pub token_program: Program<'info, Token2022>,
-
     // When transfer_hook is enabled (SSS-2), the client must pass all
     // hook-related accounts as remaining_accounts.  See doc comment above
     // for the required account list.
 }
 
-pub fn handler<'info>(
-    ctx: Context<'_, '_, '_, 'info, Seize<'info>>,
-    amount: u64,
-) -> Result<()> {
+pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, Seize<'info>>, amount: u64) -> Result<()> {
     require!(amount > 0, SssError::ZeroAmount);
 
     let state = &ctx.accounts.stablecoin_state;
     let roles = &ctx.accounts.roles_config;
 
     // Guard: SSS-2 permanent delegate must be enabled
-    require!(state.enable_permanent_delegate, SssError::ComplianceNotEnabled);
+    require!(
+        state.enable_permanent_delegate,
+        SssError::ComplianceNotEnabled
+    );
     require!(
         ctx.accounts.seizer.key() == roles.seizer
             || ctx.accounts.seizer.key() == roles.master_authority,
@@ -99,11 +102,7 @@ pub fn handler<'info>(
     // during `initialize`. We use new_with_signer so the PDA counter-signs the CPI.
     let mint_key = ctx.accounts.mint.key();
     let bump = state.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[bump],
-    ]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"stablecoin_state", mint_key.as_ref(), &[bump]]];
 
     // Build CPI with remaining_accounts appended for transfer hook support.
     //

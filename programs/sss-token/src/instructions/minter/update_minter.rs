@@ -1,5 +1,8 @@
+use crate::{
+    events::MinterUpdated,
+    state::{MinterQuota, RolesConfig, StablecoinState},
+};
 use anchor_lang::prelude::*;
-use crate::{events::MinterUpdated, state::{MinterQuota, StablecoinState, RolesConfig}};
 
 #[derive(Accounts)]
 pub struct UpdateMinter<'info> {

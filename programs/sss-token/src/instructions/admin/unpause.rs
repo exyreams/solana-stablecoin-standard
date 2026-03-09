@@ -1,5 +1,9 @@
+use crate::{
+    errors::SssError,
+    events::PauseStateChanged,
+    state::{RolesConfig, StablecoinState},
+};
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, events::PauseStateChanged, state::{RolesConfig, StablecoinState}};
 
 #[derive(Accounts)]
 pub struct Unpause<'info> {

@@ -57,10 +57,7 @@ pub mod sss_oracle {
     /// Register a new PriceFeedEntry under the oracle.
     /// Seeds: ["price_feed", oracle_config, feed_index]
     /// ---------------------------------------------------------------
-    pub fn add_feed(
-        ctx: Context<AddFeed>,
-        params: AddFeedParams,
-    ) -> Result<()> {
+    pub fn add_feed(ctx: Context<AddFeed>, params: AddFeedParams) -> Result<()> {
         instructions::add_feed::handler(ctx, params)
     }
 
@@ -68,10 +65,7 @@ pub mod sss_oracle {
     /// 5) Remove Feed
     /// Close a PriceFeedEntry and reclaim rent.
     /// ---------------------------------------------------------------
-    pub fn remove_feed(
-        ctx: Context<RemoveFeed>,
-        feed_index: u8,
-    ) -> Result<()> {
+    pub fn remove_feed(ctx: Context<RemoveFeed>, feed_index: u8) -> Result<()> {
         instructions::remove_feed::handler(ctx, feed_index)
     }
 
@@ -81,11 +75,7 @@ pub mod sss_oracle {
     /// Called by the cranker or authority.
     /// Subject to circuit breaker if `max_price_change_bps > 0`.
     /// ---------------------------------------------------------------
-    pub fn crank_feed(
-        ctx: Context<CrankFeed>,
-        price: u64,
-        confidence: u64,
-    ) -> Result<()> {
+    pub fn crank_feed(ctx: Context<CrankFeed>, price: u64, confidence: u64) -> Result<()> {
         instructions::crank_feed::handler(ctx, price, confidence)
     }
 
@@ -94,11 +84,7 @@ pub mod sss_oracle {
     /// Authority-only fallback override.  Works even while paused —
     /// allows preparing a known-good price before unpausing.
     /// ---------------------------------------------------------------
-    pub fn set_manual_price(
-        ctx: Context<SetManualPrice>,
-        price: u64,
-        active: bool,
-    ) -> Result<()> {
+    pub fn set_manual_price(ctx: Context<SetManualPrice>, price: u64, active: bool) -> Result<()> {
         instructions::set_manual_price::handler(ctx, price, active)
     }
 

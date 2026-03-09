@@ -1,7 +1,7 @@
-use anchor_lang::prelude::*;
 use crate::errors::OracleError;
 use crate::events::ManualPriceSet;
 use crate::state::OracleConfig;
+use anchor_lang::prelude::*;
 
 // ── Accounts ───────────────────────────────────────────────
 
@@ -18,11 +18,7 @@ pub struct SetManualPrice<'info> {
 
 // ── Handler ────────────────────────────────────────────────
 
-pub fn handler(
-    ctx: Context<SetManualPrice>,
-    price: u64,
-    active: bool,
-) -> Result<()> {
+pub fn handler(ctx: Context<SetManualPrice>, price: u64, active: bool) -> Result<()> {
     if active {
         require!(price > 0, OracleError::InvalidPrice);
     }

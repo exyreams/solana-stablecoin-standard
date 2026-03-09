@@ -1,13 +1,9 @@
 use anchor_lang::{prelude::*, solana_program::program::invoke};
 use anchor_spl::token_2022::Token2022;
 use spl_token_2022::{
-    extension::{
-        ExtensionType,
-        default_account_state,
-        confidential_transfer,
-    },
+    extension::{confidential_transfer, default_account_state, ExtensionType},
     instruction as token_instruction,
-    state::{Mint as SplMint, AccountState},
+    state::{AccountState, Mint as SplMint},
 };
 
 use crate::{
@@ -93,7 +89,7 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
 
     // ── Build extension list ─────────────────────────────────────────────
     let mut extensions = vec![];
-    
+
     // MintCloseAuthority conflicts with Metaplex Token Metadata
     // Only enable if explicitly requested AND not planning to use Metaplex
     if config.enable_mint_close_authority {
@@ -280,4 +276,4 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     });
 
     Ok(())
-}  
+}

@@ -1,5 +1,9 @@
+use crate::{
+    errors::SssError,
+    events::MinterRemoved,
+    state::{MinterQuota, RolesConfig, StablecoinState},
+};
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, events::MinterRemoved, state::{MinterQuota, RolesConfig, StablecoinState}};
 
 #[derive(Accounts)]
 pub struct RemoveMinter<'info> {

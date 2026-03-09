@@ -2,10 +2,16 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     token_2022::Token2022,
     // Alias SPL `FreezeAccount` to avoid conflict with the Accounts struct of the same name.
-    token_interface::{freeze_account as spl_freeze, FreezeAccount as SplFreezeAccount, Mint, TokenAccount},
+    token_interface::{
+        freeze_account as spl_freeze, FreezeAccount as SplFreezeAccount, Mint, TokenAccount,
+    },
 };
 
-use crate::{errors::SssError, events::AccountFrozen, state::{RolesConfig, StablecoinState}};
+use crate::{
+    errors::SssError,
+    events::AccountFrozen,
+    state::{RolesConfig, StablecoinState},
+};
 
 #[derive(Accounts)]
 pub struct FreezeAccount<'info> {
@@ -29,7 +35,7 @@ pub struct FreezeAccount<'info> {
 pub fn handler(ctx: Context<FreezeAccount>) -> Result<()> {
     let state = &ctx.accounts.stablecoin_state;
     let roles = &ctx.accounts.roles_config;
-    
+
     require!(
         ctx.accounts.authority.key() == roles.master_authority
             || ctx.accounts.authority.key() == roles.pauser,
@@ -39,11 +45,7 @@ pub fn handler(ctx: Context<FreezeAccount>) -> Result<()> {
     // Use PDA signing for freeze authority
     let mint_key = ctx.accounts.mint.key();
     let bump = state.bump;
-    let signer_seeds: &[&[&[u8]]] = &[&[
-        b"stablecoin_state",
-        mint_key.as_ref(),
-        &[bump],
-    ]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"stablecoin_state", mint_key.as_ref(), &[bump]]];
 
     let cpi_ctx = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(),

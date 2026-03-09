@@ -1,9 +1,9 @@
-use anchor_lang::prelude::*;
 use crate::{
     errors::SssError,
     events::{AuthorityTransferCompleted, AuthorityTransferInitiated},
     state::{RolesConfig, StablecoinState},
 };
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct TransferAuthority<'info> {
@@ -30,10 +30,7 @@ pub struct TransferAuthority<'info> {
 ///
 /// **Step 2 — Accept:** Pending master calls (any `new_master` value).
 ///   Finalizes the transfer.
-pub fn handler(
-    ctx: Context<TransferAuthority>,
-    new_master: Option<Pubkey>,
-) -> Result<()> {
+pub fn handler(ctx: Context<TransferAuthority>, new_master: Option<Pubkey>) -> Result<()> {
     let roles = &mut ctx.accounts.roles_config;
     let caller = ctx.accounts.caller.key();
     let mint = ctx.accounts.stablecoin_state.mint;

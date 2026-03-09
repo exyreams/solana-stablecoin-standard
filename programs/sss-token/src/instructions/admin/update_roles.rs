@@ -1,5 +1,9 @@
+use crate::{
+    errors::SssError,
+    events::RolesUpdated,
+    state::{RolesConfig, StablecoinState},
+};
 use anchor_lang::prelude::*;
-use crate::{errors::SssError, events::RolesUpdated, state::{RolesConfig, StablecoinState}};
 
 /// Caller passes only the fields they want to change; None = keep existing.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -36,10 +40,18 @@ pub fn handler(ctx: Context<UpdateRoles>, new_roles: RolesUpdate) -> Result<()> 
 
     let roles = &mut ctx.accounts.roles_config;
 
-    if let Some(b) = new_roles.burner       { roles.burner       = b; }
-    if let Some(p) = new_roles.pauser       { roles.pauser       = p; }
-    if let Some(b) = new_roles.blacklister  { roles.blacklister  = b; }
-    if let Some(s) = new_roles.seizer       { roles.seizer       = s; }
+    if let Some(b) = new_roles.burner {
+        roles.burner = b;
+    }
+    if let Some(p) = new_roles.pauser {
+        roles.pauser = p;
+    }
+    if let Some(b) = new_roles.blacklister {
+        roles.blacklister = b;
+    }
+    if let Some(s) = new_roles.seizer {
+        roles.seizer = s;
+    }
 
     emit!(RolesUpdated {
         mint: ctx.accounts.stablecoin_state.mint,
