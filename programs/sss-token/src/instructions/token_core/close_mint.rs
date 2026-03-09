@@ -67,9 +67,12 @@ pub fn handler(ctx: Context<CloseMint>) -> Result<()> {
         &[bump],
     ]];
 
-    // Close the Token-2022 mint account via MintCloseAuthority.
+    // Close the Token-2022 mint account via MintCloseAuthority (if enabled).
     // The stablecoin_state PDA is the MintCloseAuthority — it signs via PDA seeds.
     // Rent lamports from the mint account go to the authority.
+    //
+    // Note: If the mint was initialized without MintCloseAuthority (for Metaplex
+    // compatibility), this will fail. In that case, the mint cannot be closed.
     let ix = spl_token_2022::instruction::close_account(
         &ctx.accounts.token_program.key(),
         &mint_key,

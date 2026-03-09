@@ -4,7 +4,6 @@ use spl_token_2022::{
     extension::{
         ExtensionType,
         default_account_state,
-        metadata_pointer,
         confidential_transfer,
     },
     instruction as token_instruction,
@@ -24,6 +23,8 @@ pub struct StablecoinConfig {
     pub symbol: String,
     pub uri: String,
     pub decimals: u8,
+    // Core features
+    pub enable_mint_close_authority: bool,
     // SSS-2 features
     pub enable_permanent_delegate: bool,
     pub enable_transfer_hook: bool,
@@ -91,8 +92,13 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     let stablecoin_bump = ctx.bumps.stablecoin_state;
 
     // ── Build extension list ─────────────────────────────────────────────
-    let mut extensions = vec![ExtensionType::MintCloseAuthority];
-    extensions.push(ExtensionType::MetadataPointer);
+    let mut extensions = vec![];
+    
+    // MintCloseAuthority conflicts with Metaplex Token Metadata
+    // Only enable if explicitly requested AND not planning to use Metaplex
+    if config.enable_mint_close_authority {
+        extensions.push(ExtensionType::MintCloseAuthority);
+    }
 
     if config.enable_permanent_delegate {
         extensions.push(ExtensionType::PermanentDelegate);
@@ -128,27 +134,18 @@ pub fn handler(ctx: Context<Initialize>, config: StablecoinConfig) -> Result<()>
     // ── Initialize all extensions BEFORE initialize_mint2 ────────────────
 
     // MintCloseAuthority — set to PDA so only the program can close the
-    // mint (requires zero supply).  No EOA retains this power.
-    invoke(
-        &token_instruction::initialize_mint_close_authority(
-            &token_program_id,
-            &mint_key,
-            Some(&state_pda),
-        )?,
-        &[ctx.accounts.mint.to_account_info()],
-    )?;
-
-    // MetadataPointer — authority set to PDA for consistency; the pointer
-    // itself targets the mint account (metadata stored on-mint).
-    invoke(
-        &metadata_pointer::instruction::initialize(
-            &token_program_id,
-            &mint_key,
-            Some(state_pda),
-            Some(mint_key),
-        )?,
-        &[ctx.accounts.mint.to_account_info()],
-    )?;
+    // mint (requires zero supply). Only enabled if requested.
+    // Note: This conflicts with Metaplex Token Metadata.
+    if config.enable_mint_close_authority {
+        invoke(
+            &token_instruction::initialize_mint_close_authority(
+                &token_program_id,
+                &mint_key,
+                Some(&state_pda),
+            )?,
+            &[ctx.accounts.mint.to_account_info()],
+        )?;
+    }
 
     if config.default_account_frozen {
         invoke(

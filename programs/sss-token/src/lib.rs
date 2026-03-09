@@ -10,7 +10,7 @@ pub use instructions::*;
 pub use instructions::{
     token_core::{
         initialize::Initialize,
-        initialize_metadata::InitializeMetadata,
+        metaplex_metadata::MetaplexMetadata,
         mint::MintTokens,
         burn::Burn,
         get_supply::GetSupply,
@@ -43,7 +43,7 @@ pub use instructions::{
     },
 };
 
-declare_id!("8ikCeGrUHjWq8Nf998zTaRsvF5vrKhrDcitemXdof8H4");
+declare_id!("GQp6UgyhLZP6zXRf24JH2BiwuoSAfYZruJ3WUPkqgj8X");
 
 #[program]
 pub mod sss_token {
@@ -55,16 +55,24 @@ pub mod sss_token {
         instructions::token_core::initialize::handler(ctx, config)
     }
 
-    /// Initialize on-mint Token-2022 metadata.
+    /// Create Metaplex Token Metadata for wallet and explorer compatibility.
     ///
     /// Must be called in a **separate transaction** after `initialize`.
-    /// Reads name/symbol/uri from the StablecoinState PDA so the caller
-    /// does not need to re-supply them.
+    /// This creates a Metaplex metadata PDA that wallets like Phantom can read.
     ///
-    /// Can only be called once — Token-2022 rejects a second call with
-    /// an AlreadyInUse error.
-    pub fn initialize_metadata(ctx: Context<InitializeMetadata>) -> Result<()> {
-        instructions::token_core::initialize_metadata::handler(ctx)
+    /// **IMPORTANT:** The mint keypair must sign this transaction. Call this
+    /// immediately after `initialize` before discarding the mint keypair.
+    ///
+    /// **NOTE:** The mint must be initialized WITHOUT `enable_mint_close_authority`
+    /// for Metaplex compatibility. Metaplex Token Metadata does not support
+    /// Token-2022 mints with close authority.
+    ///
+    /// Can only be called once — Metaplex rejects duplicate metadata creation.
+    pub fn metaplex_metadata(
+        ctx: Context<MetaplexMetadata>,
+        config: MetaplexMetadataConfig,
+    ) -> Result<()> {
+        instructions::token_core::metaplex_metadata::handler(ctx, config)
     }
 
     pub fn mint(ctx: Context<MintTokens>, amount: u64) -> Result<()> {
@@ -166,4 +174,5 @@ pub mod sss_token {
 }
 
 pub use instructions::token_core::initialize::StablecoinConfig;
+pub use instructions::token_core::metaplex_metadata::MetaplexMetadataConfig;
 pub use instructions::admin::update_roles::RolesUpdate;
