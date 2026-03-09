@@ -1,1 +1,1 @@
-export { privacyCommand } from './privacy';
+export { privacyCommand } from "./privacy";

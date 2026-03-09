@@ -1,1 +1,1 @@
-export { oracleCommand } from './oracle';
+export { oracleCommand } from "./oracle";

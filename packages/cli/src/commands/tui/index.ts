@@ -1,1 +1,1 @@
-export { tuiCommand } from './tui';
+export { tuiCommand } from "./tui";
