@@ -23,11 +23,11 @@ SSS-1 is suitable for **internal tokens, DAO treasuries, and ecosystem settlemen
 
 ## Token-2022 Extensions Used
 
-| Extension | Purpose | Authority |
-|---|---|---|
-| `MintCloseAuthority` | Allow closing the mint if supply is zero | PDA (`stablecoin_state`) |
-| `MetadataPointer` | Points to on-chain metadata stored on the mint | PDA (`stablecoin_state`) |
-| `TokenMetadata` | Stores name, symbol, URI on-chain | PDA (`stablecoin_state`) — immutable after init |
+| Extension | Purpose | Authority | Notes |
+|---|---|---|---|
+| `MintCloseAuthority` | Allow closing the mint if supply is zero | PDA (`stablecoin_state`) | Optional (default: disabled for Metaplex compatibility) |
+
+**Note on Metadata:** Token-2022 on-mint metadata extensions (`MetadataPointer`, `TokenMetadata`) have been replaced with Metaplex Token Metadata for better wallet and explorer compatibility. Metadata is stored in the `StablecoinState` PDA as the canonical source, and Metaplex metadata is used for display purposes.
 
 All extension authorities are set to the `stablecoin_state` PDA. No external keypair retains privileged access to the mint after initialization.
 
@@ -39,7 +39,7 @@ All extension authorities are set to the `stablecoin_state` PDA. No external key
 
 Seeds: `["stablecoin_state", mint]`
 
-This PDA serves as the mint authority, freeze authority, mint close authority, metadata pointer authority, and metadata update authority for the Token-2022 mint.
+This PDA serves as the mint authority and freeze authority for the Token-2022 mint. Optionally, it can also serve as the mint close authority (if enabled).
 
 | Field | Type | Description |
 |---|---|---|
@@ -49,6 +49,7 @@ This PDA serves as the mint authority, freeze authority, mint close authority, m
 | `symbol` | `String` | Token symbol (max 10 bytes) |
 | `decimals` | `u8` | Decimal places |
 | `uri` | `String` | Metadata URI (max 200 bytes) |
+| `enable_mint_close_authority` | `bool` | Whether MintCloseAuthority extension is enabled (default: `false` for Metaplex compatibility) |
 | `enable_permanent_delegate` | `bool` | `false` for SSS-1 |
 | `enable_transfer_hook` | `bool` | `false` for SSS-1 |
 | `default_account_frozen` | `bool` | `false` for SSS-1 |
@@ -61,6 +62,8 @@ This PDA serves as the mint authority, freeze authority, mint close authority, m
 **Note on `version`:** The version field enables future state migrations. When the account layout changes, `CURRENT_VERSION` is incremented and migration logic can distinguish old accounts from new ones.
 
 **Note on `total_supply`:** This field is synced with the actual `mint.supply` after every mint/burn operation through this program. If tokens are burned directly via Token-2022 (bypassing this program), the value may be temporarily stale. The `get_supply` instruction reads directly from the mint account for the canonical value.
+
+**Note on `enable_mint_close_authority`:** This field controls whether the MintCloseAuthority extension is enabled. It defaults to `false` because Metaplex Token Metadata is incompatible with MintCloseAuthority. If you need to close the mint later, set this to `true` during initialization, but you won't be able to use Metaplex metadata for wallet display.
 
 ### `RolesConfig` PDA
 
@@ -202,16 +205,31 @@ The `stablecoin_state` PDA is the mint authority, freeze authority, mint close a
 
 ### Immutable Metadata
 
-Token name, symbol, and URI cannot be changed after initialization. The metadata update authority is the PDA, and no `update_metadata` instruction exists. This ensures brand identity immutability for stablecoins.
+Token name, symbol, and URI cannot be changed after initialization. Metadata is stored in the `StablecoinState` PDA as the canonical source of truth. This ensures brand identity immutability for stablecoins.
 
-> [!IMPORTANT]  
-> **Important Note on Token-2022 Metadata:** Due to a Solana runtime limitation, Token-2022 metadata cannot be initialized via CPI (cross-program invocation) because it requires reallocating the mint account, which is blocked in CPI context. As a result:
-> - Metadata is stored in the `StablecoinState` PDA (canonical source)
-> - The `initialize_metadata` instruction is a no-op that only emits an event for API compatibility
-> - On-mint Token-2022 metadata remains unpopulated
-> - For wallet display compatibility, use Metaplex metadata (see SDK documentation)
-> - The SDK provides a `getMetadata()` method to retrieve metadata from the `StablecoinState` PDA
-> This limitation affects all Solana programs that attempt to initialize Token-2022 metadata via CPI and is not specific to this implementation.
+### Wallet Display Compatibility
+
+For tokens to display properly in wallets (Phantom, Solflare, etc.) and explorers (Solscan, Solana FM), you should initialize Metaplex Token Metadata after creating your stablecoin:
+
+```typescript
+const metadataPda = await stablecoin.initializeMetaplexMetadata(
+  {
+    name: "My Dollar",
+    symbol: "MYDOL",
+    uri: "https://arweave.net/metadata.json",
+    sellerFeeBasisPoints: 0,
+  },
+  mintKeypair
+);
+```
+
+>[!IMPORTANT]
+> - The mint keypair must sign the Metaplex metadata transaction (Metaplex requirement for Token-2022 mints with PDA authority)
+> - Metaplex metadata is incompatible with `MintCloseAuthority`. The default config has `enableMintCloseAuthority: false` for Metaplex compatibility
+> - If you need mint close authority, set `enableMintCloseAuthority: true` during initialization, but you won't be able to use Metaplex metadata
+> - Cost: ~0.002 SOL for Metaplex metadata account creation
+
+See the [SDK documentation](./SDK.md#metaplex-metadata-wallet-display) for complete details.
 
 
 ### Supply Sync
