@@ -62,6 +62,12 @@ app.use("/*", adminAuth);
 
 // ---- GENERAL ADMIN & STATUS ----
 
+app.get("/authority", async (c) => {
+	return c.json({
+		publicKey: authority.publicKey.toBase58(),
+	});
+});
+
 app.get("/status", async (c) => {
 	try {
 		const s = await getStable();

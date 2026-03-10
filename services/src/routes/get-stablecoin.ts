@@ -1,31 +1,87 @@
+import { Connection, PublicKey } from "@solana/web3.js";
+import { SolanaStablecoin } from "@stbr/sss-token-sdk";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { stablecoins } from "../db/schema.js";
-import { log } from "../index.js";
+import { connection, log, authority } from "../index.js";
 
 const app = new Hono();
 
 /**
  * GET /:mintAddress
- * Get a specific stablecoin by mint address
+ * Get a specific stablecoin by mint address with on-chain data
  */
 app.get("/:mintAddress", async (c) => {
 	try {
 		const mintAddress = c.req.param("mintAddress");
 
-		const result = await db
+		// Get basic info from DB
+		const dbResults = await db
 			.select()
 			.from(stablecoins)
 			.where(eq(stablecoins.mintAddress, mintAddress))
 			.limit(1);
 
-		if (result.length === 0) {
+		if (dbResults.length === 0) {
 			c.status(404);
 			return c.json({ error: "Stablecoin not found" });
 		}
 
-		return c.json(result[0]);
+		const dbInfo = dbResults[0];
+
+		// Fetch on-chain data
+		try {
+			const mintPubkey = new PublicKey(mintAddress);
+			
+			log.info(`Loading SDK for mint: ${mintAddress}`);
+			const sdk = await SolanaStablecoin.load(connection, mintPubkey, authority);
+			
+			log.info(`Fetching status for ${mintAddress}`);
+			const status = await sdk.getStatus();
+			
+			log.info(`Fetching roles for ${mintAddress}`);
+			const roles = await sdk.getRoles();
+			
+			log.info(`Fetching supply for ${mintAddress}`);
+			const totalSupply = await sdk.getTotalSupply();
+
+			return c.json({
+				...dbInfo,
+				onChain: {
+					supply: totalSupply.toString(),
+					decimals: status.decimals,
+					name: status.name,
+					symbol: status.symbol,
+					uri: status.uri,
+					paused: status.paused,
+					roles: {
+						masterAuthority: roles.masterAuthority.toBase58(),
+						pendingMaster: roles.pendingMaster?.toBase58() || null,
+						pauser: roles.pauser.toBase58(),
+						blacklister: roles.blacklister.toBase58(),
+						burner: roles.burner.toBase58(),
+						seizer: roles.seizer.toBase58(),
+					},
+					extensions: {
+						transferHook: status.enableTransferHook,
+						permanentDelegate: status.enablePermanentDelegate,
+						defaultAccountFrozen: status.defaultAccountFrozen,
+						confidentialTransfers: status.enableConfidentialTransfers,
+					}
+				}
+			});
+		} catch (sdkError: any) {
+			log.error(`SDK Error for ${mintAddress}: ${sdkError.message}`);
+			if (sdkError.stack) log.error(sdkError.stack);
+			
+			// Return DB info even if on-chain fetch fails
+			return c.json({
+				...dbInfo,
+				onChain: null,
+				warning: `On-chain data unavailable: ${sdkError.message}`
+			});
+		}
 	} catch (error: any) {
 		log.error("Error fetching stablecoin:", error);
 		c.status(500);

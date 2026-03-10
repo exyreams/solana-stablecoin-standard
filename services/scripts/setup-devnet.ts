@@ -43,7 +43,7 @@ async function setup() {
 
 	console.log("Initializing Stablecoin via SDK on Devnet...");
 	const mintKeypair = Keypair.generate();
-	const sdk = await SolanaStablecoin.create(connection, {
+	const { stablecoin: sdk } = await SolanaStablecoin.create(connection, {
 		authority,
 		mintKeypair,
 		programId: TOKEN_PROGRAM_ID,

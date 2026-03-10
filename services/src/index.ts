@@ -39,7 +39,16 @@ export const authority = Keypair.fromSecretKey(authSecret);
 export let stable: SolanaStablecoin;
 export async function getStable() {
   if (!stable) {
-    stable = await SolanaStablecoin.load(connection, mintPubkey, authority);
+    const transferHookProgramId = process.env.TRANSFER_HOOK_PROGRAM_ID 
+      ? new PublicKey(process.env.TRANSFER_HOOK_PROGRAM_ID) 
+      : new PublicKey("HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig");
+
+    stable = await SolanaStablecoin.load(
+      connection, 
+      mintPubkey, 
+      authority, 
+      { transferHookProgramId }
+    );
   }
   return stable;
 }
