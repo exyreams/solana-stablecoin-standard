@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import { type FC, useEffect, useState } from "react";
 import {
   MetricCard,
   ActionCard,
@@ -6,44 +6,93 @@ import {
   SupplyChart,
   ActivityTable,
 } from "../../components/dashboard";
+import { useTokens } from "../../contexts/TokenContext";
+import { stablecoinApi, type StablecoinDetails } from "../../lib/api/stablecoin";
+import { Loader2 } from "lucide-react";
 
 const Dashboard: FC = () => {
+  const { selectedToken } = useTokens();
+  const [details, setDetails] = useState<StablecoinDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (!selectedToken) return;
+      
+      try {
+        setIsLoading(true);
+        const data = await stablecoinApi.get(selectedToken.mintAddress);
+        setDetails(data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [selectedToken]);
+
+  const formatNumber = (num: string | number) => {
+    return new Intl.NumberFormat().format(Number(num));
+  };
+
+  if (!selectedToken) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-(--text-dim) font-mono text-sm border border-dashed border-(--border-mid)">
+        <p>NO TOKEN SELECTED</p>
+        <p className="text-xs mt-2">PLEASE SELECT A TOKEN FROM THE TOP BAR</p>
+      </div>
+    );
+  }
+
+  if (isLoading && !details) {
+    return (
+      <div className="flex items-center justify-center p-24">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const tokenData = details || selectedToken;
+  const isPaused = tokenData.onChain?.paused ?? false;
+
   return (
     <>
       <div className="grid grid-cols-4 gap-4">
         <MetricCard
           label="Total Supply"
-          value="42,500,000"
+          value={tokenData.onChain ? formatNumber(Number(tokenData.onChain.supply) / 10 ** tokenData.onChain.decimals) : "---"}
           subtitle={
-            <span className="text-[#00ff88]">▲ 2.4% (24H)</span>
+            <span className="text-[#777777]">DECIMALS: {tokenData.decimals}</span>
           }
         />
         <MetricCard
-          label="Active Minters"
-          value="8 / 12"
+          label="Technical Standard"
+          value={tokenData.preset.toUpperCase()}
           subtitle={
-            <span className="text-[#777777]">QUOTA: 100M USDC</span>
+            <span className="text-[#CCA352]">TOKEN-2022</span>
           }
         />
         <MetricCard
           label="Pause Status"
           value={
-            <span className="inline-flex items-center px-2.5 py-1 text-[9px] font-bold border border-[#00ff88] text-[#00ff88] bg-[rgba(0,255,136,0.05)] mt-3">
-              🟢 ACTIVE
+            <span className={`inline-flex items-center px-2.5 py-1 text-[9px] font-bold border mt-3 ${isPaused ? "border-destructive text-destructive bg-destructive/5" : "border-[#00ff88] text-[#00ff88] bg-[rgba(0,255,136,0.05)]"}`}>
+              {isPaused ? "🔴 PAUSED" : "🟢 ACTIVE"}
             </span>
           }
           subtitle={
             <span className="text-[#777777] mt-3 block">
-              LAST PAUSE: 12H AGO
+              REAL-TIME STATUS
             </span>
           }
         />
         <MetricCard
           label="Oracle Price"
-          value="$1.0001"
+          value="$1.00"
           valueColor="text-[#FFD700]"
           subtitle={
-            <span className="text-[#777777]">PYTH • UPDATED 2S AGO</span>
+            <span className="text-[#777777]">MOCK • FIXED PRICE</span>
           }
         />
       </div>
@@ -54,46 +103,46 @@ const Dashboard: FC = () => {
             label="Mint Tokens"
             description="CREATE NEW SUPPLY"
             variant="mint"
-            amount="+500,000 USDC"
-            count="1,247 OPERATIONS"
-            lastAction="LAST: 2H AGO"
+            amount={`UNIT: ${tokenData.symbol}`}
+            count="MINTING INTERFACE"
+            lastAction="READY"
           />
           <ActionCard
             label="Burn Tokens"
             description="REDUCE CIRCULATION"
             variant="burn"
-            amount="-25,000 USDC"
-            count="342 OPERATIONS"
-            lastAction="LAST: 5H AGO"
+            amount={`UNIT: ${tokenData.symbol}`}
+            count="BURNING INTERFACE"
+            lastAction="READY"
           />
           <ActionCard
             label="Freeze Account"
             description="SUSPEND TRANSFERS"
-            count="3 FROZEN"
-            lastAction="LAST: 13H AGO"
+            count={tokenData.onChain?.extensions.defaultAccountFrozen ? "DEFAULT FROZEN" : "MANUAL FREEZE"}
+            lastAction="COMPLIANCE"
           />
           <ActionCard
             label="Blacklist Address"
             description="COMPLIANCE ENFORCEMENT"
-            badge="SSS-2 ONLY"
-            count="12 LISTED"
-            lastAction="LAST: 11H AGO"
+            badge={tokenData.preset === "sss2" ? "SSS-2 ONLY" : "NA"}
+            count={tokenData.onChain?.extensions.transferHook ? "HOOK ENABLED" : "NO HOOK"}
+            lastAction="REGULATORY"
           />
           <ActionCard
             label="Manage Minters"
             description="ROLE PERMISSIONS"
-            count="8 ACTIVE MINTERS"
-            lastAction="QUOTA: 100M USDC"
+            count="QUOTA MANAGEMENT"
+            lastAction="ADMIN"
           />
           <ActionCard
             label="View Audit Log"
             description="TRANSACTION HISTORY"
-            count="1,247 EVENTS"
-            lastAction="LAST EVENT: 2S AGO"
+            count="EVENT LOGS"
+            lastAction="SECURE"
           />
         </div>
 
-        <RolePanel />
+        <RolePanel details={tokenData} />
       </div>
 
       <SupplyChart />

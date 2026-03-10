@@ -1,20 +1,23 @@
 import type { FC } from "react";
+import type { StablecoinDetails } from "../../lib/api/stablecoin";
 
-interface Role {
-  name: string;
-  address: string;
+interface RolePanelProps {
+  details: StablecoinDetails;
 }
 
-const roles: Role[] = [
-  { name: "Master Authority", address: "8x2F...3f93" },
-  { name: "Minter", address: "3M1k...2a21" },
-  { name: "Burner", address: "7Qw9...8x12" },
-  { name: "Pauser", address: "msig...9x2a" },
-  { name: "Blacklister", address: "9v9L...1e11" },
-  { name: "Seizer", address: "4Kp2...7m44" },
-];
+export const RolePanel: FC<RolePanelProps> = ({ details }) => {
+  const truncateAddress = (addr: string) => {
+    return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
+  };
 
-export const RolePanel: FC = () => {
+  const roles = [
+    { name: "Master Authority", address: details.onChain ? truncateAddress(details.onChain.roles.masterAuthority) : "---" },
+    { name: "Pauser", address: details.onChain ? truncateAddress(details.onChain.roles.pauser) : "---" },
+    { name: "Blacklister", address: details.onChain ? truncateAddress(details.onChain.roles.blacklister) : "---" },
+    { name: "Burner", address: details.onChain ? truncateAddress(details.onChain.roles.burner) : "---" },
+    { name: "Seizer", address: details.onChain ? truncateAddress(details.onChain.roles.seizer) : "---" },
+  ];
+
   return (
     <div className="bg-[rgba(15,15,15,0.8)] border border-(--border-mid) relative flex-1">
       <div className="border-b border-(--border-dim) px-4 py-2 flex justify-between items-center bg-linear-to-r from-(--bg-surface) to-transparent">

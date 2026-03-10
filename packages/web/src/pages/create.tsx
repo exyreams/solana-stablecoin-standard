@@ -1,7 +1,10 @@
-import type { FC } from "react";
-import { useState } from "react";
+import { useState, useEffect, type FC } from "react";
 import { PresetCard, Stepper } from "../components/create-stablecoin";
 import { Button } from "../components/ui/Button";
+import { stablecoinApi, type CreateStablecoinResponse } from "../lib/api/stablecoin";
+import { adminApi } from "../lib/api/admin";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 type Preset = "sss1" | "sss2" | "sss3" | "custom" | null;
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -9,6 +12,10 @@ type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 const Create: FC = () => {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [selectedPreset, setSelectedPreset] = useState<Preset>("sss2");
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [authorityPubkey, setAuthorityPubkey] = useState<string>("");
+  const [deploymentResult, setDeploymentResult] = useState<CreateStablecoinResponse | null>(null);
+
   const [formData, setFormData] = useState({
     tokenName: "",
     tokenSymbol: "",
@@ -37,6 +44,53 @@ const Create: FC = () => {
       weight: 100,
     },
   });
+
+  useEffect(() => {
+    adminApi.getAuthority().then(res => {
+      setAuthorityPubkey(res.publicKey);
+    }).catch(err => {
+      console.error("Failed to fetch authority", err);
+    });
+  }, []);
+
+  const handleDeploy = async () => {
+    if (!formData.tokenName || !formData.tokenSymbol) {
+      toast.error("Please fill in basic info");
+      setCurrentStep(2);
+      return;
+    }
+
+    setIsDeploying(true);
+    try {
+      const payload = {
+        preset: selectedPreset as "sss1" | "sss2" | "sss3",
+        name: formData.tokenName,
+        symbol: formData.tokenSymbol,
+        decimals: formData.decimals,
+        uri: formData.metadataUri || undefined,
+        extensions: {
+          permanentDelegate: selectedPreset === "sss2" || formData.extensions.permanentDelegate,
+          transferHook: selectedPreset === "sss2" || formData.extensions.transferHook,
+          defaultFrozen: formData.extensions.defaultFrozen,
+        },
+        roles: {
+          minter: formData.roles.minter || authorityPubkey,
+          burner: formData.roles.burner || authorityPubkey,
+          pauser: formData.roles.pauser || authorityPubkey,
+          blacklister: formData.roles.blacklister || (selectedPreset === "sss2" ? authorityPubkey : undefined),
+        }
+      };
+
+      const result = await stablecoinApi.create(payload);
+      setDeploymentResult(result);
+      setCurrentStep(7);
+      toast.success("Stablecoin deployed successfully!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Deployment failed");
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   const steps = [
     { number: 1, label: "PRESET", active: currentStep === 1, completed: currentStep > 1 },
@@ -293,7 +347,7 @@ const Create: FC = () => {
       <div className="bg-(--bg-surface) border border-(--border-mid) px-3 py-3 flex items-center gap-3 mb-8">
         <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#00ff88]" />
         <div className="font-mono text-[11px] text-(--accent-active)">
-          CONNECTED: 8x2A...F93A
+          SYSTEM AUTHORITY: {authorityPubkey}
         </div>
       </div>
       {[
@@ -325,7 +379,7 @@ const Create: FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  value="8x2AbY7c...F93A"
+                  value={authorityPubkey}
                   readOnly
                   className="w-full bg-black/20 border border-(--border-dim) text-(--text-dim) px-3 py-2.5 font-mono text-[12px] pr-10"
                 />
@@ -348,6 +402,19 @@ const Create: FC = () => {
           </div>
         </div>
       ))}
+      {/* Smart Defaulting Hint */}
+      <div className="mt-8 p-4 bg-[rgba(204,163,82,0.05)] border border-dashed border-[rgba(204,163,82,0.3)] flex items-start gap-4">
+        <div className="text-(--accent-primary) text-lg mt-0.5">💡</div>
+        <div>
+          <div className="font-mono text-[11px] font-bold text-(--accent-primary) mb-1 uppercase tracking-wider">
+            Smart Defaulting
+          </div>
+          <p className="text-[11px] text-(--text-dim) leading-relaxed">
+            By default, the <strong>Master Authority</strong> ({authorityPubkey.slice(0, 8)}...) is assigned to all administrative roles. 
+            Fill in specific addresses only if you need to delegate distinct permissions (e.g., to a multi-sig or a separate compliance entity).
+          </p>
+        </div>
+      </div>
     </div>
   );
 
@@ -488,9 +555,14 @@ const Create: FC = () => {
             variant="primary"
             size="md"
             className="w-full mt-6 flex items-center justify-center gap-3"
-            onClick={() => setCurrentStep(7)}
+            onClick={handleDeploy}
+            disabled={isDeploying}
           >
-            🚀 DEPLOY STABLECOIN
+            {isDeploying ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "🚀 DEPLOY STABLECOIN"
+            )}
           </Button>
         </div>
       </div>
@@ -515,14 +587,24 @@ const Create: FC = () => {
             MINT ADDRESS
           </span>
           <span className="font-mono text-[12px] text-(--accent-primary) block mb-4 break-all">
-            8x2A...F93A44kLp9M2xZ1qBv7nWs
+            {deploymentResult?.mintAddress || "N/A"}
           </span>
           <div className="flex gap-4">
-            <button className="bg-transparent border border-(--border-mid) text-(--text-dim) font-mono text-[10px] px-2.5 py-1 cursor-pointer hover:border-(--border-bright)">
+            <button
+              onClick={() => {
+                if (deploymentResult?.mintAddress) {
+                  navigator.clipboard.writeText(deploymentResult.mintAddress);
+                  toast.success("Copied to clipboard");
+                }
+              }}
+              className="bg-transparent border border-(--border-mid) text-(--text-dim) font-mono text-[10px] px-2.5 py-1 cursor-pointer hover:border-(--border-bright)"
+            >
               COPY
             </button>
             <a
-              href="#"
+              href={`https://explorer.solana.com/address/${deploymentResult?.mintAddress}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-(--accent-primary) font-mono text-[10px] border-b border-transparent hover:border-(--accent-primary)"
             >
               VIEW ON EXPLORER
@@ -533,15 +615,25 @@ const Create: FC = () => {
           <span className="font-mono text-[9px] text-(--text-dark) uppercase block mb-3">
             TX SIGNATURE
           </span>
-          <span className="font-mono text-[12px] text-(--accent-primary) block mb-4">
-            4fGx...99Km
+          <span className="font-mono text-[12px] text-(--accent-primary) block mb-4 break-all">
+            {deploymentResult?.signature || "N/A"}
           </span>
           <div className="flex gap-4">
-            <button className="bg-transparent border border-(--border-mid) text-(--text-dim) font-mono text-[10px] px-2.5 py-1 cursor-pointer hover:border-(--border-bright)">
+            <button
+              onClick={() => {
+                if (deploymentResult?.signature) {
+                  navigator.clipboard.writeText(deploymentResult.signature);
+                  toast.success("Copied to clipboard");
+                }
+              }}
+              className="bg-transparent border border-(--border-mid) text-(--text-dim) font-mono text-[10px] px-2.5 py-1 cursor-pointer hover:border-(--border-bright)"
+            >
               COPY
             </button>
             <a
-              href="#"
+              href={`https://explorer.solana.com/tx/${deploymentResult?.signature}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-(--accent-primary) font-mono text-[10px] border-b border-transparent hover:border-(--accent-primary)"
             >
               VIEW ON EXPLORER
@@ -627,9 +719,16 @@ const Create: FC = () => {
             variant="primary"
             size="md"
             className="flex items-center gap-3"
-            onClick={nextStep}
+            onClick={currentStep === 6 ? handleDeploy : nextStep}
+            disabled={isDeploying}
           >
-            NEXT STEP <span>→</span>
+            {isDeploying ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                {currentStep === 6 ? "DEPLOY STABLECOIN" : "NEXT STEP"} <span>→</span>
+              </>
+            )}
           </Button>
         </div>
       )}

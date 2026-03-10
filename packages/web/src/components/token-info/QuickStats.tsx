@@ -1,33 +1,46 @@
 import type { FC } from "react";
+import type { StablecoinDetails } from "../../lib/api/stablecoin";
 
-const stats = [
-  {
-    label: "Active Minters",
-    value: "8",
-    subtitle: "of 12 total",
-    color: "text-(--text-main)",
-  },
-  {
-    label: "Blacklisted",
-    value: "12",
-    subtitle: "addresses",
-    color: "text-(--text-main)",
-  },
-  {
-    label: "Frozen Accounts",
-    value: "3",
-    subtitle: "suspended",
-    color: "text-(--text-main)",
-  },
-  {
-    label: "24H Volume",
-    value: "$2.4M",
-    subtitle: "▲ 12.5%",
-    color: "text-[#00ff88]",
-  },
-];
+interface QuickStatsProps {
+  details: StablecoinDetails;
+}
 
-export const QuickStats: FC = () => {
+export const QuickStats: FC<QuickStatsProps> = ({ details }) => {
+  const stats = [
+    {
+      label: "Master Authority",
+      value: details.onChain
+        ? `${details.onChain.roles.masterAuthority.slice(0, 4)}...${details.onChain.roles.masterAuthority.slice(-4)}`
+        : "---",
+      subtitle: "Full control",
+      color: "text-(--text-main)",
+    },
+    {
+      label: "Pauser Role",
+      value: details.onChain
+        ? `${details.onChain.roles.pauser.slice(0, 4)}...${details.onChain.roles.pauser.slice(-4)}`
+        : "---",
+      subtitle: "Global pause",
+      color: "text-(--text-main)",
+    },
+    {
+      label: "Blacklister",
+      value: details.onChain
+        ? `${details.onChain.roles.blacklister.slice(0, 4)}...${details.onChain.roles.blacklister.slice(-4)}`
+        : "---",
+      subtitle: "Compliance",
+      color: "text-(--text-main)",
+    },
+    {
+      label: "Burner Role",
+      value: details.onChain
+        ? `${details.onChain.roles.burner.slice(0, 4)}...${details.onChain.roles.burner.slice(-4)}`
+        : "---",
+      subtitle: "Supply reduction",
+      color: "text-(--text-main)",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-4">
       {stats.map((stat) => (
@@ -38,12 +51,10 @@ export const QuickStats: FC = () => {
           <div className="text-[10px] uppercase text-(--text-dim) font-semibold tracking-wider mb-2">
             {stat.label}
           </div>
-          <div className={`text-2xl font-mono font-light ${stat.color}`}>
+          <div className={`text-xl font-mono font-light ${stat.color}`}>
             {stat.value}
           </div>
-          <div
-            className={`text-[10px] mt-1 ${stat.subtitle.includes("▲") ? "text-[#00ff88]" : "text-(--text-dim)"}`}
-          >
+          <div className="text-[10px] mt-1 text-(--text-dim)">
             {stat.subtitle}
           </div>
         </div>
