@@ -46,7 +46,10 @@ app.post("/mint", async (c) => {
 			mintAddress: record.mintAddress,
 		});
 
-		log.info({ id: record.id, mintAddress: record.mintAddress }, "Mint request queued");
+		log.info(
+			{ id: record.id, mintAddress: record.mintAddress },
+			"Mint request queued",
+		);
 		c.status(202);
 		return c.json({ success: true, id: record.id, status: "PENDING" });
 	} catch (err: any) {
@@ -79,7 +82,10 @@ app.post("/burn", async (c) => {
 			mintAddress: record.mintAddress,
 		});
 
-		log.info({ id: record.id, mintAddress: record.mintAddress }, "Burn request queued");
+		log.info(
+			{ id: record.id, mintAddress: record.mintAddress },
+			"Burn request queued",
+		);
 		c.status(202);
 		return c.json({ success: true, id: record.id, status: "PENDING" });
 	} catch (err: any) {

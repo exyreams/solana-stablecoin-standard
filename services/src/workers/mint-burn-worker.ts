@@ -19,7 +19,8 @@ export const mintBurnWorker = new Worker(
 			if (!record) return;
 
 			// Use mintAddress from job, then DB, then env default
-			const mintToUse = mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
+			const mintToUse =
+				mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
 			const s = await getStable(mintToUse);
 			const status = await s.getStatus();
 
@@ -33,7 +34,12 @@ export const mintBurnWorker = new Worker(
 				);
 
 				log.info(
-					{ id, amount: record.amount, recipient: record.recipient, mintAddress: mintToUse },
+					{
+						id,
+						amount: record.amount,
+						recipient: record.recipient,
+						mintAddress: mintToUse,
+					},
 					"Processing mint",
 				);
 
@@ -64,7 +70,8 @@ export const mintBurnWorker = new Worker(
 			if (!record) return;
 
 			// Use mintAddress from job, then DB, then env default
-			const mintToUse = mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
+			const mintToUse =
+				mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
 			const s = await getStable(mintToUse);
 			const status = await s.getStatus();
 
@@ -78,7 +85,12 @@ export const mintBurnWorker = new Worker(
 				);
 
 				log.info(
-					{ id, amount: record.amount, fromTokenAccount: record.fromTokenAccount, mintAddress: mintToUse },
+					{
+						id,
+						amount: record.amount,
+						fromTokenAccount: record.fromTokenAccount,
+						mintAddress: mintToUse,
+					},
 					"Processing burn",
 				);
 
