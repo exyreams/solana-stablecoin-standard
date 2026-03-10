@@ -28,8 +28,16 @@ docker compose up
 # Start in detached mode
 docker compose up -d
 
+# Rebuild and restart (after code changes)
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+
 # View logs
 docker compose logs -f
+
+# View logs for specific service
+docker compose logs -f sss-backend
 
 # Stop services
 docker compose down
@@ -73,28 +81,46 @@ Copy `.env.example` to `.env` and configure:
 ```bash
 # Network
 SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_WS_URL=wss://api.devnet.solana.com
 
-# Program IDs (from Anchor.toml)
-SSS_TOKEN_PROGRAM_ID=your_program_id_here
-TRANSFER_HOOK_PROGRAM_ID=your_hook_program_id_here
-SSS_ORACLE_PROGRAM_ID=your_oracle_program_id_here
+# Stablecoin mint address (set after first deploy)
+STABLECOIN_MINT=your_mint_address_here
+
+# Authority keypair as JSON array
+AUTHORITY_SECRET_KEY=[1,2,3,...,64]
+
+# Redis
+REDIS_URL=redis://localhost:6379
 
 # Database
-DATABASE_URL=postgresql://sss_user:sss_password@localhost:5432/sss_db
+DATABASE_URL=file:./db/dev.db
 
 # API
-PORT=3001
-NODE_ENV=development
+PORT=3000
 
-# Webhooks
-WEBHOOK_SECRET=your_webhook_secret_here
-WEBHOOK_RETRY_ATTEMPTS=3
+# CORS allowed origins (comma-separated list)
+# Add your frontend URLs here
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
-# Oracle Crank
-ORACLE_CRANK_INTERVAL=60000
-ORACLE_CRANKER_KEYPAIR_PATH=~/.config/solana/id.json
+# Logging
+LOG_LEVEL=info
 ```
+
+### CORS Configuration
+
+The `CORS_ORIGINS` environment variable accepts a comma-separated list of allowed origins:
+
+```bash
+# Development (multiple local ports)
+CORS_ORIGINS=http://localhost:5173,http://localhost:5174
+
+# Production (single domain)
+CORS_ORIGINS=https://yourdomain.com
+
+# Mixed environments
+CORS_ORIGINS=http://localhost:5173,https://staging.yourdomain.com,https://yourdomain.com
+```
+
+If not set, defaults to `http://localhost:5173`.
 
 ## Scripts
 
