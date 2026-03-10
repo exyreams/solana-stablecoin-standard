@@ -1,12 +1,12 @@
 import client from "./client";
 
 export interface AuthorityResponse {
-  publicKey: string;
+	publicKey: string;
 }
 
 export const adminApi = {
-  getAuthority: async (): Promise<AuthorityResponse> => {
-    const { data } = await client.get<AuthorityResponse>("/admin/authority");
-    return data;
-  },
+	getAuthority: async (): Promise<AuthorityResponse> => {
+		const { data } = await client.get<AuthorityResponse>("/admin/authority");
+		return data;
+	},
 };

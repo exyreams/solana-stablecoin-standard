@@ -1,6 +1,6 @@
-export { RecipientSection } from "./RecipientSection";
 export { AmountSection } from "./AmountSection";
-export { MinterSelection } from "./MinterSelection";
-export { TransactionPreview } from "./TransactionPreview";
 export { ComplianceChecks } from "./ComplianceChecks";
+export { MinterSelection } from "./MinterSelection";
 export { RecentMints } from "./RecentMints";
+export { RecipientSection } from "./RecipientSection";
+export { TransactionPreview } from "./TransactionPreview";

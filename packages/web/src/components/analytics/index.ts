@@ -1,4 +1,4 @@
-export { SupplyOverview } from "./SupplyOverview";
 export { AnalyticsSupplyChart } from "./SupplyChart";
-export { TransactionBreakdown } from "./TransactionBreakdown";
+export { SupplyOverview } from "./SupplyOverview";
 export { TopHolders } from "./TopHolders";
+export { TransactionBreakdown } from "./TransactionBreakdown";
