@@ -4,8 +4,12 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { auditLogs } from "../db/schema.js";
 import { authority, getStable, log } from "../index.js";
+import { adminAuth } from "../middleware/auth.js";
 
 const app = new Hono();
+
+// Protect all compliance routes
+app.use("/*", adminAuth);
 
 // ---- BLACKLIST (SSS-2) ----
 

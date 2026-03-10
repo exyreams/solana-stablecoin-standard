@@ -3,8 +3,12 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { auditLogs } from "../db/schema.js";
 import { getStable, log } from "../index.js";
+import { adminAuth } from "../middleware/auth.js";
 
 const app = new Hono();
+
+// Protect all privacy routes
+app.use("/*", adminAuth);
 
 // SSS-3 (Privacy / Confidential Transfers)
 app.post("/approve", async (c) => {

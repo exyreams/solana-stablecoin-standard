@@ -103,6 +103,10 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
 # Logging
 LOG_LEVEL=info
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key
+REGISTRATION_SECRET=your-registration-secret-token
 ```
 
 ### CORS Configuration
@@ -146,9 +150,41 @@ pnpm setup:devnet     # Deploy test token to devnet
 pnpm setup:mainnet    # Deploy to mainnet (use with caution)
 ```
 
+## Admin Authentication
+
+All back-office routes (`/admin`, `/compliance`, `/mint-burn`, `/create-stablecoin`, `/privacy`, and `/webhooks`) are protected by JWT authentication.
+
+1. **Register an Admin**:
+   Use your `REGISTRATION_SECRET` from `.env` to create an account.
+   ```bash
+   curl -X POST http://localhost:3000/admin/register \
+     -H "Content-Type: application/json" \
+     -d '{"username": "admin", "password": "securepassword", "secretToken": "your-reg-secret"}'
+   ```
+
+2. **Login**:
+   ```bash
+   curl -X POST http://localhost:3000/admin/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "admin", "password": "securepassword"}'
+   ```
+   Save the `token` from the response.
+
+3. **Access Protected Routes**:
+   Include the token in the `Authorization` header.
+   ```bash
+   curl -H "Authorization: Bearer <your-token>" http://localhost:3000/admin/status
+   ```
+
 ## API Endpoints
 
 For complete API documentation, see [API.md](../docs/API.md).
+
+### Authentication
+```bash
+POST /admin/register           # Register new admin
+POST /admin/login              # Get JWT token
+```
 
 ### Health Check
 ```bash

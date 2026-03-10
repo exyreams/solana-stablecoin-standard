@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import Redis from "ioredis";
 import { db } from "../db/index.js";
 import { burnRequests, mintRequests } from "../db/schema.js";
+import { adminAuth } from "../middleware/auth.js";
 import { log } from "../index.js";
 
 export const redisConnection = new Redis.default(
@@ -18,6 +19,9 @@ export const mintBurnQueue = new Queue("mint-burn", {
 });
 
 const app = new Hono();
+
+// Protect all mint-burn routes
+app.use("/*", adminAuth);
 
 app.post("/mint", async (c) => {
 	const { recipient, amount } = await c.req.json();

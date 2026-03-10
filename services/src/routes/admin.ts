@@ -1,10 +1,64 @@
 import { PublicKey } from "@solana/web3.js";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { auditLogs } from "../db/schema.js";
+import { admins, auditLogs } from "../db/schema.js";
 import { authority, connection, getStable, log } from "../index.js";
+import { adminAuth, createToken } from "../middleware/auth.js";
+import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
 
 const app = new Hono();
+
+// ---- AUTHENTICATION ----
+
+app.post("/register", async (c) => {
+	const { username, password, secretToken } = await c.req.json();
+
+	// Very simple protection for initial setup
+	if (secretToken !== process.env.REGISTRATION_SECRET) {
+		return c.json({ error: "Unauthorized" }, 401);
+	}
+
+	try {
+		const passwordHash = await bcrypt.hash(password, 10);
+		await db.insert(admins).values({
+			username,
+			passwordHash,
+		});
+
+		log.info({ username }, "Admin registered");
+		return c.json({ success: true, message: "Admin registered successfully" });
+	} catch (err: any) {
+		log.error({ err: err.message }, "Failed to register admin");
+		return c.json({ error: "Username already exists or database error" }, 400);
+	}
+});
+
+app.post("/login", async (c) => {
+	const { username, password } = await c.req.json();
+
+	try {
+		const [admin] = await db
+			.select()
+			.from(admins)
+			.where(eq(admins.username, username))
+			.limit(1);
+
+		if (!admin || !(await bcrypt.compare(password, admin.passwordHash))) {
+			return c.json({ error: "Invalid credentials" }, 401);
+		}
+
+		const token = await createToken(admin.id);
+		log.info({ username }, "Admin logged in");
+		return c.json({ success: true, token });
+	} catch (err: any) {
+		log.error({ err: err.message }, "Login error");
+		return c.json({ error: "Login failed" }, 500);
+	}
+});
+
+// Protect all routes below this
+app.use("/*", adminAuth);
 
 // ---- GENERAL ADMIN & STATUS ----
 

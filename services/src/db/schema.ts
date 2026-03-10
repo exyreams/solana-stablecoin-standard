@@ -101,3 +101,15 @@ export const deliveryLogs = sqliteTable("delivery_logs", {
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
+
+// ── Authentication ────────────────────────────────────────────────────────────
+export const admins = sqliteTable("admins", {
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	username: text("username").notNull().unique(),
+	passwordHash: text("password_hash").notNull(),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
+});

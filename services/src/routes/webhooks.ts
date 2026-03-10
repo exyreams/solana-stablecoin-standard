@@ -5,12 +5,16 @@ import { db } from "../db/index.js";
 import { deliveryLogs, subscribers } from "../db/schema.js";
 import { log } from "../index.js";
 import { redisConnection } from "./mint-burn.js";
+import { adminAuth } from "../middleware/auth.js";
 
 // @ts-ignore - pnpm ioredis version mismatch
 const dispatchQueue = new Queue("webhook-dispatch", {
 	connection: redisConnection,
 });
 const app = new Hono();
+
+// Protect all webhooks routes
+app.use("/*", adminAuth);
 
 app.post("/subscribe", async (c) => {
 	const { url, events } = await c.req.json();

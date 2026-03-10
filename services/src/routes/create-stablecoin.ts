@@ -4,8 +4,12 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { stablecoins } from "../db/schema.js";
 import { log } from "../index.js";
+import { adminAuth } from "../middleware/auth.js";
 
 const app = new Hono();
+
+// Protect all create-stablecoin routes
+app.use("/*", adminAuth);
 
 /**
  * POST /
