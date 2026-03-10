@@ -1,58 +1,30 @@
-import { Copy } from "lucide-react";
+import { Copy, RefreshCw } from "lucide-react";
 import type { FC } from "react";
+import { toast } from "sonner";
+import type { MinterResponse } from "../../lib/api/admin";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 
-interface Minter {
-	address: string;
-	status: "active" | "inactive";
-	quota: number | "unlimited";
-	minted: number;
-	remaining: number | "unlimited";
+interface MinterTableProps {
+	minters: MinterResponse[];
+	isLoading: boolean;
+	onEdit: (minter: MinterResponse) => void;
+	onRemove: (minter: MinterResponse) => void;
+	onReset: (minter: MinterResponse) => void;
 }
 
-const mockMinters: Minter[] = [
-	{
-		address: "8x2...f93",
-		status: "active",
-		quota: 10000000,
-		minted: 2500000,
-		remaining: 7500000,
-	},
-	{
-		address: "3M1...a21",
-		status: "active",
-		quota: "unlimited",
-		minted: 1240500,
-		remaining: "unlimited",
-	},
-	{
-		address: "9v9...e11",
-		status: "inactive",
-		quota: 5000000,
-		minted: 0,
-		remaining: 5000000,
-	},
-	{
-		address: "4f2...99K",
-		status: "active",
-		quota: 50000000,
-		minted: 49000000,
-		remaining: 1000000,
-	},
-	{
-		address: "6h1...bb8",
-		status: "active",
-		quota: 2000000,
-		minted: 1999999,
-		remaining: 1,
-	},
-];
-
-export const MinterTable: FC = () => {
-	const getProgressPercentage = (minter: Minter): number => {
-		if (minter.quota === "unlimited") return 100;
-		return ((minter.quota - (minter.remaining as number)) / minter.quota) * 100;
+export const MinterTable: FC<MinterTableProps> = ({
+	minters,
+	isLoading,
+	onEdit,
+	onRemove,
+	onReset,
+}) => {
+	const getProgressPercentage = (minter: MinterResponse): number => {
+		const quota = BigInt(minter.quota);
+		if (quota === 0n) return 100;
+		const minted = BigInt(minter.minted);
+		return Number((minted * 100n) / quota);
 	};
 
 	const getProgressColor = (percentage: number): string => {
@@ -61,9 +33,30 @@ export const MinterTable: FC = () => {
 		return "var(--accent-primary)";
 	};
 
+	if (isLoading) {
+		return (
+			<div className="bg-(--bg-panel) border border-(--border-mid) p-12 flex flex-col items-center justify-center gap-4">
+				<div className="w-8 h-8 border-2 border-(--accent-primary) border-t-transparent rounded-full animate-spin" />
+				<span className="text-[10px] text-(--text-dim) uppercase font-mono">
+					Fetching minter records...
+				</span>
+			</div>
+		);
+	}
+
+	if (minters.length === 0) {
+		return (
+			<div className="bg-(--bg-panel) border border-(--border-mid) p-12 flex flex-col items-center justify-center gap-4">
+				<span className="text-[10px] text-(--text-dim) uppercase font-mono">
+					No minters configured for this token.
+				</span>
+			</div>
+		);
+	}
+
 	return (
-		<div className="bg-(--bg-panel) border border-(--border-mid)">
-			<table className="w-full font-mono text-[11px]">
+		<div className="bg-(--bg-panel) border border-(--border-mid) overflow-x-auto">
+			<table className="w-full font-mono text-[11px] whitespace-nowrap">
 				<thead>
 					<tr className="border-b border-(--border-mid)">
 						<th className="text-left p-4 text-(--text-dark) uppercase text-[10px] font-normal">
@@ -76,7 +69,7 @@ export const MinterTable: FC = () => {
 							Quota
 						</th>
 						<th className="text-left p-4 text-(--text-dark) uppercase text-[10px] font-normal">
-							Minted This Period
+							Minted
 						</th>
 						<th className="text-left p-4 text-(--text-dark) uppercase text-[10px] font-normal">
 							Remaining
@@ -87,37 +80,47 @@ export const MinterTable: FC = () => {
 					</tr>
 				</thead>
 				<tbody>
-					{mockMinters.map((minter, index) => {
+					{minters.map((minter, index) => {
 						const progress = getProgressPercentage(minter);
+						const quota = BigInt(minter.quota);
+						const minted = BigInt(minter.minted);
+						const remaining = quota === 0n ? null : quota - minted;
+
 						return (
 							<tr key={index} className="border-b border-(--border-dim)">
 								<td className="p-4">
 									<div className="flex items-center gap-2">
-										<span className="text-(--text-main)">{minter.address}</span>
-										<Copy className="w-3 h-3 text-(--text-dark) hover:text-(--accent-primary) cursor-pointer" />
+										<span className="text-(--text-main)">
+											{minter.minter.slice(0, 6)}...{minter.minter.slice(-6)}
+										</span>
+										<Copy
+											className="w-3 h-3 text-(--text-dark) hover:text-(--accent-primary) cursor-pointer"
+											onClick={() => {
+												navigator.clipboard.writeText(minter.minter);
+												toast.success("Address copied to clipboard");
+											}}
+										/>
 									</div>
 								</td>
 								<td className="p-4">
-									<Badge
-										variant={minter.status === "active" ? "success" : "danger"}
-									>
-										{minter.status.toUpperCase()}
+									<Badge variant={minter.active ? "success" : "danger"}>
+										{minter.active ? "ACTIVE" : "INACTIVE"}
 									</Badge>
 								</td>
 								<td className="p-4">
-									{minter.quota === "unlimited" ? (
+									{quota === 0n ? (
 										<Badge variant="accent">UNLIMITED</Badge>
 									) : (
-										minter.quota.toLocaleString()
+										quota.toLocaleString()
 									)}
 								</td>
-								<td className="p-4">{minter.minted.toLocaleString()}</td>
+								<td className="p-4">{minted.toLocaleString()}</td>
 								<td className="p-4">
 									<div className="flex items-center gap-2">
-										{minter.quota !== "unlimited" && (
-											<div className="w-20 h-1 bg-(--border-dim) relative">
+										{quota !== 0n && (
+											<div className="w-16 h-1 bg-(--border-dim) relative overflow-hidden">
 												<div
-													className="h-full"
+													className="h-full transition-all duration-500"
 													style={{
 														width: `${progress}%`,
 														background: getProgressColor(progress),
@@ -125,22 +128,38 @@ export const MinterTable: FC = () => {
 												/>
 											</div>
 										)}
-										<span>
-											{minter.remaining === "unlimited"
-												? "∞"
-												: minter.remaining.toLocaleString()}
+										<span
+											className={
+												quota !== 0n && remaining !== null && remaining < 1000n
+													? "text-(--danger) font-bold"
+													: ""
+											}
+										>
+											{remaining === null ? "∞" : remaining.toLocaleString()}
 										</span>
 									</div>
 								</td>
 								<td className="p-4 text-right">
 									<div className="flex gap-1 justify-end">
-										<Button variant="secondary" size="sm">
+										<Button
+											variant="secondary"
+											size="sm"
+											onClick={() => onEdit(minter)}
+										>
 											EDIT
 										</Button>
-										<Button variant="ghost" size="sm">
-											RESET
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => onReset(minter)}
+										>
+											<RefreshCw className="w-3 h-3" />
 										</Button>
-										<Button variant="danger" size="sm">
+										<Button
+											variant="danger"
+											size="sm"
+											onClick={() => onRemove(minter)}
+										>
 											REMOVE
 										</Button>
 									</div>

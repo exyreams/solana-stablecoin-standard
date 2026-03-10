@@ -120,8 +120,9 @@ app.get("/on-chain-status", async (c) => {
 // ---- MINTER MANAGEMENT ----
 
 app.get("/minters", async (c) => {
+	const mintAddress = c.req.query("mint");
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const minters = await s.getMinters();
 
 		return c.json(
@@ -140,18 +141,18 @@ app.get("/minters", async (c) => {
 });
 
 app.post("/minters", async (c) => {
-	const { address, quota } = await c.req.json();
+	const { address, quota, mintAddress } = await c.req.json();
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.addMinter(new PublicKey(address), BigInt(quota));
 
 		await db.insert(auditLogs).values({
 			action: "ADD_MINTER",
 			address,
-			reason: `Quota: ${quota}`,
+			reason: `Quota: ${quota}, Mint: ${mintAddress}`,
 			signature: sig,
 		});
-		log.info({ address, quota, sig }, "Minter added");
+		log.info({ address, quota, mintAddress, sig }, "Minter added");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
 		log.error({ err }, "Failed to add minter");
@@ -162,9 +163,9 @@ app.post("/minters", async (c) => {
 
 app.put("/minters/:address", async (c) => {
 	const address = c.req.param("address");
-	const { quota, active, resetMinted } = await c.req.json();
+	const { quota, active, resetMinted, mintAddress } = await c.req.json();
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.updateMinter({
 			minter: new PublicKey(address),
 			quota: BigInt(quota),
@@ -175,10 +176,10 @@ app.put("/minters/:address", async (c) => {
 		await db.insert(auditLogs).values({
 			action: "UPDATE_MINTER",
 			address,
-			reason: `Quota: ${quota}, Active: ${active}`,
+			reason: `Quota: ${quota}, Active: ${active}, Mint: ${mintAddress}`,
 			signature: sig,
 		});
-		log.info({ address, quota, active, sig }, "Minter updated");
+		log.info({ address, quota, active, mintAddress, sig }, "Minter updated");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
 		log.error({ err: err.message }, "Failed to update minter");
@@ -189,17 +190,18 @@ app.put("/minters/:address", async (c) => {
 
 app.delete("/minters/:address", async (c) => {
 	const address = c.req.param("address");
+	const mintAddress = c.req.query("mint");
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.removeMinter(new PublicKey(address));
 
 		await db.insert(auditLogs).values({
 			action: "REMOVE_MINTER",
 			address,
-			reason: "Manual removal",
+			reason: `Manual removal, Mint: ${mintAddress}`,
 			signature: sig,
 		});
-		log.info({ address, sig }, "Minter removed");
+		log.info({ address, mintAddress, sig }, "Minter removed");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
 		log.error({ err: err.message }, "Failed to remove minter");
