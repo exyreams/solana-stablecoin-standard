@@ -9,9 +9,7 @@ import { redisConnection } from "../routes/mint-burn.js";
 export const mintBurnWorker = new Worker(
 	"mint-burn",
 	async (job: Job) => {
-		const { type, id } = job.data;
-		const s = await getStable();
-		const status = await s.getStatus();
+		const { type, id, mintAddress } = job.data;
 
 		if (type === "mint") {
 			const [record] = await db
@@ -19,6 +17,11 @@ export const mintBurnWorker = new Worker(
 				.from(mintRequests)
 				.where(eq(mintRequests.id, id));
 			if (!record) return;
+
+			// Use mintAddress from job, then DB, then env default
+			const mintToUse = mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
+			const s = await getStable(mintToUse);
+			const status = await s.getStatus();
 
 			try {
 				await db
@@ -30,14 +33,14 @@ export const mintBurnWorker = new Worker(
 				);
 
 				log.info(
-					{ id, amount: record.amount, recipient: record.recipient },
+					{ id, amount: record.amount, recipient: record.recipient, mintAddress: mintToUse },
 					"Processing mint",
 				);
 
 				const sig = await s.mintTokens({
 					recipient: new PublicKey(record.recipient),
 					amount: amountBN,
-					minter: authority, // Assuming authority is added as a minter for this service
+					minter: authority,
 				});
 
 				await db
@@ -60,6 +63,11 @@ export const mintBurnWorker = new Worker(
 				.where(eq(burnRequests.id, id));
 			if (!record) return;
 
+			// Use mintAddress from job, then DB, then env default
+			const mintToUse = mintAddress || record.mintAddress || process.env.STABLECOIN_MINT;
+			const s = await getStable(mintToUse);
+			const status = await s.getStatus();
+
 			try {
 				await db
 					.update(burnRequests)
@@ -69,10 +77,15 @@ export const mintBurnWorker = new Worker(
 					Math.round(parseFloat(record.amount) * 10 ** status.decimals),
 				);
 
+				log.info(
+					{ id, amount: record.amount, fromTokenAccount: record.fromTokenAccount, mintAddress: mintToUse },
+					"Processing burn",
+				);
+
 				const sig = await s.burn({
 					fromTokenAccount: new PublicKey(record.fromTokenAccount),
 					amount: amountBN,
-					burner: authority, // Assuming authority has burner role
+					burner: authority,
 				});
 
 				await db

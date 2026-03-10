@@ -24,7 +24,7 @@ const app = new Hono();
 app.use("/*", adminAuth);
 
 app.post("/mint", async (c) => {
-	const { recipient, amount } = await c.req.json();
+	const { recipient, amount, mintAddress } = await c.req.json();
 	if (!recipient || !amount) {
 		c.status(400);
 		return c.json({ error: "recipient and amount are required" });
@@ -36,12 +36,17 @@ app.post("/mint", async (c) => {
 			.values({
 				recipient,
 				amount: amount.toString(),
+				mintAddress: mintAddress || process.env.STABLECOIN_MINT,
 			})
 			.returning();
 
-		await mintBurnQueue.add("mint-job", { type: "mint", id: record.id });
+		await mintBurnQueue.add("mint-job", {
+			type: "mint",
+			id: record.id,
+			mintAddress: record.mintAddress,
+		});
 
-		log.info({ id: record.id }, "Mint request queued");
+		log.info({ id: record.id, mintAddress: record.mintAddress }, "Mint request queued");
 		c.status(202);
 		return c.json({ success: true, id: record.id, status: "PENDING" });
 	} catch (err: any) {
@@ -52,7 +57,7 @@ app.post("/mint", async (c) => {
 });
 
 app.post("/burn", async (c) => {
-	const { fromTokenAccount, amount } = await c.req.json();
+	const { fromTokenAccount, amount, mintAddress } = await c.req.json();
 	if (!fromTokenAccount || !amount) {
 		c.status(400);
 		return c.json({ error: "fromTokenAccount and amount are required" });
@@ -64,12 +69,17 @@ app.post("/burn", async (c) => {
 			.values({
 				fromTokenAccount,
 				amount: amount.toString(),
+				mintAddress: mintAddress || process.env.STABLECOIN_MINT,
 			})
 			.returning();
 
-		await mintBurnQueue.add("burn-job", { type: "burn", id: record.id });
+		await mintBurnQueue.add("burn-job", {
+			type: "burn",
+			id: record.id,
+			mintAddress: record.mintAddress,
+		});
 
-		log.info({ id: record.id }, "Burn request queued");
+		log.info({ id: record.id, mintAddress: record.mintAddress }, "Burn request queued");
 		c.status(202);
 		return c.json({ success: true, id: record.id, status: "PENDING" });
 	} catch (err: any) {

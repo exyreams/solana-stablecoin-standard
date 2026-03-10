@@ -2,7 +2,12 @@ import type { FC } from "react";
 import { Input } from "../ui/Input";
 import { AlertCircle } from "lucide-react";
 
-export const RecipientSection: FC = () => {
+export interface RecipientSectionProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export const RecipientSection: FC<RecipientSectionProps> = ({ value, onChange }) => {
   return (
     <div className="bg-(--bg-panel) border border-(--border-mid) p-6">
       <div className="text-[10px] uppercase text-(--text-dim) font-semibold tracking-wider mb-4">
@@ -14,6 +19,8 @@ export const RecipientSection: FC = () => {
             Recipient Address
           </label>
           <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
             placeholder="Enter Solana address (e.g., 9zK...M22)"
             className="font-mono text-xs"
           />

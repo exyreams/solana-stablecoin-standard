@@ -1,17 +1,57 @@
-import type { FC } from "react";
+import { useState, type FC } from "react";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Flame, AlertCircle } from "lucide-react";
-import { BurnForm, BurnPreview, RecentBurns } from "../../components/burn-tokens";
+import { useTokens } from "../../contexts/TokenContext";
+import { stablecoinApi } from "../../lib/api/stablecoin";
+import {
+  BurnForm,
+  BurnPreview,
+  RecentBurns,
+} from "../../components/burn-tokens";
 
 const BurnTokens: FC = () => {
+  const { selectedToken } = useTokens();
+  const [fromTokenAccount, setFromTokenAccount] = useState("");
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleBurn = async () => {
+    if (!selectedToken || !fromTokenAccount || !amount) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await stablecoinApi.burn(
+        selectedToken.mintAddress,
+        fromTokenAccount,
+        parseFloat(amount),
+      );
+      if (response.success) {
+        alert("Burn request submitted successfully!");
+        setFromTokenAccount("");
+        setAmount("");
+      }
+    } catch (error: any) {
+      console.error("Burning failed:", error);
+      alert(error.response?.data?.error || "Failed to submit burn request");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-mono font-light mb-2">Burn Tokens</h1>
           <p className="text-[#777777] text-sm">
-            Permanently remove tokens from circulation
+            Permanently remove tokens from circulation for{" "}
+            <span className="text-[#EAEAEA] font-mono">
+              {selectedToken?.symbol || "selected token"}
+            </span>
           </p>
         </div>
         <Badge variant="danger">IRREVERSIBLE ACTION</Badge>
@@ -19,16 +59,35 @@ const BurnTokens: FC = () => {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
-          <BurnForm />
+          <BurnForm
+            fromTokenAccount={fromTokenAccount}
+            onFromTokenAccountChange={setFromTokenAccount}
+            amount={amount}
+            onAmountChange={setAmount}
+            symbol={selectedToken?.symbol || "TOKEN"}
+          />
 
           <div className="flex gap-3">
-            <Button variant="danger" className="flex-1">
+            <Button
+              variant="danger"
+              className="flex-1"
+              onClick={handleBurn}
+              disabled={loading || !fromTokenAccount || !amount}
+            >
               <span className="flex items-center justify-center gap-2">
                 <Flame className="w-4 h-4" />
-                BURN TOKENS
+                {loading ? "BURNING..." : "BURN TOKENS"}
               </span>
             </Button>
-            <Button variant="ghost">CANCEL</Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setFromTokenAccount("");
+                setAmount("");
+              }}
+            >
+              CANCEL
+            </Button>
           </div>
         </div>
 

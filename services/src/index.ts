@@ -36,18 +36,27 @@ const authSecret = Uint8Array.from(
 );
 export const authority = Keypair.fromSecretKey(authSecret);
 
-export let stable: SolanaStablecoin;
-export async function getStable() {
-	if (!stable) {
+export const stableInstances = new Map<string, SolanaStablecoin>();
+export async function getStable(mintAddress?: string) {
+	const mintToLoad = mintAddress || process.env.STABLECOIN_MINT;
+	if (!mintToLoad) {
+		throw new Error("Mint address is required");
+	}
+
+	if (!stableInstances.has(mintToLoad)) {
 		const transferHookProgramId = process.env.TRANSFER_HOOK_PROGRAM_ID
 			? new PublicKey(process.env.TRANSFER_HOOK_PROGRAM_ID)
 			: new PublicKey("HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig");
 
-		stable = await SolanaStablecoin.load(connection, mintPubkey, authority, {
-			transferHookProgramId,
-		});
+		const instance = await SolanaStablecoin.load(
+			connection,
+			new PublicKey(mintToLoad),
+			authority,
+			{ transferHookProgramId },
+		);
+		stableInstances.set(mintToLoad, instance);
 	}
-	return stable;
+	return stableInstances.get(mintToLoad)!;
 }
 
 import adminRoutes from "./routes/admin.js";

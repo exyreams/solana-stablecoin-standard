@@ -1,9 +1,9 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { SolanaStablecoin } from "@stbr/sss-token-sdk";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { stablecoins } from "../db/schema.js";
+import { burnRequests, mintRequests, stablecoins } from "../db/schema.js";
 import { authority, connection, log } from "../index.js";
 
 const app = new Hono();
@@ -93,6 +93,26 @@ app.get("/:mintAddress", async (c) => {
 			error: error.message || "Failed to fetch stablecoin",
 		});
 	}
+});
+
+app.get("/:mintAddress/history", async (c) => {
+	const mintAddress = c.req.param("mintAddress");
+
+	const mints = await db
+		.select()
+		.from(mintRequests)
+		.where(eq(mintRequests.mintAddress, mintAddress))
+		.orderBy(desc(mintRequests.createdAt))
+		.limit(10);
+
+	const burns = await db
+		.select()
+		.from(burnRequests)
+		.where(eq(burnRequests.mintAddress, mintAddress))
+		.orderBy(desc(burnRequests.createdAt))
+		.limit(10);
+
+	return c.json({ mints, burns });
 });
 
 export default app;

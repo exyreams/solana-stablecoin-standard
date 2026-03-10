@@ -6,6 +6,7 @@ export const mintRequests = sqliteTable("mint_requests", {
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
 	recipient: text("recipient").notNull(),
+	mintAddress: text("mint_address"),
 	amount: text("amount").notNull(),
 	status: text("status").notNull().default("PENDING"), // PENDING, PROCESSING, COMPLETED, FAILED
 	signature: text("signature"),
@@ -22,6 +23,7 @@ export const burnRequests = sqliteTable("burn_requests", {
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
 	fromTokenAccount: text("from_token_account").notNull(),
+	mintAddress: text("mint_address"),
 	amount: text("amount").notNull(),
 	status: text("status").notNull().default("PENDING"), // PENDING, PROCESSING, COMPLETED, FAILED
 	signature: text("signature"),

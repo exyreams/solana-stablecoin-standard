@@ -84,4 +84,16 @@ export const stablecoinApi = {
     const response = await api.get<ListStablecoinsResponse>("/list-stablecoins", { params });
     return response.data;
   },
+  mint: async (mintAddress: string, recipient: string, amount: number): Promise<{ success: boolean; id: string }> => {
+    const response = await api.post("/mint-burn/mint", { mintAddress, recipient, amount });
+    return response.data;
+  },
+  burn: async (mintAddress: string, fromTokenAccount: string, amount: number): Promise<{ success: boolean; id: string }> => {
+    const response = await api.post("/mint-burn/burn", { mintAddress, fromTokenAccount, amount });
+    return response.data;
+  },
+  getHistory: async (mintAddress: string): Promise<{ mints: any[]; burns: any[] }> => {
+    const response = await api.get<{ mints: any[]; burns: any[] }>(`/get-stablecoin/${mintAddress}/history`);
+    return response.data;
+  },
 };
