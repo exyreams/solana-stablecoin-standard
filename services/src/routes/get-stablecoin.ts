@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { stablecoins } from "../db/schema.js";
-import { connection, log, authority } from "../index.js";
+import { authority, connection, log } from "../index.js";
 
 const app = new Hono();
 
@@ -33,16 +33,20 @@ app.get("/:mintAddress", async (c) => {
 		// Fetch on-chain data
 		try {
 			const mintPubkey = new PublicKey(mintAddress);
-			
+
 			log.info(`Loading SDK for mint: ${mintAddress}`);
-			const sdk = await SolanaStablecoin.load(connection, mintPubkey, authority);
-			
+			const sdk = await SolanaStablecoin.load(
+				connection,
+				mintPubkey,
+				authority,
+			);
+
 			log.info(`Fetching status for ${mintAddress}`);
 			const status = await sdk.getStatus();
-			
+
 			log.info(`Fetching roles for ${mintAddress}`);
 			const roles = await sdk.getRoles();
-			
+
 			log.info(`Fetching supply for ${mintAddress}`);
 			const totalSupply = await sdk.getTotalSupply();
 
@@ -68,18 +72,18 @@ app.get("/:mintAddress", async (c) => {
 						permanentDelegate: status.enablePermanentDelegate,
 						defaultAccountFrozen: status.defaultAccountFrozen,
 						confidentialTransfers: status.enableConfidentialTransfers,
-					}
-				}
+					},
+				},
 			});
 		} catch (sdkError: any) {
 			log.error(`SDK Error for ${mintAddress}: ${sdkError.message}`);
 			if (sdkError.stack) log.error(sdkError.stack);
-			
+
 			// Return DB info even if on-chain fetch fails
 			return c.json({
 				...dbInfo,
 				onChain: null,
-				warning: `On-chain data unavailable: ${sdkError.message}`
+				warning: `On-chain data unavailable: ${sdkError.message}`,
 			});
 		}
 	} catch (error: any) {

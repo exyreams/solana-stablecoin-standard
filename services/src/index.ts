@@ -14,43 +14,40 @@ export const log = pino({ level: process.env.LOG_LEVEL ?? "info" });
 
 // Blockchain configuration
 if (!process.env.SOLANA_RPC_URL) {
-  log.error("SOLANA_RPC_URL is required");
-  process.exit(1);
+	log.error("SOLANA_RPC_URL is required");
+	process.exit(1);
 }
 if (!process.env.STABLECOIN_MINT) {
-  log.error("STABLECOIN_MINT is required");
-  process.exit(1);
+	log.error("STABLECOIN_MINT is required");
+	process.exit(1);
 }
 if (!process.env.AUTHORITY_SECRET_KEY) {
-  log.error("AUTHORITY_SECRET_KEY is required");
-  process.exit(1);
+	log.error("AUTHORITY_SECRET_KEY is required");
+	process.exit(1);
 }
 
 export const connection = new Connection(
-  process.env.SOLANA_RPC_URL,
-  "confirmed",
+	process.env.SOLANA_RPC_URL,
+	"confirmed",
 );
 export const mintPubkey = new PublicKey(process.env.STABLECOIN_MINT);
 const authSecret = Uint8Array.from(
-  JSON.parse(process.env.AUTHORITY_SECRET_KEY),
+	JSON.parse(process.env.AUTHORITY_SECRET_KEY),
 );
 export const authority = Keypair.fromSecretKey(authSecret);
 
 export let stable: SolanaStablecoin;
 export async function getStable() {
-  if (!stable) {
-    const transferHookProgramId = process.env.TRANSFER_HOOK_PROGRAM_ID 
-      ? new PublicKey(process.env.TRANSFER_HOOK_PROGRAM_ID) 
-      : new PublicKey("HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig");
+	if (!stable) {
+		const transferHookProgramId = process.env.TRANSFER_HOOK_PROGRAM_ID
+			? new PublicKey(process.env.TRANSFER_HOOK_PROGRAM_ID)
+			: new PublicKey("HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig");
 
-    stable = await SolanaStablecoin.load(
-      connection, 
-      mintPubkey, 
-      authority, 
-      { transferHookProgramId }
-    );
-  }
-  return stable;
+		stable = await SolanaStablecoin.load(connection, mintPubkey, authority, {
+			transferHookProgramId,
+		});
+	}
+	return stable;
 }
 
 import adminRoutes from "./routes/admin.js";
@@ -70,30 +67,35 @@ const app = new Hono();
 
 // CORS configuration - should be called before routes
 if (!process.env.CORS_ORIGINS) {
-  log.error("CORS_ORIGINS is required");
-  process.exit(1);
+	log.error("CORS_ORIGINS is required");
+	process.exit(1);
 }
 
-const corsOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
+const corsOrigins = process.env.CORS_ORIGINS.split(",").map((origin) =>
+	origin.trim(),
+);
 
-app.use("*", cors({
-  origin: corsOrigins,
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-  maxAge: 600,
-}));
+app.use(
+	"*",
+	cors({
+		origin: corsOrigins,
+		allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+		maxAge: 600,
+	}),
+);
 
 app.use("*", logger());
 
 app.get("/health", async (c) => {
-  try {
-    await db.run(sql`SELECT 1`);
-    return c.json({ status: "ok", service: "sss-backend" });
-  } catch (_error) {
-    c.status(503);
-    return c.json({ status: "error", service: "sss-backend" });
-  }
+	try {
+		await db.run(sql`SELECT 1`);
+		return c.json({ status: "ok", service: "sss-backend" });
+	} catch (_error) {
+		c.status(503);
+		return c.json({ status: "error", service: "sss-backend" });
+	}
 });
 
 app.route("/create-stablecoin", createStablecoinRoutes);
@@ -109,15 +111,15 @@ const port = parseInt(process.env.PORT || "3000", 10);
 console.log(`Server is running on port ${port}`);
 
 serve(
-  {
-    fetch: app.fetch,
-    port,
-  },
-  async () => {
-    log.info({ port }, "sss-backend started");
+	{
+		fetch: app.fetch,
+		port,
+	},
+	async () => {
+		log.info({ port }, "sss-backend started");
 
-    // Start background workers
-    await startEventIndexer();
-    startOracleCrank();
-  },
+		// Start background workers
+		await startEventIndexer();
+		startOracleCrank();
+	},
 );

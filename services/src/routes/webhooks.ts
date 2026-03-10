@@ -4,8 +4,8 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { deliveryLogs, subscribers } from "../db/schema.js";
 import { log } from "../index.js";
-import { redisConnection } from "./mint-burn.js";
 import { adminAuth } from "../middleware/auth.js";
+import { redisConnection } from "./mint-burn.js";
 
 // @ts-ignore - pnpm ioredis version mismatch
 const dispatchQueue = new Queue("webhook-dispatch", {

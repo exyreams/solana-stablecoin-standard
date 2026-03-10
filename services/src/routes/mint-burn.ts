@@ -4,8 +4,8 @@ import { Hono } from "hono";
 import Redis from "ioredis";
 import { db } from "../db/index.js";
 import { burnRequests, mintRequests } from "../db/schema.js";
-import { adminAuth } from "../middleware/auth.js";
 import { log } from "../index.js";
+import { adminAuth } from "../middleware/auth.js";
 
 export const redisConnection = new Redis.default(
 	process.env.REDIS_URL || "redis://localhost:6379",
