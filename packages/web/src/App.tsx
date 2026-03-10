@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { WalletContextProvider } from "./contexts/WalletContextProvider";
+import { AuthProvider } from "./contexts/AuthContext";
+import { TokenProvider } from "./contexts/TokenContext";
 import { LandingPage } from "./pages";
 import { DashboardWrapper } from "./components/layout/DashboardWrapper";
+import LoginPage from "./pages/login";
+import RegisterPage from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import TokenInfo from "./pages/dashboard/token-info";
 import MintTokens from "./pages/dashboard/mint-tokens";
@@ -21,39 +24,48 @@ import Docs from "./pages/docs";
 import Profile from "./pages/profile";
 import NotFound from "./pages/not-found";
 import ErrorPage from "./pages/error";
+import { Toaster } from "sonner";
 
 function App() {
   return (
-    <WalletContextProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/dashboard" element={<DashboardWrapper />}>
-            <Route index element={<Dashboard />} />
-            <Route path="token-info" element={<TokenInfo />} />
-            <Route path="mint-tokens" element={<MintTokens />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="burn-tokens" element={<BurnTokens />} />
-            <Route path="blacklist" element={<Blacklist />} />
-            <Route path="minters" element={<Minters />} />
-            <Route path="accounts" element={<Accounts />} />
-            <Route path="compliance" element={<Compliance />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="oracle" element={<Oracle />} />
-            <Route path="roles" element={<Roles />} />
-            <Route path="audit-logs" element={<AuditLogs />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="/create" element={<DashboardWrapper />}>
-            <Route index element={<Create />} />
-          </Route>
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/error" element={<ErrorPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </WalletContextProvider>
+    <AuthProvider>
+      <TokenProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            <Route path="/dashboard" element={<DashboardWrapper />}>
+              <Route index element={<Dashboard />} />
+              <Route path="token-info" element={<TokenInfo />} />
+              <Route path="mint-tokens" element={<MintTokens />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="burn-tokens" element={<BurnTokens />} />
+              <Route path="blacklist" element={<Blacklist />} />
+              <Route path="minters" element={<Minters />} />
+              <Route path="accounts" element={<Accounts />} />
+              <Route path="compliance" element={<Compliance />} />
+              <Route path="privacy" element={<Privacy />} />
+              <Route path="oracle" element={<Oracle />} />
+              <Route path="roles" element={<Roles />} />
+              <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+  
+            <Route path="/create" element={<DashboardWrapper />}>
+              <Route index element={<Create />} />
+            </Route>
+  
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/error" element={<ErrorPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" theme="dark" closeButton />
+      </TokenProvider>
+    </AuthProvider>
   );
 }
 

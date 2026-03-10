@@ -1,14 +1,11 @@
 import type { FC } from "react";
-import { useState } from "react";
-import { ArrowRight, BookOpen, Github, Wallet } from "lucide-react";
+import { ArrowRight, BookOpen, Github, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { Button } from "../ui/Button";
-import { WalletModal } from "../wallet/WalletModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const HeroSection: FC = () => {
-  const { connected } = useWallet();
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   return (
     <section className="py-[120px] pb-20 text-center max-w-[900px] mx-auto px-8">
@@ -26,17 +23,18 @@ export const HeroSection: FC = () => {
         SSS-3 preset compliance tiers for every use case.
       </p>
       <div className="flex justify-center gap-4 mt-12">
-        {!connected ? (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setIsWalletModalOpen(true)}
-          >
-            <span className="flex items-center gap-2">
-              <Wallet size={16} />
-              CONNECT WALLET
-            </span>
-          </Button>
+        {!isAuthenticated ? (
+          <Link to="/login">
+            <Button
+              variant="primary"
+              size="md"
+            >
+              <span className="flex items-center gap-2">
+                <LogIn size={16} />
+                ADMIN LOGIN
+              </span>
+            </Button>
+          </Link>
         ) : (
           <Link to="/dashboard">
             <Button variant="primary" size="md">
@@ -64,11 +62,6 @@ export const HeroSection: FC = () => {
           </Button>
         </a>
       </div>
-
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-      />
     </section>
   );
 };

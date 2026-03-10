@@ -2,10 +2,9 @@ import type { FC } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { ChevronDown, LogIn } from "lucide-react";
 import { Button } from "../ui/Button";
-import { WalletModal } from "../wallet";
+import { useAuth } from "../../contexts/AuthContext";
 
 type MenuCategory = "dashboard" | "operations" | "resources" | null;
 
@@ -18,8 +17,7 @@ type MenuItem = {
 
 export const Navbar: FC = () => {
   const [activeMenu, setActiveMenu] = useState<MenuCategory>(null);
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const { connected, publicKey } = useWallet();
+  const { isAuthenticated } = useAuth();
 
   const dashboardMenu: MenuItem[] = [
     { path: "/dashboard", label: "Overview", desc: "Main dashboard with metrics and quick actions" },
@@ -164,32 +162,30 @@ export const Navbar: FC = () => {
       </div>
 
       <div className="flex gap-3 items-center">
-        {connected && publicKey ? (
-          <button
-            onClick={() => setIsWalletModalOpen(true)}
-            className="bg-[#CCA352] text-[#0a0a0a] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[#d4b366] transition-colors"
-          >
-            {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
-          </button>
+        {!isAuthenticated ? (
+          <>
+            <Link to="/register">
+              <button
+                className="bg-transparent border border-[#CCA352] text-[#CCA352] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[rgba(204,163,82,0.1)] transition-colors uppercase"
+              >
+                Register
+              </button>
+            </Link>
+            <Link to="/login">
+              <Button variant="primary" size="sm" className="flex items-center gap-2">
+                <LogIn size={14} />
+                ADMIN LOGIN
+              </Button>
+            </Link>
+          </>
         ) : (
-          <button
-            onClick={() => setIsWalletModalOpen(true)}
-            className="bg-transparent border border-[#CCA352] text-[#CCA352] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[rgba(204,163,82,0.1)] transition-colors"
-          >
-            CONNECT WALLET
-          </button>
+          <Link to="/dashboard">
+            <Button variant="primary" size="sm">
+              Launch Dashboard
+            </Button>
+          </Link>
         )}
-        <Link to="/dashboard">
-          <Button variant="secondary" size="sm">
-            Launch Dashboard
-          </Button>
-        </Link>
       </div>
-
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-      />
     </nav>
   );
 };

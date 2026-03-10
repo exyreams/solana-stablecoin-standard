@@ -1,11 +1,27 @@
 import type { FC } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { DashboardLayout } from "./DashboardLayout";
 import { DashboardTopBar } from "./DashboardTopBar";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardFooter } from "./DashboardFooter";
+import { useAuth } from "../../contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export const DashboardWrapper: FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-body flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   return (
     <DashboardLayout>
       <DashboardTopBar />
