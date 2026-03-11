@@ -7,7 +7,8 @@ import { logger } from "hono/logger";
 import pino from "pino";
 import { db } from "./db/index.js";
 import "dotenv/config";
-import { sql } from "drizzle-orm"; // Assuming sql tag is from drizzle-orm
+import { sql } from "drizzle-orm";
+import { adminAuth, rbac } from "./middleware/auth.js";
 
 // Configure Pino
 export const log = pino({ level: process.env.LOG_LEVEL ?? "info" });
@@ -71,6 +72,7 @@ import webhookRoutes from "./routes/webhooks.js";
 import { startOracleCrank } from "./workers/crank.js";
 // Workers
 import { startEventIndexer } from "./workers/indexer.js";
+import "./workers/mint-burn-worker.js";
 
 const app = new Hono();
 
@@ -97,6 +99,31 @@ app.use(
 
 app.use("*", logger());
 
+// Dashboard routes protection
+const dashboard = new Hono();
+dashboard.use("/*", adminAuth);
+
+// Admin-only management routes
+dashboard.use("/create-stablecoin/*", rbac(["ADMIN"]));
+dashboard.use("/compliance/*", rbac(["ADMIN"]));
+dashboard.use("/privacy/*", rbac(["ADMIN"]));
+dashboard.use("/webhooks/*", rbac(["ADMIN"]));
+
+dashboard.route("/create-stablecoin", createStablecoinRoutes);
+dashboard.route("/compliance", complianceRoutes);
+dashboard.route("/privacy", privacyRoutes);
+dashboard.route("/webhooks", webhookRoutes);
+
+// Shared routes (Admin & Minter)
+dashboard.use("/list-stablecoins/*", rbac(["ADMIN", "MINTER"]));
+dashboard.use("/get-stablecoin/*", rbac(["ADMIN", "MINTER"]));
+dashboard.use("/mint-burn/*", rbac(["ADMIN", "MINTER"]));
+
+dashboard.route("/list-stablecoins", listStablecoinsRoutes);
+dashboard.route("/get-stablecoin", getStablecoinRoutes);
+dashboard.route("/mint-burn", mintBurnRoutes);
+
+// Health check (Public)
 app.get("/health", async (c) => {
 	try {
 		await db.run(sql`SELECT 1`);
@@ -107,14 +134,11 @@ app.get("/health", async (c) => {
 	}
 });
 
-app.route("/create-stablecoin", createStablecoinRoutes);
-app.route("/list-stablecoins", listStablecoinsRoutes);
-app.route("/get-stablecoin", getStablecoinRoutes);
-app.route("/mint-burn", mintBurnRoutes);
-app.route("/compliance", complianceRoutes);
-app.route("/privacy", privacyRoutes);
-app.route("/webhooks", webhookRoutes);
+// Admin route handles its own internal auth for login/register
 app.route("/admin", adminRoutes);
+
+// Mount dashboard
+app.route("/", dashboard);
 
 const port = parseInt(process.env.PORT || "3000", 10);
 console.log(`Server is running on port ${port}`);
@@ -130,5 +154,6 @@ serve(
 		// Start background workers
 		await startEventIndexer();
 		startOracleCrank();
+		log.info("Mint/Burn worker initialized");
 	},
 );

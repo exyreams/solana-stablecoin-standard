@@ -8,7 +8,6 @@ services:
       - "3001:3001"
     env_file:
       - ./services/.env
-      - ./services/.env.secret
     environment:
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=file:./db/dev.db
@@ -21,7 +20,7 @@ services:
     volumes:
       - ./services/db:/app/services/db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3001/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

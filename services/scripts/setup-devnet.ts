@@ -49,10 +49,10 @@ async function setup() {
 		programId: TOKEN_PROGRAM_ID,
 		oracleProgramId: ORACLE_PROGRAM_ID,
 		preset: Presets.SSS_1,
-		name: "USD Black",
-		symbol: "USDb",
+		name: "USD Red",
+		symbol: "USDr",
 		decimals: 6,
-		uri: "https://pastebin.com/raw/SjTJzhvy",
+		uri: "https://pastebin.com/raw/ZHzHzyK2",
 	});
 
 	console.log("Stablecoin Mint:", sdk.mint.toBase58());
@@ -60,9 +60,9 @@ async function setup() {
 	console.log("Initializing Metaplex metadata for wallet display...");
 	const metadataPda = await sdk.initializeMetaplexMetadata(
 		{
-			name: "USD Black",
-			symbol: "USDb",
-			uri: "https://pastebin.com/raw/SjTJzhvy",
+			name: "USD Red",
+			symbol: "USDr",
+			uri: "https://pastebin.com/raw/ZHzHzyK2",
 			sellerFeeBasisPoints: 0,
 		},
 		mintKeypair,

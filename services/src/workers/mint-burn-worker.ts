@@ -9,7 +9,7 @@ import { redisConnection } from "../routes/mint-burn.js";
 export const mintBurnWorker = new Worker(
 	"mint-burn",
 	async (job: Job) => {
-		const { type, id, mintAddress } = job.data;
+		const { type, id, mintAddress, minter } = job.data;
 
 		if (type === "mint") {
 			const [record] = await db
@@ -33,12 +33,17 @@ export const mintBurnWorker = new Worker(
 					Math.round(parseFloat(record.amount) * 10 ** status.decimals),
 				);
 
+				// Use minter from job, then DB, then authority default
+				const minterToUse =
+					minter || record.minter || authority.publicKey.toBase58();
+
 				log.info(
 					{
 						id,
 						amount: record.amount,
 						recipient: record.recipient,
 						mintAddress: mintToUse,
+						intendedMinter: minterToUse,
 					},
 					"Processing mint",
 				);
@@ -46,8 +51,9 @@ export const mintBurnWorker = new Worker(
 				const sig = await s.mintTokens({
 					recipient: new PublicKey(record.recipient),
 					amount: amountBN,
-					minter: authority,
+					minter: authority, // Must be Keypair, using system authority
 				});
+
 
 				await db
 					.update(mintRequests)
@@ -84,12 +90,17 @@ export const mintBurnWorker = new Worker(
 					Math.round(parseFloat(record.amount) * 10 ** status.decimals),
 				);
 
+				// Use minter from job, then DB, then authority default
+				const minterToUse =
+					minter || record.minter || authority.publicKey.toBase58();
+
 				log.info(
 					{
 						id,
 						amount: record.amount,
 						fromTokenAccount: record.fromTokenAccount,
 						mintAddress: mintToUse,
+						intendedBurner: minterToUse,
 					},
 					"Processing burn",
 				);
@@ -97,8 +108,9 @@ export const mintBurnWorker = new Worker(
 				const sig = await s.burn({
 					fromTokenAccount: new PublicKey(record.fromTokenAccount),
 					amount: amountBN,
-					burner: authority,
+					burner: authority, // Must be Keypair, using system authority
 				});
+
 
 				await db
 					.update(burnRequests)
@@ -114,7 +126,6 @@ export const mintBurnWorker = new Worker(
 				throw error;
 			}
 		}
-		// @ts-ignore - pnpm ioredis version mismatch
 	},
 	{ connection: redisConnection },
 );

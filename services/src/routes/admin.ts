@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { admins, auditLogs } from "../db/schema.js";
+import { admins, auditLogs, stablecoins } from "../db/schema.js";
 import { authority, connection, getStable, log } from "../index.js";
 import { adminAuth, createToken } from "../middleware/auth.js";
 
@@ -12,7 +12,7 @@ const app = new Hono();
 // ---- AUTHENTICATION ----
 
 app.post("/register", async (c) => {
-	const { username, password, secretToken } = await c.req.json();
+	const { username, password, secretToken, role } = await c.req.json();
 
 	// Very simple protection for initial setup
 	if (secretToken !== process.env.REGISTRATION_SECRET) {
@@ -24,6 +24,7 @@ app.post("/register", async (c) => {
 		await db.insert(admins).values({
 			username,
 			passwordHash,
+			role: role || "ADMIN",
 		});
 
 		log.info({ username }, "Admin registered");
@@ -48,9 +49,9 @@ app.post("/login", async (c) => {
 			return c.json({ error: "Invalid credentials" }, 401);
 		}
 
-		const token = await createToken(admin.id);
-		log.info({ username }, "Admin logged in");
-		return c.json({ success: true, token });
+		const token = await createToken(admin.id, admin.role);
+		log.info({ username, role: admin.role }, "Admin logged in");
+		return c.json({ success: true, token, role: admin.role });
 	} catch (err: any) {
 		log.error({ err: err.message }, "Login error");
 		return c.json({ error: "Login failed" }, 500);
@@ -205,6 +206,39 @@ app.delete("/minters/:address", async (c) => {
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
 		log.error({ err: err.message }, "Failed to remove minter");
+		c.status(500);
+		return c.json({ error: err.message });
+	}
+});
+
+// Returns all mint addresses where a specific wallet is an authorized minter
+app.get("/minter-status/:walletAddress", async (c) => {
+	const walletAddress = c.req.param("walletAddress");
+	try {
+		const allStablecoins = await db.select().from(stablecoins);
+		const results = [];
+		
+		for (const sc of allStablecoins) {
+			try {
+				const s = await getStable(sc.mintAddress);
+				const minters = await s.getMinters();
+				const isMinter = minters.some(
+					(m) => m.minter.toBase58() === walletAddress && m.active,
+				);
+				if (isMinter) {
+					results.push(sc.mintAddress);
+				}
+			} catch (e) {
+				log.warn(
+					{ mint: sc.mintAddress, err: (e as Error).message },
+					"Failed to check minter status for token",
+				);
+			}
+		}
+
+		return c.json({ authorizedMints: results });
+	} catch (err: any) {
+		log.error({ err: err.message }, "Failed to fetch minter status");
 		c.status(500);
 		return c.json({ error: err.message });
 	}

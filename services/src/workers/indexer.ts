@@ -3,8 +3,9 @@ import { PublicKey } from "@solana/web3.js";
 import fs from "fs";
 import { createRequire } from "module";
 import { db } from "../db/index.js";
-import { eventLogs } from "../db/schema.js";
+import { eventLogs, mintRequests, burnRequests } from "../db/schema.js";
 import { connection, log } from "../index.js";
+import { eq, and } from "drizzle-orm";
 
 const require = createRequire(import.meta.url);
 const idlPath = require.resolve("@stbr/sss-token-sdk/dist/idl/sss_token.json");
@@ -37,6 +38,49 @@ export async function startEventIndexer() {
 						name: event.name,
 						data: JSON.stringify(event.data),
 					});
+
+					// Sync to mint/burn history tables
+					if (event.name === "TokensMinted") {
+						const { recipient, amount, minter } = event.data as any;
+						// Try to find existing record by signature first (to avoid double entry)
+						const existing = await db
+							.select()
+							.from(mintRequests)
+							.where(eq(mintRequests.signature, logs.signature))
+							.limit(1);
+
+						if (existing.length === 0) {
+							// If no record with this signature, insert one
+							// We divide by decimals if we want to store as "human readable" or keep as base units?
+							// Schema says amount is text. Logic in routes uses base units string.
+							await db.insert(mintRequests).values({
+								recipient: recipient.toBase58(),
+								amount: amount.toString(),
+								mintAddress: logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
+								minter: minter.toBase58(),
+								status: "COMPLETED",
+								signature: logs.signature,
+							});
+						}
+					} else if (event.name === "TokensBurned") {
+						const { fromTokenAccount, amount, burner } = event.data as any;
+						const existing = await db
+							.select()
+							.from(burnRequests)
+							.where(eq(burnRequests.signature, logs.signature))
+							.limit(1);
+
+						if (existing.length === 0) {
+							await db.insert(burnRequests).values({
+								fromTokenAccount: fromTokenAccount.toBase58(),
+								amount: amount.toString(),
+								mintAddress: logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
+								minter: burner.toBase58(),
+								status: "COMPLETED",
+								signature: logs.signature,
+							});
+						}
+					}
 
 					// Auto-trigger webhooks for configured events
 					try {

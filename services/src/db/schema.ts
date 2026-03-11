@@ -7,6 +7,7 @@ export const mintRequests = sqliteTable("mint_requests", {
 		.$defaultFn(() => crypto.randomUUID()),
 	recipient: text("recipient").notNull(),
 	mintAddress: text("mint_address"),
+	minter: text("minter"), // The minter authority used for this request
 	amount: text("amount").notNull(),
 	status: text("status").notNull().default("PENDING"), // PENDING, PROCESSING, COMPLETED, FAILED
 	signature: text("signature"),
@@ -24,6 +25,7 @@ export const burnRequests = sqliteTable("burn_requests", {
 		.$defaultFn(() => crypto.randomUUID()),
 	fromTokenAccount: text("from_token_account").notNull(),
 	mintAddress: text("mint_address"),
+	minter: text("minter"), // The burner authority used for this request
 	amount: text("amount").notNull(),
 	status: text("status").notNull().default("PENDING"), // PENDING, PROCESSING, COMPLETED, FAILED
 	signature: text("signature"),
@@ -34,6 +36,7 @@ export const burnRequests = sqliteTable("burn_requests", {
 		.notNull()
 		.$defaultFn(() => new Date()),
 });
+
 
 // ── Event Indexer ─────────────────────────────────────────────────────────────
 export const eventLogs = sqliteTable("event_logs", {
@@ -111,6 +114,7 @@ export const admins = sqliteTable("admins", {
 		.$defaultFn(() => crypto.randomUUID()),
 	username: text("username").notNull().unique(),
 	passwordHash: text("password_hash").notNull(),
+	role: text("role").notNull().default("ADMIN"), // 'ADMIN', 'MINTER'
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
 		.$defaultFn(() => new Date()),
