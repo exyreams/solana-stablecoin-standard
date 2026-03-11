@@ -3,6 +3,7 @@ import client from "./client";
 export interface LoginResponse {
 	success: boolean;
 	token: string;
+	role: string;
 }
 
 export interface RegisterResponse {

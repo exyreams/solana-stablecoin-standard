@@ -4,7 +4,7 @@ interface AuditFiltersProps {
 	onFilterChange?: (filters: any) => void;
 }
 
-export const AuditFilters: FC<AuditFiltersProps> = ({ onFilterChange }) => {
+export const AuditFilters: FC<AuditFiltersProps> = () => {
 	const actionTypes = [
 		{ label: "MINT", active: true, color: "text-green-400" },
 		{ label: "BURN", active: true, color: "text-red-400" },

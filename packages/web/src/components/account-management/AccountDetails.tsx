@@ -69,7 +69,7 @@ export const AccountDetails: FC = () => {
 						<span className="text-[10px] uppercase text-(--text-dim)">
 							Delegate
 						</span>
-						<Badge variant="ghost">NONE</Badge>
+						<Badge variant="info">NONE</Badge>
 					</div>
 				</div>
 			</div>

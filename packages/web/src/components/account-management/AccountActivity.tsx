@@ -132,7 +132,7 @@ export const AccountActivity: FC = () => {
 							<td className="p-3">{activity.authority}</td>
 							<td className="p-3">
 								<Badge
-									variant={activity.status === "FINALIZED" ? "accent" : "ghost"}
+									variant={activity.status === "FINALIZED" ? "accent" : "info"}
 								>
 									{activity.status}
 								</Badge>

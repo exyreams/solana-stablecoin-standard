@@ -1,6 +1,5 @@
 import type { FC } from "react";
 import { Badge } from "../ui/Badge";
-import { Button } from "../ui/Button";
 
 export const AccountActions: FC = () => {
 	return (
