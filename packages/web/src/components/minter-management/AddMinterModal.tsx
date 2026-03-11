@@ -1,5 +1,6 @@
 import { type FC, useState } from "react";
 import { toast } from "sonner";
+import { useTokens } from "../../contexts/TokenContext";
 import { adminApi } from "../../lib/api/admin";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -18,6 +19,7 @@ export const AddMinterModal: FC<AddMinterModalProps> = ({
 	onSuccess,
 	mintAddress,
 }) => {
+	const { selectedToken } = useTokens();
 	const [address, setAddress] = useState("");
 	const [quota, setQuota] = useState("");
 	const [isActive, setIsActive] = useState(true);
@@ -31,14 +33,26 @@ export const AddMinterModal: FC<AddMinterModalProps> = ({
 
 		setIsSubmitting(true);
 		try {
-			await adminApi.addMinter(address, quota || "0", mintAddress);
+			// Scale quota by decimals (default to 6 if not found)
+			const decimals = selectedToken?.onChain?.decimals ?? 6;
+			const scaledQuota =
+				quota && quota !== "0"
+					? BigInt(Math.floor(parseFloat(quota) * 10 ** decimals)).toString()
+					: "0";
+
+			await adminApi.addMinter(address, scaledQuota, mintAddress);
 			toast.success("Minter added successfully");
 			onSuccess();
 			onClose();
 			setAddress("");
 			setQuota("");
 		} catch (err: any) {
-			toast.error(err.response?.data?.error || "Failed to add minter");
+			const errorMsg = err.response?.data?.error || "";
+			if (errorMsg.includes("already in use")) {
+				toast.error("This address is already authorized as a minter");
+			} else {
+				toast.error(errorMsg || "Failed to add minter");
+			}
 		} finally {
 			setIsSubmitting(false);
 		}

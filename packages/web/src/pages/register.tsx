@@ -9,6 +9,7 @@ export default function RegisterPage() {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [secretToken, setSecretToken] = useState("");
+	const [role, setRole] = useState("ADMIN");
 	const [loading, setLoading] = useState(false);
 	const { register } = useAuth();
 	const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function RegisterPage() {
 		setLoading(true);
 
 		try {
-			await register({ username, password, secretToken });
+			await register({ username, password, secretToken, role });
 			toast.success("Account created successfully. You can now login.");
 			navigate("/login");
 		} catch (error: any) {
@@ -76,6 +77,36 @@ export default function RegisterPage() {
 									placeholder="••••••••"
 									className="w-full bg-body border border-border rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
 								/>
+							</div>
+						</div>
+
+						<div className="space-y-2">
+							<label className="text-xs font-bold uppercase tracking-wider text-text-dark">
+								Account Role
+							</label>
+							<div className="flex gap-4">
+								<button
+									type="button"
+									onClick={() => setRole("ADMIN")}
+									className={`flex-1 py-2 rounded-lg border font-mono text-[10px] transition-all ${
+										role === "ADMIN"
+											? "bg-primary/20 border-primary text-primary"
+											: "border-border text-text-dim hover:border-text-dark"
+									}`}
+								>
+									ADMIN
+								</button>
+								<button
+									type="button"
+									onClick={() => setRole("MINTER")}
+									className={`flex-1 py-2 rounded-lg border font-mono text-[10px] transition-all ${
+										role === "MINTER"
+											? "bg-primary/20 border-primary text-primary"
+											: "border-border text-text-dim hover:border-text-dark"
+									}`}
+								>
+									MINTER
+								</button>
 							</div>
 						</div>
 

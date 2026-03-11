@@ -11,6 +11,8 @@ interface MinterTableProps {
 	onEdit: (minter: MinterResponse) => void;
 	onRemove: (minter: MinterResponse) => void;
 	onReset: (minter: MinterResponse) => void;
+	backendAuthority?: string;
+	decimals?: number;
 }
 
 export const MinterTable: FC<MinterTableProps> = ({
@@ -19,6 +21,8 @@ export const MinterTable: FC<MinterTableProps> = ({
 	onEdit,
 	onRemove,
 	onReset,
+	backendAuthority,
+	decimals = 6,
 }) => {
 	const getProgressPercentage = (minter: MinterResponse): number => {
 		const quota = BigInt(minter.quota);
@@ -85,6 +89,21 @@ export const MinterTable: FC<MinterTableProps> = ({
 						const quota = BigInt(minter.quota);
 						const minted = BigInt(minter.minted);
 						const remaining = quota === 0n ? null : quota - minted;
+						const multiplier = 10 ** decimals;
+
+						const formattedQuota =
+							quota === 0n
+								? "UNLIMITED"
+								: (Number(quota) / multiplier).toLocaleString();
+						const formattedMinted = (
+							Number(minted) / multiplier
+						).toLocaleString();
+						const formattedRemaining =
+							remaining === null
+								? "∞"
+								: (Number(remaining) / multiplier).toLocaleString();
+
+						const isAuthority = minter.minter === backendAuthority;
 
 						return (
 							<tr key={index} className="border-b border-(--border-dim)">
@@ -93,6 +112,14 @@ export const MinterTable: FC<MinterTableProps> = ({
 										<span className="text-(--text-main)">
 											{minter.minter.slice(0, 6)}...{minter.minter.slice(-6)}
 										</span>
+										{isAuthority && (
+											<Badge
+												variant="danger"
+												className="text-[9px] px-1.5 py-0"
+											>
+												AUTHORITY
+											</Badge>
+										)}
 										<Copy
 											className="w-3 h-3 text-(--text-dark) hover:text-(--accent-primary) cursor-pointer"
 											onClick={() => {
@@ -111,10 +138,10 @@ export const MinterTable: FC<MinterTableProps> = ({
 									{quota === 0n ? (
 										<Badge variant="accent">UNLIMITED</Badge>
 									) : (
-										quota.toLocaleString()
+										formattedQuota
 									)}
 								</td>
-								<td className="p-4">{minted.toLocaleString()}</td>
+								<td className="p-4">{formattedMinted}</td>
 								<td className="p-4">
 									<div className="flex items-center gap-2">
 										{quota !== 0n && (
@@ -130,12 +157,14 @@ export const MinterTable: FC<MinterTableProps> = ({
 										)}
 										<span
 											className={
-												quota !== 0n && remaining !== null && remaining < 1000n
+												quota !== 0n &&
+												remaining !== null &&
+												remaining < BigInt(1000 * multiplier)
 													? "text-(--danger) font-bold"
 													: ""
 											}
 										>
-											{remaining === null ? "∞" : remaining.toLocaleString()}
+											{formattedRemaining}
 										</span>
 									</div>
 								</td>

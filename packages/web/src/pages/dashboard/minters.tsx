@@ -1,3 +1,4 @@
+import { ShieldCheck } from "lucide-react";
 import { type FC, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -15,6 +16,7 @@ const Minters: FC = () => {
 
 	const [minters, setMinters] = useState<MinterResponse[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [authority, setAuthority] = useState<string>("");
 
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [isEditOpen, setIsEditOpen] = useState(false);
@@ -37,9 +39,19 @@ const Minters: FC = () => {
 		}
 	}, [selectedToken]);
 
+	const fetchAuthority = useCallback(async () => {
+		try {
+			const data = await adminApi.getAuthority();
+			setAuthority(data.publicKey);
+		} catch (err) {
+			console.error("Failed to fetch authority:", err);
+		}
+	}, []);
+
 	useEffect(() => {
 		fetchMinters();
-	}, [fetchMinters]);
+		fetchAuthority();
+	}, [fetchMinters, fetchAuthority]);
 
 	const handleEdit = (minter: MinterResponse) => {
 		setSelectedMinter(minter);
@@ -99,12 +111,43 @@ const Minters: FC = () => {
 				</Button>
 			</div>
 
+			{authority && (
+				<div className="mb-6 p-4 bg-[#CCA352]/5 border border-[#CCA352]/20 rounded-sm flex items-center justify-between">
+					<div className="flex items-center gap-3">
+						<div className="p-2 bg-[#CCA352]/10 rounded-full">
+							<ShieldCheck className="w-4 h-4 text-[#CCA352]" />
+						</div>
+						<div>
+							<div className="text-[10px] font-mono text-[#CCA352] uppercase font-bold">
+								Backend Authority Address
+							</div>
+							<div className="text-xs font-mono text-(--text-main)">
+								{authority}
+							</div>
+						</div>
+					</div>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-[#CCA352] hover:bg-[#CCA352]/10"
+						onClick={() => {
+							navigator.clipboard.writeText(authority);
+							toast.success("Address copied to clipboard");
+						}}
+					>
+						COPY ADDRESS
+					</Button>
+				</div>
+			)}
+
 			<MinterTable
 				minters={minters}
 				isLoading={isLoading}
 				onEdit={handleEdit}
 				onRemove={handleRemove}
 				onReset={handleReset}
+				backendAuthority={authority}
+				decimals={selectedToken?.onChain?.decimals ?? 6}
 			/>
 
 			<AddMinterModal

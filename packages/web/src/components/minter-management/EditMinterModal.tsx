@@ -1,5 +1,6 @@
 import { type FC, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTokens } from "../../contexts/TokenContext";
 import { adminApi, type MinterResponse } from "../../lib/api/admin";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -20,6 +21,7 @@ export const EditMinterModal: FC<EditMinterModalProps> = ({
 	minter,
 	mintAddress,
 }) => {
+	const { selectedToken } = useTokens();
 	const [quota, setQuota] = useState("");
 	const [isActive, setIsActive] = useState(true);
 	const [resetMinted, setResetMinted] = useState(false);
@@ -27,19 +29,28 @@ export const EditMinterModal: FC<EditMinterModalProps> = ({
 
 	useEffect(() => {
 		if (minter) {
-			setQuota(minter.quota);
+			const decimals = selectedToken?.onChain?.decimals ?? 6;
+			// Convert atomic units to UI units for display
+			const quotaVal = parseFloat(minter.quota) / 10 ** decimals;
+			setQuota(quotaVal.toString());
 			setIsActive(minter.active);
 			setResetMinted(false);
 		}
-	}, [minter]);
+	}, [minter, selectedToken]);
 
 	const handleSubmit = async () => {
 		if (!minter) return;
 
 		setIsSubmitting(true);
 		try {
+			const decimals = selectedToken?.onChain?.decimals ?? 6;
+			const scaledQuota =
+				quota && quota !== "0"
+					? BigInt(Math.floor(parseFloat(quota) * 10 ** decimals)).toString()
+					: "0";
+
 			await adminApi.updateMinter(minter.minter, {
-				quota,
+				quota: scaledQuota,
 				active: isActive,
 				resetMinted,
 				mintAddress,
