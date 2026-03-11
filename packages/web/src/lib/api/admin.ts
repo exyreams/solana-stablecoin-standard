@@ -61,4 +61,10 @@ export const adminApi = {
 		});
 		return data;
 	},
+	getMinterStatus: async (walletAddress: string): Promise<string[]> => {
+		const { data } = await client.get<{ authorizedMints: string[] }>(
+			`/admin/minter-status/${walletAddress}`,
+		);
+		return data.authorizedMints;
+	},
 };

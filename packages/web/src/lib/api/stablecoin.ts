@@ -101,11 +101,13 @@ export const stablecoinApi = {
 		mintAddress: string,
 		recipient: string,
 		amount: number,
+		minter?: string,
 	): Promise<{ success: boolean; id: string }> => {
 		const response = await api.post("/mint-burn/mint", {
 			mintAddress,
 			recipient,
 			amount,
+			minter,
 		});
 		return response.data;
 	},
@@ -113,19 +115,58 @@ export const stablecoinApi = {
 		mintAddress: string,
 		fromTokenAccount: string,
 		amount: number,
+		minter?: string,
 	): Promise<{ success: boolean; id: string }> => {
 		const response = await api.post("/mint-burn/burn", {
 			mintAddress,
 			fromTokenAccount,
 			amount,
+			minter,
 		});
 		return response.data;
 	},
+
 	getHistory: async (
 		mintAddress: string,
 	): Promise<{ mints: any[]; burns: any[] }> => {
 		const response = await api.get<{ mints: any[]; burns: any[] }>(
 			`/get-stablecoin/${mintAddress}/history`,
+		);
+		return response.data;
+	},
+
+	prepareMint: async (
+		mintAddress: string,
+		recipient: string,
+		amount: number,
+		minter: string,
+	): Promise<{ transaction: string }> => {
+		const response = await api.post<{ transaction: string }>(
+			"/mint-burn/prepare-mint",
+			{
+				mintAddress,
+				recipient,
+				amount,
+				minter,
+			},
+		);
+		return response.data;
+	},
+
+	prepareBurn: async (
+		mintAddress: string,
+		fromTokenAccount: string,
+		amount: number,
+		minter: string,
+	): Promise<{ transaction: string }> => {
+		const response = await api.post<{ transaction: string }>(
+			"/mint-burn/prepare-burn",
+			{
+				mintAddress,
+				fromTokenAccount,
+				amount,
+				minter,
+			},
 		);
 		return response.data;
 	},
