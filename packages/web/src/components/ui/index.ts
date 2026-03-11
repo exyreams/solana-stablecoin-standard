@@ -13,3 +13,4 @@ export {
 } from "./Card";
 export type { InputProps } from "./Input";
 export { Input } from "./Input";
+export { TokenIcon } from "./TokenIcon";

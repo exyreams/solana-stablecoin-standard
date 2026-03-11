@@ -1,13 +1,14 @@
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { ChevronDown, LogOut, User as UserIcon } from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTokens } from "../../contexts/TokenContext";
-import { Badge } from "../ui/Badge";
+import { Badge, TokenIcon } from "../ui";
 
 export const DashboardTopBar: FC = () => {
-	const { admin, logout } = useAuth();
+	const { user, logout } = useAuth();
 	const { tokens, selectedToken, setSelectedToken } = useTokens();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [showTokenDropdown, setShowTokenDropdown] = useState(false);
@@ -36,6 +37,13 @@ export const DashboardTopBar: FC = () => {
 						className="bg-[#0f0f0f] border border-[#333333] px-3 py-1 flex items-center gap-3 cursor-pointer hover:border-[#CCA352] transition-colors"
 					>
 						<div className="flex items-center gap-2">
+							{selectedToken && (
+								<TokenIcon
+									symbol={selectedToken.symbol}
+									logoUri={selectedToken.onChain?.uri || selectedToken.uri}
+									size="sm"
+								/>
+							)}
 							<span className="font-mono text-xs">
 								{selectedToken ? `${selectedToken.symbol}-SOL` : "SELECT TOKEN"}
 							</span>
@@ -73,13 +81,21 @@ export const DashboardTopBar: FC = () => {
 													: "text-[#EAEAEA]"
 											}`}
 										>
-											<span>{token.symbol}-SOL</span>
+											<div className="flex items-center gap-2">
+												<TokenIcon
+													symbol={token.symbol}
+													logoUri={token.onChain?.uri || token.uri}
+													size="sm"
+												/>
+												<span>{token.symbol}-SOL</span>
+											</div>
 											<Badge variant="accent" className="text-[7px] uppercase">
 												{token.preset}
 											</Badge>
 										</button>
 									))
 								)}
+
 								<div className="h-[1px] bg-border mx-2 my-1" />
 								<button
 									onClick={() => {
@@ -98,13 +114,17 @@ export const DashboardTopBar: FC = () => {
 					NET <span className="text-[#FFD700]">DEVNET</span>
 				</div>
 
+				<div className="wallet-adapter-wrapper">
+					<WalletMultiButton className="!bg-[#111111] !border !border-[#333333] !font-mono !text-[11px] !h-8 hover:!border-primary !transition-colors" />
+				</div>
+
 				<div className="relative">
 					<button
 						onClick={() => setShowDropdown(!showDropdown)}
 						className="bg-[#CCA352] text-[#0a0a0a] px-4 py-1.5 font-mono text-[11px] font-semibold hover:bg-[#d4b366] transition-colors flex items-center gap-2"
 					>
 						<UserIcon className="w-3.5 h-3.5" />
-						{admin?.username || "ADMIN"}
+						{user?.username || "USER"}
 						<ChevronDown className="w-3 h-3" />
 					</button>
 

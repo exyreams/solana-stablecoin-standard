@@ -23,6 +23,7 @@ import {
 import type { FC } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface NavItemProps {
 	label: string;
@@ -100,104 +101,136 @@ const NavGroup: FC<NavGroupProps> = ({
 };
 
 export const DashboardSidebar: FC = () => {
+	const { user } = useAuth();
+	const isAdmin = user?.role === "ADMIN";
+
 	return (
 		<nav className="col-start-1 row-start-2 bg-[#0f0f0f] border-r border-[#222222] p-4 flex flex-col gap-6 overflow-y-auto">
 			{/* Quick Action - Create Stablecoin */}
-			<div className="pb-4 border-b border-[#222222]">
-				<Link
-					to="/create"
-					className="flex items-center justify-center px-4 py-3 text-[11px] font-mono font-bold bg-[#CCA352] text-black border border-[#CCA352] hover:bg-[#FFD700] hover:shadow-[0_0_15px_rgba(204,163,82,0.15)] transition-all"
-				>
-					+ CREATE STABLECOIN
-				</Link>
-			</div>
+			{isAdmin && (
+				<div className="pb-4 border-b border-[#222222]">
+					<Link
+						to="/create"
+						className="flex items-center justify-center px-4 py-3 text-[11px] font-mono font-bold bg-[#CCA352] text-black border border-[#CCA352] hover:bg-[#FFD700] hover:shadow-[0_0_15px_rgba(204,163,82,0.15)] transition-all"
+					>
+						+ CREATE STABLECOIN
+					</Link>
+				</div>
+			)}
 
-			<NavGroup title="Overview" icon={<Layers size={14} />}>
-				<NavItem
-					label="DASHBOARD"
-					href="/dashboard"
-					icon={<LayoutDashboard size={14} />}
-				/>
-				<NavItem
-					label="TOKEN INFO"
-					href="/dashboard/token-info"
-					icon={<Coins size={14} />}
-				/>
-				<NavItem
-					label="ANALYTICS"
-					href="/dashboard/analytics"
-					icon={<BarChart3 size={14} />}
-				/>
-				<NavItem
-					label="AUDIT LOGS"
-					href="/dashboard/audit-logs"
-					icon={<FileText size={14} />}
-				/>
-			</NavGroup>
-			<NavGroup title="Operations" icon={<Sliders size={14} />}>
-				<NavItem
-					label="MINT TOKENS"
-					href="/dashboard/mint-tokens"
-					icon={<Flame size={14} />}
-				/>
-				<NavItem
-					label="BURN TOKENS"
-					href="/dashboard/burn-tokens"
-					icon={<Zap size={14} />}
-				/>
-				<NavItem
-					label="ACCOUNTS"
-					href="/dashboard/accounts"
-					icon={<Database size={14} />}
-				/>
-			</NavGroup>
-			<NavGroup
-				title="Compliance"
-				defaultOpen={false}
-				icon={<ShieldAlert size={14} />}
-			>
-				<NavItem
-					label="BLACKLIST"
-					href="/dashboard/blacklist"
-					icon={<Lock size={14} />}
-				/>
-				<NavItem
-					label="COMPLIANCE"
-					href="/dashboard/compliance"
-					icon={<Shield size={14} />}
-				/>
-				<NavItem
-					label="PRIVACY"
-					href="/dashboard/privacy"
-					icon={<Eye size={14} />}
-				/>
-			</NavGroup>
-			<NavGroup
-				title="Admin"
-				defaultOpen={false}
-				icon={<Settings2 size={14} />}
-			>
-				<NavItem
-					label="MINTERS"
-					href="/dashboard/minters"
-					icon={<Users size={14} />}
-				/>
-				<NavItem
-					label="ROLES & PERMS"
-					href="/dashboard/roles"
-					icon={<UserCog size={14} />}
-				/>
-				<NavItem
-					label="ORACLE"
-					href="/dashboard/oracle"
-					icon={<Database size={14} />}
-				/>
-				<NavItem
-					label="SETTINGS"
-					href="/dashboard/settings"
-					icon={<Settings size={14} />}
-				/>
-			</NavGroup>
+			{isAdmin && (
+				<NavGroup title="Overview" icon={<Layers size={14} />}>
+					<NavItem
+						label="DASHBOARD"
+						href="/dashboard"
+						icon={<LayoutDashboard size={14} />}
+					/>
+					<NavItem
+						label="TOKEN INFO"
+						href="/dashboard/token-info"
+						icon={<Coins size={14} />}
+					/>
+					<NavItem
+						label="ANALYTICS"
+						href="/dashboard/analytics"
+						icon={<BarChart3 size={14} />}
+					/>
+					<NavItem
+						label="AUDIT LOGS"
+						href="/dashboard/audit-logs"
+						icon={<FileText size={14} />}
+					/>
+				</NavGroup>
+			)}
+
+			{isAdmin ? (
+				<NavGroup title="Operations" icon={<Sliders size={14} />}>
+					<NavItem
+						label="MINT TOKENS"
+						href="/dashboard/mint-tokens"
+						icon={<Coins size={14} />}
+					/>
+					<NavItem
+						label="BURN TOKENS"
+						href="/dashboard/burn-tokens"
+						icon={<Flame size={14} />}
+					/>
+					<NavItem
+						label="ACCOUNTS"
+						href="/dashboard/accounts"
+						icon={<Database size={14} />}
+					/>
+				</NavGroup>
+			) : (
+				<div className="flex flex-col gap-1">
+					<div className="text-[10px] text-[#777777] uppercase font-bold tracking-wider mb-2 flex items-center gap-2">
+						<Sliders size={14} />
+						Operations
+					</div>
+					<NavItem
+						label="MINT TOKENS"
+						href="/dashboard/mint-tokens"
+						icon={<Flame size={14} />}
+					/>
+					<NavItem
+						label="BURN TOKENS"
+						href="/dashboard/burn-tokens"
+						icon={<Zap size={14} />}
+					/>
+				</div>
+			)}
+
+			{isAdmin && (
+				<>
+					<NavGroup
+						title="Compliance"
+						defaultOpen={false}
+						icon={<ShieldAlert size={14} />}
+					>
+						<NavItem
+							label="BLACKLIST"
+							href="/dashboard/blacklist"
+							icon={<Lock size={14} />}
+						/>
+						<NavItem
+							label="COMPLIANCE"
+							href="/dashboard/compliance"
+							icon={<Shield size={14} />}
+						/>
+						<NavItem
+							label="PRIVACY"
+							href="/dashboard/privacy"
+							icon={<Eye size={14} />}
+						/>
+					</NavGroup>
+					<NavGroup
+						title="Admin"
+						defaultOpen={false}
+						icon={<Settings2 size={14} />}
+					>
+						<NavItem
+							label="MINTERS"
+							href="/dashboard/minters"
+							icon={<Users size={14} />}
+						/>
+						<NavItem
+							label="ROLES & PERMS"
+							href="/dashboard/roles"
+							icon={<UserCog size={14} />}
+						/>
+						<NavItem
+							label="ORACLE"
+							href="/dashboard/oracle"
+							icon={<Database size={14} />}
+						/>
+						<NavItem
+							label="SETTINGS"
+							href="/dashboard/settings"
+							icon={<Settings size={14} />}
+						/>
+					</NavGroup>
+				</>
+			)}
 		</nav>
 	);
 };
