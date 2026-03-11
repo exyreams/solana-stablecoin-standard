@@ -3,7 +3,7 @@ import {
 	getOrCreateAssociatedTokenAccount,
 	TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import {
 	deriveMinterQuota,
 	deriveRolesConfig,
@@ -400,6 +400,73 @@ export class SolanaStablecoin {
 			})
 			.signers([burner])
 			.rpc();
+	}
+
+	/**
+	 * Prepare a transaction for minting tokens.
+	 * Returns a Transaction object that can be signed by an external wallet.
+	 */
+	async prepareMintTransaction(options: {
+		recipient: PublicKey;
+		amount: bigint;
+		minter: PublicKey;
+	}): Promise<Transaction> {
+		const ata = await getOrCreateAssociatedTokenAccount(
+			this.connection,
+			this.authority,
+			this.mint,
+			options.recipient,
+			false,
+			"confirmed",
+			{},
+			TOKEN_2022_PROGRAM_ID,
+		);
+
+		const [minterQuotaPda] = deriveMinterQuota(
+			this.mint,
+			options.minter,
+			this.program.programId,
+		);
+		const [statePda] = deriveStablecoinState(this.mint, this.program.programId);
+		const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
+
+		return (this.program.methods as any)
+			.mint(new BN(options.amount.toString()))
+			.accounts({
+				minter: options.minter,
+				stablecoinState: statePda,
+				rolesConfig: rolesPda,
+				minterQuota: minterQuotaPda,
+				mint: this.mint,
+				recipientTokenAccount: ata.address,
+				tokenProgram: TOKEN_2022_PROGRAM_ID,
+			})
+			.transaction();
+	}
+
+	/**
+	 * Prepare a transaction for burning tokens.
+	 * Returns a Transaction object that can be signed by an external wallet.
+	 */
+	async prepareBurnTransaction(options: {
+		fromTokenAccount: PublicKey;
+		amount: bigint;
+		burner: PublicKey;
+	}): Promise<Transaction> {
+		const [statePda] = deriveStablecoinState(this.mint, this.program.programId);
+		const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
+
+		return (this.program.methods as any)
+			.burn(new BN(options.amount.toString()))
+			.accounts({
+				burner: options.burner,
+				stablecoinState: statePda,
+				rolesConfig: rolesPda,
+				mint: this.mint,
+				fromTokenAccount: options.fromTokenAccount,
+				tokenProgram: TOKEN_2022_PROGRAM_ID,
+			})
+			.transaction();
 	}
 
 	/** Freeze a token account. Requires master or pauser role. */
