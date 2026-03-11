@@ -2,6 +2,12 @@
 
 All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: application/json`.
 
+## Authentication
+
+Most routes (except Health and Public Stablecoin info) require a JSON Web Token (JWT).
+- **Header**: `Authorization: Bearer <your_jwt_token>`
+- **Roles**: `ADMIN` (Full access) or `MINTER` (Mint/Burn only)
+
 ---
 
 ## Health
@@ -10,35 +16,46 @@ All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: applica
 |---|---|---|
 | `GET` | `/health` | Returns `{ status: "ok" }` |
 
+## Authentication (Admin/Minter)
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| `POST` | `/admin/register` | `{ username, password, secretToken }` | Register a new Admin (requires secret token) |
+| `POST` | `/admin/login` | `{ username, password }` | Login and receive a JWT token |
+
 ---
 
 ## Stablecoin Management
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/create-stablecoin` | `{ preset, name, symbol, decimals?, uri?, extensions?, roles? }` | Create a new stablecoin |
-| `GET` | `/list-stablecoins` | `?limit=50&offset=0` | List all created stablecoins |
-| `GET` | `/get-stablecoin/:mintAddress` | — | Get a specific stablecoin by mint address |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `POST` | `/create-stablecoin` | `{ preset, name, symbol, decimals?, uri?, extensions?, roles? }` | Create a new stablecoin | `ADMIN` |
+| `GET` | `/list-stablecoins` | `?limit=50&offset=0` | List all created stablecoins | Public |
+| `GET` | `/get-stablecoin/:mintAddress` | — | Get a specific stablecoin details | Public |
+| `GET` | `/get-stablecoin/:mintAddress/history` | — | Get recent mint/burn history | Public |
 
 ---
 
 ## Mint / Burn (SSS-1+)
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/mint-burn/mint` | `{ recipient, amount }` | Queue a mint request |
-| `POST` | `/mint-burn/burn` | `{ fromTokenAccount, amount }` | Queue a burn request |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `POST` | `/mint-burn/mint` | `{ recipient, amount, mintAddress, minter }` | Queue a mint request (Admin flow) | `ADMIN` |
+| `POST` | `/mint-burn/prepare-mint` | `{ recipient, amount, mintAddress, minter }` | Prepare a mint transaction (Minter flow). Returns `{ transaction: string }` (base64) | `MINTER`/`ADMIN` |
+| `POST` | `/mint-burn/burn` | `{ fromTokenAccount, amount, mintAddress, minter }` | Queue a burn request (Admin flow) | `ADMIN` |
+| `POST` | `/mint-burn/prepare-burn` | `{ fromTokenAccount, amount, mintAddress, minter }` | Prepare a burn transaction (Minter flow). Returns `{ transaction: string }` (base64) | `MINTER`/`ADMIN` |
 
 ---
 
 ## Admin — Status & Lifecycle
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/admin/status` | — | High-level state, metadata, and roles |
-| `GET` | `/admin/on-chain-status` | — | Raw blockchain account data (audit source) |
-| `GET` | `/admin/supply` | — | Canonical on-chain total supply |
-| `DELETE` | `/admin/close-mint` | — | Permanently close mint (supply must be zero) |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `GET` | `/admin/status` | — | High-level state, metadata, and roles | `ADMIN` |
+| `GET` | `/admin/on-chain-status` | — | Raw blockchain account data | `ADMIN` |
+| `GET` | `/admin/supply` | — | Canonical on-chain total supply | `ADMIN` |
+| `GET` | `/admin/authority` | — | Get backend authority public key | `MINTER`/`ADMIN` |
+| `DELETE` | `/admin/close-mint` | — | Permanently close mint | `ADMIN` |
 
 ## Admin — Roles
 
@@ -50,12 +67,13 @@ All routes are on a single Hono server (`PORT=3001`). Set `Content-Type: applica
 
 ## Admin — Minters
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/admin/minters` | — | List all minters |
-| `POST` | `/admin/minters` | `{ address, quota }` | Add minter |
-| `PUT` | `/admin/minters/:address` | `{ quota, active, resetMinted? }` | Update minter |
-| `DELETE` | `/admin/minters/:address` | — | Remove minter |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `GET` | `/admin/minters` | — | List all minters | `ADMIN` |
+| `GET` | `/admin/minter-status/:wallet` | — | Check wallet's authorized mints | `MINTER`/`ADMIN` |
+| `POST` | `/admin/minters` | `{ address, quota }` | Add minter | `ADMIN` |
+| `PUT` | `/admin/minters/:address` | `{ quota, active, resetMinted? }` | Update minter | `ADMIN` |
+| `DELETE` | `/admin/minters/:address` | — | Remove minter | `ADMIN` |
 
 ## Admin — Transfer Hook (SSS-2)
 
