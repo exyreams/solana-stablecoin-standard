@@ -276,4 +276,25 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
+	getAuditLogs: async (
+		limit = 100,
+	): Promise<{ count: number; entries: any[] }> => {
+		const response = await api.get<{ count: number; entries: any[] }>(
+			"/compliance/audit",
+			{
+				params: { limit },
+			},
+		);
+		return response.data;
+	},
+	getAccountBalance: async (
+		address: string,
+	): Promise<{ amount: string; decimals: number; uiAmountString: string }> => {
+		const response = await api.get<{
+			amount: string;
+			decimals: number;
+			uiAmountString: string;
+		}>(`/accounts/${address}/balance`);
+		return response.data;
+	},
 };
