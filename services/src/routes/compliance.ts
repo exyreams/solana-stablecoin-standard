@@ -1,9 +1,13 @@
+import {
+	getOrCreateAssociatedTokenAccount,
+	TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { count, desc } from "drizzle-orm";
+import { count, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { auditLogs } from "../db/schema.js";
-import { authority, getStable, log } from "../index.js";
+import { auditLogs, burnRequests, mintRequests } from "../db/schema.js";
+import { authority, connection, getStable, log } from "../index.js";
 import { adminAuth } from "../middleware/auth.js";
 
 const app = new Hono();
@@ -14,7 +18,7 @@ app.use("/*", adminAuth);
 // ---- BLACKLIST (SSS-2) ----
 
 app.post("/blacklist", async (c) => {
-	const { address, reason } = await c.req.json();
+	const { mintAddress, address, reason } = await c.req.json();
 	if (!address) {
 		c.status(400);
 		return c.json({ error: "address required" });
@@ -22,7 +26,7 @@ app.post("/blacklist", async (c) => {
 
 	try {
 		const finalReason = reason || "Manual addition";
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.compliance.blacklistAdd(
 			new PublicKey(address),
 			finalReason,
@@ -91,7 +95,7 @@ app.get("/blacklist/:address", async (c) => {
 // ---- SEIZE (SSS-2) ----
 
 app.post("/seize", async (c) => {
-	const { fromTokenAccount, toTokenAccount, amount, reason } =
+	const { mintAddress, fromTokenAccount, toTokenAccount, amount, reason } =
 		await c.req.json();
 	if (!fromTokenAccount || !toTokenAccount || !amount) {
 		c.status(400);
@@ -100,10 +104,24 @@ app.post("/seize", async (c) => {
 		});
 	}
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
+
+		// SMART RESOLUTION: If toTokenAccount is a wallet, get/create its ATA
+		const toAddressPk = new PublicKey(toTokenAccount);
+		const toAta = await getOrCreateAssociatedTokenAccount(
+			connection,
+			authority,
+			new PublicKey(s.mint),
+			toAddressPk,
+			false,
+			"confirmed",
+			{},
+			TOKEN_2022_PROGRAM_ID,
+		);
+
 		const sig = await s.compliance.seize({
 			fromTokenAccount: new PublicKey(fromTokenAccount),
-			toTokenAccount: new PublicKey(toTokenAccount),
+			toTokenAccount: toAta.address,
 			amount: BigInt(amount),
 			seizer: authority,
 		});
@@ -111,7 +129,11 @@ app.post("/seize", async (c) => {
 		await db.insert(auditLogs).values({
 			action: "SEIZE",
 			address: fromTokenAccount,
-			reason: reason || `Seized to ${toTokenAccount}`,
+			reason: JSON.stringify({
+				amount: amount,
+				destination: toTokenAccount,
+				note: reason || "Manual seizure",
+			}),
 			signature: sig,
 		});
 		log.info(
@@ -129,13 +151,13 @@ app.post("/seize", async (c) => {
 // ---- FREEZE / THAW (SSS-1) ----
 
 app.post("/freeze", async (c) => {
-	const { address, reason } = await c.req.json();
+	const { mintAddress, address, reason } = await c.req.json();
 	if (!address) {
 		c.status(400);
 		return c.json({ error: "address required" });
 	}
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.freeze(new PublicKey(address));
 
 		await db.insert(auditLogs).values({
@@ -154,13 +176,13 @@ app.post("/freeze", async (c) => {
 });
 
 app.post("/thaw", async (c) => {
-	const { address, reason } = await c.req.json();
+	const { mintAddress, address, reason } = await c.req.json();
 	if (!address) {
 		c.status(400);
 		return c.json({ error: "address required" });
 	}
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.thaw(new PublicKey(address));
 
 		await db.insert(auditLogs).values({
@@ -236,6 +258,205 @@ app.get("/audit", async (c) => {
 		const [{ value }] = await db.select({ value: count() }).from(auditLogs);
 		return c.json({ count: value, entries: logs });
 	} catch (err: any) {
+		c.status(500);
+		return c.json({ error: err.message });
+	}
+});
+
+// ---- ACCOUNT HISTORY (On-Chain) ----
+
+app.get("/history/:address", async (c) => {
+	const addressString = c.req.param("address");
+	try {
+		const address = new PublicKey(addressString);
+		const limit = parseInt(c.req.query("limit") || "20");
+
+		// 1. Fetch Audit Logs from DB first (fastest, no rate limit)
+		const dbLogs = await db
+			.select()
+			.from(auditLogs)
+			.where(eq(auditLogs.address, addressString))
+			.orderBy(desc(auditLogs.timestamp))
+			.limit(limit);
+
+		// 2. Fetch Mint/Burn requests from DB
+		// we fetch mints where recipient is this address, and burns where fromTokenAccount is this address
+		const [mints, burns] = await Promise.all([
+			db
+				.select()
+				.from(mintRequests)
+				.where(eq(mintRequests.recipient, addressString))
+				.orderBy(desc(mintRequests.createdAt))
+				.limit(limit),
+			db
+				.select()
+				.from(burnRequests)
+				.where(eq(burnRequests.fromTokenAccount, addressString))
+				.orderBy(desc(burnRequests.createdAt))
+				.limit(limit),
+		]);
+
+		const s = await getStable();
+		let decimals = 6;
+		try {
+			const status = await s.getStatus();
+			decimals = status.decimals;
+		} catch (_e) {
+			// Intentional - use default decimals
+		}
+		const div = Math.pow(10, decimals);
+
+		// 3. Map DB logs to UI format
+		const history = dbLogs.map((log) => {
+			let details = log.reason || "";
+			let amountStr = "";
+
+			if (
+				log.action === "FREEZE" ||
+				log.action === "THAW" ||
+				log.action === "BLACKLIST_ADD"
+			) {
+				details = log.signature
+					? `${log.signature.slice(0, 8)}...${log.signature.slice(-8)}`
+					: "Pending";
+			} else if (log.action === "SEIZE") {
+				try {
+					const parsed = JSON.parse(log.reason || "{}");
+					const readableAmount = (Number(parsed.amount) / div).toLocaleString(
+						undefined,
+						{ minimumFractionDigits: 2 },
+					);
+					amountStr = `-${readableAmount}`;
+					details = `Rec: ${parsed.destination?.slice(0, 4)}...${parsed.destination?.slice(-4)}${parsed.note ? ` (${parsed.note})` : ""}`;
+				} catch (_e) {
+					details = `Seizure: ${log.reason}`;
+				}
+			}
+
+			return {
+				signature: log.signature || "pending",
+				action: log.action,
+				amount: amountStr,
+				details,
+				authority: "ADMIN",
+				status: log.signature ? "FINALIZED" : "PENDING",
+				timestamp: log.timestamp.toISOString(),
+			};
+		});
+
+		// Add Mint/Burn to records
+		mints.forEach((m) => {
+			const readableAmount = (Number(m.amount) / div).toLocaleString(
+				undefined,
+				{ minimumFractionDigits: 2 },
+			);
+			history.push({
+				signature: m.signature || "pending",
+				action: "MINT",
+				amount: `+${readableAmount}`,
+				details: m.signature
+					? `${m.signature.slice(0, 8)}...${m.signature.slice(-8)}`
+					: "Pending",
+				authority: m.minter
+					? `${m.minter.slice(0, 4)}...${m.minter.slice(-4)}`
+					: "ADMIN",
+				status: m.status === "COMPLETED" ? "FINALIZED" : m.status || "PENDING",
+				timestamp: m.createdAt.toISOString(),
+			});
+		});
+
+		burns.forEach((b) => {
+			const readableAmount = (Number(b.amount) / div).toLocaleString(
+				undefined,
+				{ minimumFractionDigits: 2 },
+			);
+			history.push({
+				signature: b.signature || "pending",
+				action: "BURN",
+				amount: `-${readableAmount}`,
+				details: b.signature
+					? `${b.signature.slice(0, 8)}...${b.signature.slice(-8)}`
+					: "Pending",
+				authority: b.minter
+					? `${b.minter.slice(0, 4)}...${b.minter.slice(-4)}`
+					: "ADMIN",
+				status: b.status === "COMPLETED" ? "FINALIZED" : b.status || "PENDING",
+				timestamp: b.createdAt.toISOString(),
+			});
+		});
+
+		// 3. Optional: Fetch on-chain signatures only if we have room in the limit
+		// and wrap in try-catch to ignore 429 errors
+		if (history.length < limit) {
+			try {
+				const signatures = await connection.getSignaturesForAddress(address, {
+					limit: limit - history.length,
+				});
+
+				const dbSignatures = new Set(dbLogs.map((l) => l.signature));
+				const newSigs = signatures.filter(
+					(s) => !dbSignatures.has(s.signature),
+				);
+
+				if (newSigs.length > 0) {
+					const txs = await connection.getParsedTransactions(
+						newSigs.map((s) => s.signature),
+						{
+							maxSupportedTransactionVersion: 0,
+							commitment: "confirmed",
+						},
+					);
+
+					for (let i = 0; i < txs.length; i++) {
+						const tx = txs[i];
+						if (!tx) continue;
+
+						const sig = newSigs[i].signature;
+						const logs = tx.meta?.logMessages || [];
+						let action = "TRANSACTION";
+
+						if (logs.some((l) => l.includes("Instruction: Mint")))
+							action = "MINT";
+						else if (logs.some((l) => l.includes("Instruction: Burn")))
+							action = "BURN";
+						else if (logs.some((l) => l.includes("Instruction: Transfer")))
+							action = "TRANSFER";
+
+						history.push({
+							signature: sig,
+							timestamp: tx.blockTime
+								? new Date(tx.blockTime * 1000).toISOString()
+								: new Date().toISOString(),
+							action,
+							amount: "",
+							details: sig.slice(0, 8) + "...",
+							authority: "USER",
+							status: tx.meta?.err ? "FAILED" : "FINALIZED",
+						});
+					}
+				}
+			} catch (rpcErr) {
+				log.warn(
+					{ err: rpcErr, address: addressString },
+					"RPC history fetch suppressed (likely 429)",
+				);
+			}
+		}
+
+		// Final sort and slice
+		const sorted = history
+			.sort(
+				(a, b) =>
+					new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+			)
+			.slice(0, limit);
+
+		return c.json({ entries: sorted });
+	} catch (err: any) {
+		log.error(
+			{ err: err.message, address: addressString },
+			"Failed to fetch history",
+		);
 		c.status(500);
 		return c.json({ error: err.message });
 	}
