@@ -113,20 +113,40 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, Seize<'info>>, amount: u64
     //
     // When no hook is active (SSS-1), remaining_accounts is empty and
     // Token-2022 processes a standard transfer — no extra accounts needed.
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info(),
-        TransferChecked {
-            from: ctx.accounts.from_token_account.to_account_info(),
-            mint: ctx.accounts.mint.to_account_info(),
-            to: ctx.accounts.to_token_account.to_account_info(),
-            // The PDA is the permanent delegate — it has authority over any token account.
-            authority: ctx.accounts.stablecoin_state.to_account_info(),
-        },
-        signer_seeds,
-    )
-    .with_remaining_accounts(ctx.remaining_accounts.to_vec());
+    // We don't use Anchor's `transfer_checked` wrapper because it drops
+    // `remaining_accounts` when passing into `invoke_signed`, which breaks Transfer Hooks.
+    // Instead, we build the instruction directly and append `remaining_accounts` manually.
+    let mut ix = spl_token_2022::instruction::transfer_checked(
+        ctx.accounts.token_program.key,
+        &ctx.accounts.from_token_account.key(),
+        &ctx.accounts.mint.key(),
+        &ctx.accounts.to_token_account.key(),
+        &ctx.accounts.stablecoin_state.key(),
+        &[],
+        amount,
+        state.decimals,
+    )?;
 
-    transfer_checked(cpi_ctx, amount, state.decimals)?;
+    // Append the extra accounts directly to the CPI instruction's account vector!
+    // Without this, Token-2022 doesn't receive the accounts from the Solana runtime.
+    for extra_info in ctx.remaining_accounts.iter() {
+        ix.accounts.push(anchor_lang::solana_program::instruction::AccountMeta {
+            pubkey: *extra_info.key,
+            is_signer: extra_info.is_signer,
+            is_writable: extra_info.is_writable,
+        });
+    }
+
+    let mut account_infos = vec![
+        ctx.accounts.from_token_account.to_account_info(),
+        ctx.accounts.mint.to_account_info(),
+        ctx.accounts.to_token_account.to_account_info(),
+        ctx.accounts.stablecoin_state.to_account_info(),
+        ctx.accounts.token_program.to_account_info(),
+    ];
+    account_infos.extend_from_slice(ctx.remaining_accounts);
+
+    anchor_lang::solana_program::program::invoke_signed(&ix, &account_infos, signer_seeds)?;
 
     emit!(TokensSeized {
         mint: state.mint,
