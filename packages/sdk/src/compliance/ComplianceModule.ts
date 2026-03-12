@@ -1,5 +1,9 @@
 import { BN, Program } from "@coral-xyz/anchor";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import {
+	addExtraAccountMetasForExecute,
+	createTransferCheckedInstruction,
+	TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 import {
 	Connection,
 	Keypair,
@@ -100,6 +104,72 @@ export class ComplianceModule {
 	}): Promise<string> {
 		const [statePda] = deriveStablecoinState(this.mint, this.program.programId);
 		const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
+
+		if (this.transferHookProgramId) {
+			// 1. Fetch the actual token accounts to get the true owners to generate the right Blacklist PDAs
+			const sourceAccount = await this.connection.getParsedAccountInfo(
+				options.fromTokenAccount,
+			);
+			const ownerPubkey = new PublicKey(
+				(sourceAccount.value?.data as any)?.parsed?.info?.owner ||
+					options.fromTokenAccount.toBase58(),
+			);
+
+			// 2. Create a dummy TransferChecked instruction.
+			// We do this because `addExtraAccountMetasForExecute` relies on the exact
+			// index positions of [source, mint, destination, authority] to derive PDAs.
+			const status = await this.connection.getTokenSupply(this.mint);
+			const dummyTransferIx = createTransferCheckedInstruction(
+				options.fromTokenAccount,
+				this.mint,
+				options.toTokenAccount,
+				statePda, // The PDA is the permanent delegate
+				options.amount,
+				status.value.decimals,
+				[],
+				TOKEN_2022_PROGRAM_ID,
+			);
+
+			// TEMPORARY HACK: `addExtraAccountMetasForExecute` needs the TRUE owner of the Token Account
+			// to derive the Blacklist PDAs correctly, but `dummyTransferIx` has `statePda` as the owner.
+			// We swap `dummyTransferIx.keys[3]` to `ownerPubkey` BEFORE calling it, then swap it back.
+			dummyTransferIx.keys[3].pubkey = ownerPubkey;
+
+			// 3. Resolve the transfer hook accounts onto the dummy instruction
+			await addExtraAccountMetasForExecute(
+				this.connection,
+				dummyTransferIx,
+				this.transferHookProgramId,
+				options.fromTokenAccount,
+				this.mint,
+				options.toTokenAccount,
+				ownerPubkey,
+				options.amount,
+				"confirmed",
+			);
+
+			// Sweep it back to statePda so the actual CPI generation doesn't break
+			dummyTransferIx.keys[3].pubkey = statePda;
+
+			// 3. Extract just the extra accounts (everything after the first 4 standard accounts)
+			const extraAccounts = dummyTransferIx.keys.slice(4);
+
+			// 4. Build and send the actual Seize instruction with the resolved extra accounts
+			return (this.program.methods as any)
+				.seize(new BN(options.amount.toString()))
+				.accounts({
+					seizer: options.seizer.publicKey,
+					stablecoinState: statePda,
+					rolesConfig: rolesPda,
+					mint: this.mint,
+					fromTokenAccount: options.fromTokenAccount,
+					toTokenAccount: options.toTokenAccount,
+					tokenProgram: TOKEN_2022_PROGRAM_ID,
+				})
+				.remainingAccounts(extraAccounts)
+				.signers([options.seizer])
+				.rpc();
+		}
 
 		return (this.program.methods as any)
 			.seize(new BN(options.amount.toString()))
