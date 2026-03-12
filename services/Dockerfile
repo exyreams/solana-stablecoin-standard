@@ -70,4 +70,4 @@ ENTRYPOINT ["/sbin/tini", "--"]
 USER node
 
 # Start the server
-CMD ["pnpm", "start"]
+CMD ["node", "dist/src/index.js"]
