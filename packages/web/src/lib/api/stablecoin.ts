@@ -251,4 +251,29 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
+	listBlacklist: async (
+		mintAddress: string,
+		sync = false,
+	): Promise<{
+		entries: { address: string; reason: string; timestamp: number }[];
+	}> => {
+		const response = await api.get<{
+			entries: { address: string; reason: string; timestamp: number }[];
+		}>("/compliance/blacklist", {
+			params: { mintAddress, sync },
+		});
+		return response.data;
+	},
+	removeFromBlacklist: async (
+		mintAddress: string,
+		address: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.delete<{ success: boolean; signature: string }>(
+			`/compliance/blacklist/${address}`,
+			{
+				params: { mintAddress },
+			},
+		);
+		return response.data;
+	},
 };

@@ -9,11 +9,14 @@
 	--bg-body: #080808;
 	--bg-panel: #0f0f0f;
 	--bg-surface: #161616;
+	--bg-input: #0a0a0a;
 	--border-dim: #222222;
 	--border-mid: #333333;
+	--border-bright: #555555;
 	--accent-primary: #cca352;
-	--accent-glow: rgba(204, 163, 82, 0.2);
+	--accent-glow: rgba(204, 163, 82, 0.15);
 	--accent-active: #ffd700;
+	--accent-red: #ff4444;
 	--text-main: #eaeaea;
 	--text-dim: #777777;
 	--text-dark: #444444;
@@ -25,9 +28,11 @@
 	--font-mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
 
 	/* Spacing */
+	--space-xs: 4px;
+	--space-s: 8px;
 	--space-m: 16px;
 	--space-l: 24px;
-	--space-xl: 48px;
+	--space-xl: 32px;
 	--space-huge: 80px;
 
 	/* Radius */

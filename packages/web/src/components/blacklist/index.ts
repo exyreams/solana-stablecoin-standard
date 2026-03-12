@@ -1,3 +1,3 @@
 export { AddToBlacklist } from "./AddToBlacklist";
-export { BlacklistStats } from "./BlacklistStats";
+export { BlacklistDetailsModal } from "./BlacklistDetailsModal";
 export { BlacklistTable } from "./BlacklistTable";
