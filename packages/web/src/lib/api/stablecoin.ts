@@ -170,4 +170,85 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
+
+	freeze: async (
+		mintAddress: string,
+		address: string,
+		reason?: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/compliance/freeze",
+			{
+				mintAddress,
+				address,
+				reason,
+			},
+		);
+		return response.data;
+	},
+
+	thaw: async (
+		mintAddress: string,
+		address: string,
+		reason?: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/compliance/thaw",
+			{
+				mintAddress,
+				address,
+				reason,
+			},
+		);
+		return response.data;
+	},
+
+	blacklist: async (
+		mintAddress: string,
+		address: string,
+		reason?: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/compliance/blacklist",
+			{
+				mintAddress,
+				address,
+				reason,
+			},
+		);
+		return response.data;
+	},
+
+	seize: async (
+		mintAddress: string,
+		fromTokenAccount: string,
+		toTokenAccount: string,
+		amount: string | number,
+		reason?: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/compliance/seize",
+			{
+				mintAddress,
+				fromTokenAccount,
+				toTokenAccount,
+				amount,
+				reason,
+			},
+		);
+		return response.data;
+	},
+
+	getAccountHistory: async (
+		address: string,
+		limit = 20,
+	): Promise<{ entries: any[] }> => {
+		const response = await api.get<{ entries: any[] }>(
+			`/compliance/history/${address}`,
+			{
+				params: { limit },
+			},
+		);
+		return response.data;
+	},
 };
