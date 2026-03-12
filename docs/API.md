@@ -30,9 +30,9 @@ Most routes (except Health and Public Stablecoin info) require a JSON Web Token 
 | Method | Path | Body | Description | Auth |
 |---|---|---|---|---|
 | `POST` | `/create-stablecoin` | `{ preset, name, symbol, decimals?, uri?, extensions?, roles? }` | Create a new stablecoin | `ADMIN` |
-| `GET` | `/list-stablecoins` | `?limit=50&offset=0` | List all created stablecoins | Public |
-| `GET` | `/get-stablecoin/:mintAddress` | — | Get a specific stablecoin details | Public |
-| `GET` | `/get-stablecoin/:mintAddress/history` | — | Get recent mint/burn history | Public |
+| `GET` | `/list-stablecoins` | `?limit=50&offset=0` | List all created stablecoins | `ADMIN`/`MINTER` |
+| `GET` | `/get-stablecoin/:mintAddress` | — | Get a specific stablecoin details | `ADMIN`/`MINTER` |
+| `GET` | `/get-stablecoin/:mintAddress/history` | — | Get recent mint/burn history | `ADMIN`/`MINTER` |
 
 ---
 
@@ -104,30 +104,30 @@ Most routes (except Health and Public Stablecoin info) require a JSON Web Token 
 
 ## Compliance (SSS-1+)
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/compliance/freeze` | `{ address, reason? }` | Freeze a token account |
-| `POST` | `/compliance/thaw` | `{ address, reason? }` | Thaw a token account |
-| `POST` | `/compliance/pause` | `{ reason? }` | Pause minting & burning globally |
-| `POST` | `/compliance/unpause` | `{ reason? }` | Unpause minting & burning |
-| `GET` | `/compliance/audit` | `?limit=100` | Audit trail (all on-chain actions) |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `POST` | `/compliance/freeze` | `{ address, reason? }` | Freeze a token account | `ADMIN` |
+| `POST` | `/compliance/thaw` | `{ address, reason? }` | Thaw a token account | `ADMIN` |
+| `POST` | `/compliance/pause` | `{ reason? }` | Pause minting & burning globally | `ADMIN` |
+| `POST` | `/compliance/unpause` | `{ reason? }` | Unpause minting & burning | `ADMIN` |
+| `GET` | `/compliance/audit` | `?limit=100` | Audit trail (all on-chain actions) | `ADMIN` |
 
 ## Compliance — Blacklist (SSS-2)
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/compliance/blacklist` | `{ address, reason }` | Blacklist an address |
-| `DELETE` | `/compliance/blacklist/:address` | — | Remove from blacklist |
-| `GET` | `/compliance/blacklist/:address` | — | Check blacklist status |
-| `POST` | `/compliance/seize` | `{ fromTokenAccount, toTokenAccount, amount, reason? }` | Seize tokens via permanent delegate |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `POST` | `/compliance/blacklist` | `{ address, reason }` | Blacklist an address | `ADMIN` |
+| `DELETE` | `/compliance/blacklist/:address` | — | Remove from blacklist | `ADMIN` |
+| `GET` | `/compliance/blacklist/:address` | — | Check blacklist status | `ADMIN` |
+| `POST` | `/compliance/seize` | `{ fromTokenAccount, toTokenAccount, amount, reason? }` | Seize tokens via permanent delegate | `ADMIN` |
 
 ## Compliance — Privacy (SSS-3)
 
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/privacy/approve` | `{ tokenAccount, reason? }` | Approve account for confidential transfers |
-| `POST` | `/privacy/enable-credits` | `{ tokenAccount, reason? }` | Enable confidential credits |
-| `POST` | `/privacy/disable-credits` | `{ tokenAccount, reason? }` | Disable confidential credits |
+| Method | Path | Body | Description | Auth |
+|---|---|---|---|---|
+| `POST` | `/privacy/approve` | `{ tokenAccount, reason? }` | Approve account for confidential transfers | `ADMIN` |
+| `POST` | `/privacy/enable-credits` | `{ tokenAccount, reason? }` | Enable confidential credits | `ADMIN` |
+| `POST` | `/privacy/disable-credits` | `{ tokenAccount, reason? }` | Disable confidential credits | `ADMIN` |
 
 ---
 
