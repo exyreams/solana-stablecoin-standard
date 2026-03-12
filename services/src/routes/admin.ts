@@ -217,7 +217,7 @@ app.get("/minter-status/:walletAddress", async (c) => {
 	try {
 		const allStablecoins = await db.select().from(stablecoins);
 		const results = [];
-		
+
 		for (const sc of allStablecoins) {
 			try {
 				const s = await getStable(sc.mintAddress);

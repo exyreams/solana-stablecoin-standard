@@ -1,11 +1,11 @@
 import { BorshCoder, EventParser } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
+import { and, eq } from "drizzle-orm";
 import fs from "fs";
 import { createRequire } from "module";
 import { db } from "../db/index.js";
-import { eventLogs, mintRequests, burnRequests } from "../db/schema.js";
+import { burnRequests, eventLogs, mintRequests } from "../db/schema.js";
 import { connection, log } from "../index.js";
-import { eq, and } from "drizzle-orm";
 
 const require = createRequire(import.meta.url);
 const idlPath = require.resolve("@stbr/sss-token-sdk/dist/idl/sss_token.json");
@@ -56,7 +56,8 @@ export async function startEventIndexer() {
 							await db.insert(mintRequests).values({
 								recipient: recipient.toBase58(),
 								amount: amount.toString(),
-								mintAddress: logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
+								mintAddress:
+									logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
 								minter: minter.toBase58(),
 								status: "COMPLETED",
 								signature: logs.signature,
@@ -74,7 +75,8 @@ export async function startEventIndexer() {
 							await db.insert(burnRequests).values({
 								fromTokenAccount: fromTokenAccount.toBase58(),
 								amount: amount.toString(),
-								mintAddress: logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
+								mintAddress:
+									logs.mint?.toBase58() || process.env.STABLECOIN_MINT,
 								minter: burner.toBase58(),
 								status: "COMPLETED",
 								signature: logs.signature,

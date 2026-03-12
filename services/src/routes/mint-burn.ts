@@ -48,7 +48,6 @@ app.post("/mint", async (c) => {
 			minter: record.minter, // Pass to worker
 		});
 
-
 		log.info(
 			{ id: record.id, mintAddress: record.mintAddress },
 			"Mint request queued",
@@ -87,7 +86,6 @@ app.post("/burn", async (c) => {
 			minter: record.minter, // Pass to worker
 		});
 
-
 		log.info(
 			{ id: record.id, mintAddress: record.mintAddress },
 			"Burn request queued",
@@ -111,7 +109,9 @@ app.post("/prepare-mint", async (c) => {
 	try {
 		const s = await getStable(mintAddress);
 		const status = await s.getStatus();
-		const amountBN = BigInt(Math.round(parseFloat(amount) * 10 ** status.decimals));
+		const amountBN = BigInt(
+			Math.round(parseFloat(amount) * 10 ** status.decimals),
+		);
 
 		const tx = await s.prepareMintTransaction({
 			recipient: new PublicKey(recipient),
@@ -139,13 +139,17 @@ app.post("/prepare-burn", async (c) => {
 	const { fromTokenAccount, amount, mintAddress, minter } = await c.req.json();
 	if (!fromTokenAccount || !amount || !minter) {
 		c.status(400);
-		return c.json({ error: "fromTokenAccount, amount, and minter are required" });
+		return c.json({
+			error: "fromTokenAccount, amount, and minter are required",
+		});
 	}
 
 	try {
 		const s = await getStable(mintAddress);
 		const status = await s.getStatus();
-		const amountBN = BigInt(Math.round(parseFloat(amount) * 10 ** status.decimals));
+		const amountBN = BigInt(
+			Math.round(parseFloat(amount) * 10 ** status.decimals),
+		);
 
 		const tx = await s.prepareBurnTransaction({
 			fromTokenAccount: new PublicKey(fromTokenAccount),

@@ -37,7 +37,6 @@ export const burnRequests = sqliteTable("burn_requests", {
 		.$defaultFn(() => new Date()),
 });
 
-
 // ── Event Indexer ─────────────────────────────────────────────────────────────
 export const eventLogs = sqliteTable("event_logs", {
 	id: text("id")

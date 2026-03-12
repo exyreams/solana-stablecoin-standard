@@ -54,7 +54,6 @@ export const mintBurnWorker = new Worker(
 					minter: authority, // Must be Keypair, using system authority
 				});
 
-
 				await db
 					.update(mintRequests)
 					.set({ status: "COMPLETED", signature: sig })
@@ -110,7 +109,6 @@ export const mintBurnWorker = new Worker(
 					amount: amountBN,
 					burner: authority, // Must be Keypair, using system authority
 				});
-
 
 				await db
 					.update(burnRequests)
