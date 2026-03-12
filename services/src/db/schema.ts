@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 
 // ── Mint & Burn ──────────────────────────────────────────────────────────────
 export const mintRequests = sqliteTable("mint_requests", {
@@ -51,6 +51,22 @@ export const eventLogs = sqliteTable("event_logs", {
 });
 
 // ── Compliance ────────────────────────────────────────────────────────────────
+export const blacklist = sqliteTable(
+	"blacklist",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		mintAddress: text("mint_address").notNull(),
+		address: text("address").notNull(),
+		reason: text("reason"),
+		timestamp: integer("timestamp", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(table) => [unique().on(table.mintAddress, table.address)],
+);
+
 export const auditLogs = sqliteTable("audit_logs", {
 	id: text("id")
 		.primaryKey()

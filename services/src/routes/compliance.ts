@@ -3,10 +3,16 @@ import {
 	TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { count, desc, eq, inArray } from "drizzle-orm";
+import bs58 from "bs58";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { auditLogs, burnRequests, mintRequests } from "../db/schema.js";
+import {
+	auditLogs,
+	blacklist,
+	burnRequests,
+	mintRequests,
+} from "../db/schema.js";
 import { authority, connection, getStable, log } from "../index.js";
 import { adminAuth } from "../middleware/auth.js";
 
@@ -16,6 +22,98 @@ const app = new Hono();
 app.use("/*", adminAuth);
 
 // ---- BLACKLIST (SSS-2) ----
+
+app.get("/blacklist", async (c) => {
+	const mintAddress = c.req.query("mintAddress");
+	if (!mintAddress) {
+		c.status(400);
+		return c.json({ error: "mintAddress query param required" });
+	}
+
+	try {
+		const sync = c.req.query("sync") === "true";
+
+		// 1. Get from DB
+		let entries = await db
+			.select()
+			.from(blacklist)
+			.where(eq(blacklist.mintAddress, mintAddress))
+			.orderBy(desc(blacklist.timestamp));
+
+		// 2. Sync from on-chain if force requested or DB is empty
+		if (sync || entries.length === 0) {
+			try {
+				const s = await getStable(mintAddress);
+				const programId = s.programId;
+
+				const discriminator = Buffer.from([
+					218, 179, 231, 40, 141, 25, 168, 189,
+				]);
+
+				const accounts = await connection.getProgramAccounts(programId, {
+					filters: [
+						{ memcmp: { offset: 0, bytes: bs58.encode(discriminator) } },
+						{ memcmp: { offset: 8, bytes: mintAddress } },
+					],
+				});
+
+				if (accounts.length > 0) {
+					const onChainEntries = accounts.map((account) => {
+						const data = account.account.data;
+						const address = new PublicKey(data.slice(40, 72)).toBase58();
+						const reasonLen = data.readUInt32LE(72);
+						const reason = data
+							.slice(76, 76 + Math.min(reasonLen, 128))
+							.toString("utf8")
+							.replace(/\0/g, ""); // Clean null bytes
+						const timestamp = Number(data.readBigInt64LE(76 + reasonLen));
+
+						return {
+							mintAddress,
+							address,
+							reason,
+							timestamp: new Date(timestamp * 1000),
+						};
+					});
+
+					// Batch insert to DB
+					for (const entry of onChainEntries) {
+						await db
+							.insert(blacklist)
+							.values(entry)
+							.onConflictDoUpdate({
+								target: [blacklist.mintAddress, blacklist.address],
+								set: { reason: entry.reason, timestamp: entry.timestamp },
+							});
+					}
+
+					// Re-fetch from DB to get sorted results
+					entries = await db
+						.select()
+						.from(blacklist)
+						.where(eq(blacklist.mintAddress, mintAddress))
+						.orderBy(desc(blacklist.timestamp));
+				}
+			} catch (syncErr: any) {
+				log.warn(
+					{ err: syncErr.message, mintAddress },
+					"On-chain sync failed, falling back to DB",
+				);
+			}
+		}
+
+		return c.json({
+			entries: entries.map((e) => ({
+				...e,
+				timestamp: e.timestamp.getTime(),
+			})),
+		});
+	} catch (err: any) {
+		log.error({ err: err.message, mintAddress }, "Failed to fetch blacklist");
+		c.status(500);
+		return c.json({ error: err.message });
+	}
+});
 
 app.post("/blacklist", async (c) => {
 	const { mintAddress, address, reason } = await c.req.json();
@@ -40,6 +138,20 @@ app.post("/blacklist", async (c) => {
 			signature: sig,
 		});
 
+		// Sync to blacklist table
+		await db
+			.insert(blacklist)
+			.values({
+				mintAddress: s.mint.toBase58(),
+				address,
+				reason: finalReason,
+				timestamp: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: [blacklist.mintAddress, blacklist.address],
+				set: { reason: finalReason, timestamp: new Date() },
+			});
+
 		log.info({ address, finalReason, sig }, "Address blacklisted");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -51,8 +163,9 @@ app.post("/blacklist", async (c) => {
 
 app.delete("/blacklist/:address", async (c) => {
 	const address = c.req.param("address");
+	const mintAddress = c.req.query("mintAddress");
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const sig = await s.compliance.blacklistRemove(
 			new PublicKey(address),
 			authority,
@@ -65,6 +178,16 @@ app.delete("/blacklist/:address", async (c) => {
 			signature: sig,
 		});
 
+		// Remove from blacklist table
+		await db
+			.delete(blacklist)
+			.where(
+				and(
+					eq(blacklist.mintAddress, mintAddress!),
+					eq(blacklist.address, address),
+				),
+			);
+
 		log.info({ address, sig }, "Address removed from blacklist");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -76,8 +199,9 @@ app.delete("/blacklist/:address", async (c) => {
 
 app.get("/blacklist/:address", async (c) => {
 	const address = c.req.param("address");
+	const mintAddress = c.req.query("mintAddress");
 	try {
-		const s = await getStable();
+		const s = await getStable(mintAddress);
 		const entry = await s.compliance.getBlacklistEntry(new PublicKey(address));
 		if (!entry) {
 			return c.json({ blacklisted: false });
