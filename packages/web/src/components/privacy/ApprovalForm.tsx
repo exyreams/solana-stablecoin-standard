@@ -14,7 +14,11 @@ export const ApprovalForm: FC = () => {
 
 			<div className="p-4 space-y-4">
 				<div className="flex gap-2 opacity-50 pointer-events-none">
-					<Input placeholder="Token account address..." className="flex-1" disabled />
+					<Input
+						placeholder="Token account address..."
+						className="flex-1"
+						disabled
+					/>
 					<Button variant="secondary" size="sm" className="px-5" disabled>
 						VALIDATE
 					</Button>
@@ -45,8 +49,8 @@ export const ApprovalForm: FC = () => {
 					</div>
 				</div>
 
-				<button 
-					disabled 
+				<button
+					disabled
 					className="w-full border border-(--border-dim) text-(--text-dark) bg-transparent py-2.5 font-mono text-[11px] cursor-not-allowed uppercase tracking-tighter"
 				>
 					Confidential Features Currently Unavailable

@@ -1,3 +1,4 @@
+import { Zap } from "lucide-react";
 import type { FC } from "react";
 import {
 	ApprovalForm,
@@ -6,7 +7,6 @@ import {
 	PrivacyStats,
 } from "../../components/privacy";
 import { Badge } from "../../components/ui/Badge";
-import { Zap } from "lucide-react";
 
 const Privacy: FC = () => {
 	return (
@@ -31,11 +31,14 @@ const Privacy: FC = () => {
 					<Zap className="w-5 h-5 text-[#ef4444] fill-[#ef4444]" />
 				</div>
 				<div>
-					<h3 className="text-[#ef4444] font-bold text-sm uppercase tracking-tight mb-1">Confidential Transfers Suspended</h3>
+					<h3 className="text-[#ef4444] font-bold text-sm uppercase tracking-tight mb-1">
+						Confidential Transfers Suspended
+					</h3>
 					<p className="text-[11px] text-(--text-dim) leading-relaxed max-w-2xl">
-						Solana's ZK ElGamal programs are currently inactive globally for security auditing. 
-						SSS-3 privacy features, including account configuration and confidential approvals, 
-						are temporarily disabled until the network re-enables the underlying ZK instructions.
+						Solana's ZK ElGamal programs are currently inactive globally for
+						security auditing. SSS-3 privacy features, including account
+						configuration and confidential approvals, are temporarily disabled
+						until the network re-enables the underlying ZK instructions.
 					</p>
 				</div>
 			</div>
