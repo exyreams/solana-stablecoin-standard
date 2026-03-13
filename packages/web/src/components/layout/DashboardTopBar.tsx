@@ -135,16 +135,9 @@ export const DashboardTopBar: FC = () => {
 								onClick={() => setShowDropdown(false)}
 							/>
 							<div className="absolute right-0 top-full mt-2 bg-[#0f0f0f] border border-[#333333] min-w-[200px] z-20 shadow-xl rounded-sm py-1 overflow-hidden">
-								<button
-									onClick={() => {
-										navigate("/dashboard/settings");
-										setShowDropdown(false);
-									}}
-									className="w-full px-4 py-2.5 text-left font-mono text-[11px] text-[#EAEAEA] hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
-								>
-									<UserIcon className="w-3 h-3" />
-									Account Settings
-								</button>
+								<div className="px-4 py-2.5 font-mono text-[11px] text-[#777777] uppercase border-b border-[#222222] mb-1">
+									Account
+								</div>
 								<div className="h-[1px] bg-border mx-2 my-1" />
 								<button
 									onClick={handleLogout}

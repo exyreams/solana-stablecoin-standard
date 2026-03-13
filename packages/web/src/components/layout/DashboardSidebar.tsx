@@ -11,7 +11,6 @@ import {
 	Layers,
 	LayoutDashboard,
 	Lock,
-	Settings,
 	Settings2,
 	Shield,
 	ShieldAlert,
@@ -222,11 +221,6 @@ export const DashboardSidebar: FC = () => {
 							label="ORACLE"
 							href="/dashboard/oracle"
 							icon={<Database size={14} />}
-						/>
-						<NavItem
-							label="SETTINGS"
-							href="/dashboard/settings"
-							icon={<Settings size={14} />}
 						/>
 					</NavGroup>
 				</>

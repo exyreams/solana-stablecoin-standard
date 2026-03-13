@@ -38,7 +38,6 @@ export const DashboardWrapper: FC = () => {
 		"/dashboard/minters",
 		"/dashboard/roles",
 		"/dashboard/oracle",
-		"/dashboard/settings",
 	];
 
 	// Exact matches for admin only routes

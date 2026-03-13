@@ -65,11 +65,6 @@ export const Navbar: FC = () => {
 			label: "Audit Logs",
 			desc: "Transaction history and event logs",
 		},
-		{
-			path: "/dashboard/settings",
-			label: "Settings",
-			desc: "Configure application preferences",
-		},
 	];
 
 	const operationsMenu: MenuItem[] = [

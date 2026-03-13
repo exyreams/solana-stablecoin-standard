@@ -18,7 +18,6 @@ import Minters from "./pages/dashboard/minters";
 import Oracle from "./pages/dashboard/oracle";
 import Privacy from "./pages/dashboard/privacy";
 import Roles from "./pages/dashboard/roles";
-import Settings from "./pages/dashboard/settings";
 import TokenInfo from "./pages/dashboard/token-info";
 import Docs from "./pages/docs";
 import ErrorPage from "./pages/error";
@@ -52,7 +51,6 @@ function App() {
 								<Route path="oracle" element={<Oracle />} />
 								<Route path="roles" element={<Roles />} />
 								<Route path="audit-logs" element={<AuditLogs />} />
-								<Route path="settings" element={<Settings />} />
 							</Route>
 
 							<Route path="/create" element={<DashboardWrapper />}>
