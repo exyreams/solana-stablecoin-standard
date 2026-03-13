@@ -297,4 +297,50 @@ export const stablecoinApi = {
 		}>(`/accounts/${address}/balance`);
 		return response.data;
 	},
+
+	updateRoles: async (
+		mintAddress: string,
+		updates: {
+			burner?: string;
+			pauser?: string;
+			blacklister?: string;
+			seizer?: string;
+		},
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.put<{ success: boolean; signature: string }>(
+			"/admin/roles",
+			{ ...updates, mintAddress },
+		);
+		return response.data;
+	},
+
+	initiateTransfer: async (
+		mintAddress: string,
+		newMaster: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/authority/transfer",
+			{ mintAddress, newMaster },
+		);
+		return response.data;
+	},
+
+	acceptTransfer: async (
+		mintAddress: string,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/authority/accept",
+			{ mintAddress },
+		);
+		return response.data;
+	},
+	setDevAuthority: async (
+		secretKey: string,
+	): Promise<{ success: boolean; message: string }> => {
+		const response = await api.post<{ success: boolean; message: string }>(
+			"/admin/dev/set-authority",
+			{ secretKey },
+		);
+		return response.data;
+	},
 };
