@@ -4,13 +4,14 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, or, like } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import {
 	auditLogs,
 	blacklist,
 	burnRequests,
+	eventLogs,
 	mintRequests,
 } from "../db/schema.js";
 import { authority, connection, getStable, log } from "../index.js";
@@ -373,15 +374,151 @@ app.post("/unpause", async (c) => {
 app.get("/audit", async (c) => {
 	try {
 		const limit = parseInt(c.req.query("limit") || "100");
-		const logs = await db
+		const offset = parseInt(c.req.query("offset") || "0");
+		const action = c.req.query("action");
+		const address = c.req.query("address");
+		const startDate = c.req.query("startDate");
+		const endDate = c.req.query("endDate");
+		const status = c.req.query("status"); // success, failed
+
+		// 1. Fetch Audit Logs (Admin Actions)
+		const aConditions = [];
+		if (action) {
+			if (action === "BLACKLIST") {
+				aConditions.push(or(like(auditLogs.action, "BLACKLIST_%"), eq(auditLogs.action, "BLACKLIST")));
+			} else {
+				aConditions.push(eq(auditLogs.action, action));
+			}
+		}
+		if (address) aConditions.push(like(auditLogs.address, `%${address}%`));
+		if (startDate)
+			aConditions.push(gte(auditLogs.timestamp, new Date(startDate)));
+		if (endDate) aConditions.push(lte(auditLogs.timestamp, new Date(endDate)));
+
+		// If filtering specifically for "failed", return empty as we currently only record successes in these tables
+		if (status === "failed") {
+			return c.json({ count: 0, entries: [] });
+		}
+
+		const aLogs = await db
 			.select()
 			.from(auditLogs)
+			.where(aConditions.length > 0 ? and(...aConditions) : undefined)
 			.orderBy(desc(auditLogs.timestamp))
-			.limit(limit);
+			.limit(limit + offset);
 
-		const [{ value }] = await db.select({ value: count() }).from(auditLogs);
-		return c.json({ count: value, entries: logs });
+		// 2. Fetch Event Logs (On-Chain Events)
+		const eConditions = [];
+		if (action) {
+			if (action === "BLACKLIST") {
+				// On-chain event for blacklist might be different, but follow pattern
+				eConditions.push(like(eventLogs.name, "BLACKLIST%"));
+			} else {
+				eConditions.push(eq(eventLogs.name, action));
+			}
+		}
+		if (address) eConditions.push(like(eventLogs.data, `%${address}%`));
+		if (startDate)
+			eConditions.push(gte(eventLogs.timestamp, new Date(startDate)));
+		if (endDate) eConditions.push(lte(eventLogs.timestamp, new Date(endDate)));
+
+		const eLogs = await db
+			.select()
+			.from(eventLogs)
+			.where(eConditions.length > 0 ? and(...eConditions) : undefined)
+			.orderBy(desc(eventLogs.timestamp))
+			.limit(limit + offset);
+
+		// 3. Get Accurate Total Count
+		let aCount = 0;
+		let eCount = 0;
+		try {
+			const aCountResult = await db
+				.select({ value: count() })
+				.from(auditLogs)
+				.where(aConditions.length > 0 ? and(...aConditions) : undefined);
+			aCount = aCountResult[0]?.value || 0;
+
+			const eCountResult = await db
+				.select({ value: count() })
+				.from(eventLogs)
+				.where(eConditions.length > 0 ? and(...eConditions) : undefined);
+			eCount = eCountResult[0]?.value || 0;
+		} catch (err) {
+			log.error({ err }, "Failed to count audit logs");
+		}
+
+		const totalCount = aCount + eCount;
+
+		const s = await getStable();
+		let decimals = 6;
+		try {
+			const status = await s.getStatus();
+			decimals = status.decimals;
+		} catch (_e) {
+			// use default
+		}
+		const div = Math.pow(10, decimals);
+
+		// 4. Merge and Unify
+		const merged = [
+			...aLogs.map((l) => {
+				let amount: string | undefined = undefined;
+				try {
+					const trimmedReason = l.reason?.trim() || "";
+					if (trimmedReason.startsWith("{")) {
+						const data = JSON.parse(trimmedReason);
+						if (data.amount !== undefined) {
+							amount = (Number(data.amount) / div).toLocaleString(undefined, {
+								minimumFractionDigits: 2,
+							});
+						}
+					}
+				} catch (_e) {
+					// Reason is not JSON or invalid
+				}
+				return {
+					id: l.id,
+					type: "ADMIN",
+					action: l.action,
+					address: l.address,
+					reason: l.reason,
+					signature: l.signature,
+					timestamp: l.timestamp,
+					amount,
+					status: "success" as const,
+				};
+			}),
+			...eLogs.map((l) => {
+				const data = JSON.parse(l.data);
+				let amount: string | undefined = undefined;
+				if (data.amount !== undefined) {
+					amount = (Number(data.amount) / div).toLocaleString(undefined, {
+						minimumFractionDigits: 2,
+					});
+				}
+				return {
+					id: l.id,
+					type: "EVENT",
+					action: l.name.toUpperCase(),
+					address: data.to || data.address || data.from || "—",
+					reason: `On-chain event: ${l.name}`,
+					signature: l.signature,
+					timestamp: l.timestamp,
+					amount,
+					status: "success" as const,
+				};
+			}),
+		]
+			.sort(
+				(a, b) =>
+					new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+			)
+			.slice(offset, offset + limit);
+
+		return c.json({ count: totalCount, entries: merged });
 	} catch (err: any) {
+		log.error({ err: err.message }, "Audit log fetch failed");
 		c.status(500);
 		return c.json({ error: err.message });
 	}
