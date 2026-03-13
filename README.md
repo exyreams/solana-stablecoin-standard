@@ -270,6 +270,7 @@ docs/                 # Standard specifications and guides
 - [Operations Guide](./docs/OPERATIONS.md) — Operator runbook for production deployments
 - [Compliance Guide](./docs/COMPLIANCE.md) — Regulatory considerations and audit trails
 - [API Reference](./docs/API.md) — Backend service API documentation
+- [API Testing Guide](./docs/testing/API_TEST.md) — Step-by-step API verification manual
 
 ---
 
