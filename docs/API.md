@@ -86,6 +86,7 @@ Most routes (except Health and Public Stablecoin info) require a JSON Web Token 
 | Method | Path | Body | Description |
 |---|---|---|---|
 | `GET` | `/admin/oracle/status` | — | Oracle config + all feeds |
+| `GET` | `/admin/oracle/activity` | `?limit=15` | Oracle event + audit logs |
 | `GET` | `/admin/oracle/feeds/:index` | — | Single feed by index |
 | `GET` | `/admin/oracle/price/mint` | — | Get mint price (aggregated + premium) |
 | `GET` | `/admin/oracle/price/redeem` | — | Get redeem price (aggregated - discount) |
