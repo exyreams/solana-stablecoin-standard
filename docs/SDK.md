@@ -71,10 +71,11 @@ static async create(
   connection: Connection,
   options: CreateOptions & {
     authority: Keypair;
+    mintKeypair?: Keypair;
     programId?: PublicKey;
     oracleProgramId?: PublicKey;
   }
-): Promise<SolanaStablecoin>
+): Promise<{ stablecoin: SolanaStablecoin; signature: string }>
 ```
 
 **Parameters:**
@@ -103,7 +104,7 @@ static async create(
 **Example:**
 ```typescript
 // SSS-1: Minimal stablecoin
-const minimal = await SolanaStablecoin.create(connection, {
+const { stablecoin, signature } = await SolanaStablecoin.create(connection, {
   preset: Presets.SSS_1,
   name: 'Simple Dollar',
   symbol: 'SDOL',
@@ -111,7 +112,7 @@ const minimal = await SolanaStablecoin.create(connection, {
 });
 
 // SSS-2: Compliant stablecoin with blacklist
-const compliant = await SolanaStablecoin.create(connection, {
+const { stablecoin, signature } = await SolanaStablecoin.create(connection, {
   preset: Presets.SSS_2,
   name: 'Compliant USD',
   symbol: 'CUSD',
@@ -120,7 +121,7 @@ const compliant = await SolanaStablecoin.create(connection, {
 });
 
 // SSS-3: Private stablecoin
-const private = await SolanaStablecoin.create(connection, {
+const { stablecoin, signature } = await SolanaStablecoin.create(connection, {
   preset: Presets.SSS_3,
   name: 'Private Dollar',
   symbol: 'PDOL',
@@ -129,7 +130,7 @@ const private = await SolanaStablecoin.create(connection, {
 });
 
 // Custom configuration
-const custom = await SolanaStablecoin.create(connection, {
+const { stablecoin, signature } = await SolanaStablecoin.create(connection, {
   name: 'Custom Token',
   symbol: 'CUST',
   enablePermanentDelegate: true,
