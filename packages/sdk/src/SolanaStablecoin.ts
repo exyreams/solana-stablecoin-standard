@@ -606,12 +606,11 @@ export class SolanaStablecoin {
 		const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
 
 		return (this.program.methods as any)
-			.transferAuthority()
+			.transferAuthority(newMaster)
 			.accounts({
 				caller: this.authority.publicKey,
 				stablecoinState: statePda,
 				rolesConfig: rolesPda,
-				newMaster,
 			})
 			.signers([this.authority])
 			.rpc();
@@ -626,13 +625,11 @@ export class SolanaStablecoin {
 		const [rolesPda] = deriveRolesConfig(this.mint, this.program.programId);
 
 		return (this.program.methods as any)
-			.transferAuthority()
+			.transferAuthority(null)
 			.accounts({
 				caller: this.authority.publicKey,
 				stablecoinState: statePda,
 				rolesConfig: rolesPda,
-				// new_master is unused in step 2 — pass any pubkey
-				newMaster: this.authority.publicKey,
 			})
 			.signers([this.authority])
 			.rpc();
