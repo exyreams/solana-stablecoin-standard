@@ -35,7 +35,36 @@ export const mintPubkey = new PublicKey(process.env.STABLECOIN_MINT);
 const authSecret = Uint8Array.from(
 	JSON.parse(process.env.AUTHORITY_SECRET_KEY),
 );
-export const authority = Keypair.fromSecretKey(authSecret);
+export let authority = Keypair.fromSecretKey(authSecret);
+
+export async function updateAuthority(newSecret: string) {
+	try {
+		const secret = Uint8Array.from(JSON.parse(newSecret));
+		authority = Keypair.fromSecretKey(secret);
+		stableInstances.clear(); // Force reload with new authority
+		log.info(
+			{ publicKey: authority.publicKey.toBase58() },
+			"Backend authority updated",
+		);
+		return true;
+	} catch (_e) {
+		// Try base58 if JSON fails
+		try {
+			const { default: bs58 } = await import("bs58");
+			const secret = bs58.decode(newSecret);
+			authority = Keypair.fromSecretKey(secret);
+			stableInstances.clear();
+			log.info(
+				{ publicKey: authority.publicKey.toBase58() },
+				"Backend authority updated (BS58)",
+			);
+			return true;
+		} catch (_err) {
+			log.error("Failed to update authority: Invalid secret key format");
+			return false;
+		}
+	}
+}
 
 export const stableInstances = new Map<string, SolanaStablecoin>();
 export async function getStable(mintAddress?: string) {

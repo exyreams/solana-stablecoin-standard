@@ -628,4 +628,17 @@ app.post("/oracle/authority/accept", async (c) => {
 	}
 });
 
+// ---- DEV TOOLS ----
+
+app.post("/dev/set-authority", async (c) => {
+	const { secretKey } = await c.req.json();
+	const { updateAuthority } = await import("../index.js");
+	const success = await updateAuthority(secretKey);
+
+	if (success) {
+		return c.json({ success: true, message: "Authority updated" });
+	}
+	return c.json({ error: "Invalid secret key" }, 400);
+});
+
 export default app;
