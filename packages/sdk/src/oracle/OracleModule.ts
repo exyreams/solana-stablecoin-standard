@@ -129,7 +129,7 @@ export class OracleModule {
 		);
 
 		return (this.oracleProgram.methods as any)
-			.transferOracleAuthority()
+			.transferOracleAuthority(newAuthority)
 			.accounts({
 				caller: this.authority.publicKey,
 				oracleConfig: oracleConfigPda,
@@ -149,7 +149,7 @@ export class OracleModule {
 		);
 
 		return (this.oracleProgram.methods as any)
-			.transferOracleAuthority()
+			.transferOracleAuthority(null)
 			.accounts({
 				caller: this.authority.publicKey,
 				oracleConfig: oracleConfigPda,
@@ -211,7 +211,7 @@ export class OracleModule {
 		);
 
 		return (this.oracleProgram.methods as any)
-			.removeFeed()
+			.removeFeed(feedIndex)
 			.accounts({
 				authority: this.authority.publicKey,
 				oracleConfig: oracleConfigPda,
@@ -419,6 +419,7 @@ export class OracleModule {
 		]);
 
 		return accounts.map((a: any) => ({
+			priceFeedPda: a.publicKey,
 			oracleConfig: a.account.oracleConfig,
 			feedIndex: a.account.feedIndex,
 			feedType: a.account.feedType,
@@ -448,6 +449,7 @@ export class OracleModule {
 				this.oracleProgram.account as any
 			).priceFeedEntry.fetch(feedPda);
 			return {
+				priceFeedPda: feedPda,
 				oracleConfig: feed.oracleConfig,
 				feedIndex: feed.feedIndex,
 				feedType: feed.feedType,

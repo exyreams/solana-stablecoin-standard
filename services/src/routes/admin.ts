@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { admins, auditLogs, stablecoins } from "../db/schema.js";
+import { admins, auditLogs, eventLogs, stablecoins } from "../db/schema.js";
+import { desc, inArray } from "drizzle-orm";
 import { authority, connection, getStable, log } from "../index.js";
 import { adminAuth, createToken } from "../middleware/auth.js";
 
@@ -261,12 +262,82 @@ app.get("/oracle/status", async (c) => {
 				lastAggregatedPrice: status.lastAggregatedPrice.toString(),
 				lastAggregatedConfidence: status.lastAggregatedConfidence.toString(),
 			},
-			feeds: feeds.map((f) => ({
+			feeds: feeds.map((f: any) => ({
 				...f,
+				priceFeedPda: f.priceFeedPda?.toBase58() || "",
 				lastPrice: f.lastPrice.toString(),
 				lastConfidence: f.lastConfidence.toString(),
 			})),
 		});
+	} catch (err: any) {
+		c.status(500);
+		return c.json({ error: err.message });
+	}
+});
+
+app.get("/oracle/activity", async (c) => {
+	try {
+		const limit = parseInt(c.req.query("limit") || "15");
+
+		// 1. Fetch On-Chain Events
+		const eLogs = await db
+			.select()
+			.from(eventLogs)
+			.where(
+				inArray(eventLogs.name, [
+					"PriceAggregated",
+					"OracleConfigUpdated",
+					"OraclePauseStateChanged",
+					"OracleInitialized",
+				]),
+			)
+			.orderBy(desc(eventLogs.timestamp))
+			.limit(limit);
+
+		// 2. Fetch Admin Audit Logs
+		const aLogs = await db
+			.select()
+			.from(auditLogs)
+			.where(
+				inArray(auditLogs.action, [
+					"ORACLE_INIT",
+					"ORACLE_CONFIG",
+					"ORACLE_FEED_ADD",
+					"ORACLE_FEED_REMOVE",
+					"ORACLE_CRANK",
+					"ORACLE_AGGREGATE",
+					"ORACLE_MANUAL_PRICE",
+				]),
+			)
+			.orderBy(desc(auditLogs.timestamp))
+			.limit(limit);
+
+		// 3. Merge and Unify
+		const merged = [
+			...eLogs.map((l) => ({
+				id: l.id,
+				type: "EVENT",
+				name: l.name,
+				data: JSON.parse(l.data),
+				timestamp: l.timestamp,
+				signature: l.signature,
+			})),
+			...aLogs.map((l) => ({
+				id: l.id,
+				type: l.action,
+				name: l.action,
+				data: { reason: l.reason, address: l.address },
+				timestamp: l.timestamp,
+				signature: l.signature,
+			})),
+		]
+			.sort(
+				(a, b) =>
+					new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+			)
+			.slice(0, limit);
+
+		return c.json({ entries: merged });
 	} catch (err: any) {
 		c.status(500);
 		return c.json({ error: err.message });
@@ -281,6 +352,15 @@ app.post("/oracle/initialize", async (c) => {
 			...opts,
 			cranker: opts.cranker ? new PublicKey(opts.cranker) : undefined,
 		});
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_INIT",
+			address: "ORACLE",
+			reason: `Pair: ${opts.baseCurrency}/${opts.quoteCurrency}`,
+			signature: sig,
+		});
+
 		log.info({ sig }, "Oracle initialized");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -298,6 +378,15 @@ app.put("/oracle/config", async (c) => {
 			...opts,
 			cranker: opts.cranker ? new PublicKey(opts.cranker) : undefined,
 		});
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_CONFIG",
+			address: "ORACLE",
+			reason: "Parameters updated",
+			signature: sig,
+		});
+
 		log.info({ sig }, "Oracle config updated");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -317,6 +406,15 @@ app.post("/oracle/feeds", async (c) => {
 				? new PublicKey(opts.feedAddress)
 				: undefined,
 		});
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_FEED_ADD",
+			address: opts.feedAddress || "MANUAL",
+			reason: `Label: ${opts.label}, Idx: ${opts.feedIndex}`,
+			signature: sig,
+		});
+
 		log.info({ sig }, "Oracle feed added");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -331,6 +429,15 @@ app.delete("/oracle/feeds/:index", async (c) => {
 	try {
 		const s = await getStable();
 		const sig = await s.oracle.removeFeed(index);
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_FEED_REMOVE",
+			address: "ORACLE",
+			reason: `Idx: ${index}`,
+			signature: sig,
+		});
+
 		log.info({ index, sig }, "Oracle feed removed");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -346,10 +453,19 @@ app.post("/oracle/crank", async (c) => {
 		const s = await getStable();
 		const sig = await s.oracle.crankFeed({
 			feedIndex: opts.feedIndex,
-			price: BigInt(Math.floor(opts.price * 1_000_000)),
+			price: BigInt(Math.floor(opts.price * 1_000_000_000)),
 			confidence: BigInt(0),
 			cranker: authority,
 		});
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_CRANK",
+			address: "ORACLE",
+			reason: `Idx: ${opts.feedIndex}, Price: ${opts.price}`,
+			signature: sig,
+		});
+
 		log.info({ sig }, "Manual crank successful");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -365,6 +481,15 @@ app.post("/oracle/aggregate", async (c) => {
 		const s = await getStable();
 		const pks = feedAccounts.map((a: string) => new PublicKey(a));
 		const sig = await s.oracle.aggregate(pks);
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_AGGREGATE",
+			address: "ORACLE",
+			reason: `Feeds: ${feedAccounts.length}`,
+			signature: sig,
+		});
+
 		log.info({ sig }, "Oracle aggregate successful");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {
@@ -379,9 +504,18 @@ app.post("/oracle/manual-price", async (c) => {
 	try {
 		const s = await getStable();
 		const sig = await s.oracle.setManualPrice(
-			BigInt(Math.floor(price * 1_000_000)),
+			BigInt(Math.floor(price * 1_000_000_000)),
 			active,
 		);
+
+		// Audit Log
+		await db.insert(auditLogs).values({
+			action: "ORACLE_MANUAL_PRICE",
+			address: "ORACLE",
+			reason: `${active ? "Activated" : "Deactivated"}, Price: ${price}`,
+			signature: sig,
+		});
+
 		log.info({ price, active, sig }, "Oracle manual price set");
 		return c.json({ success: true, signature: sig });
 	} catch (err: any) {

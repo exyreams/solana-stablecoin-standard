@@ -30,7 +30,7 @@ const task = cron.schedule("* * * * *", async () => {
 			// @ts-ignore - method signature may vary slightly, fallback if needed
 			const sig = await s.oracle.crankFeed({
 				feedIndex: i,
-				price: BigInt(Math.floor(price * 1_000_000)), // Assuming 6 decimals for price, converting float to bigint
+				price: BigInt(Math.floor(price * 1_000_000_000)), // Using 9 decimals for high precision input
 				confidence: BigInt(0),
 				cranker: authority,
 			});
