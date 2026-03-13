@@ -186,6 +186,7 @@ export interface OracleStatus {
 }
 
 export interface PriceFeedInfo {
+	priceFeedPda: PublicKey;
 	oracleConfig: PublicKey;
 	feedIndex: number;
 	feedType: number;
