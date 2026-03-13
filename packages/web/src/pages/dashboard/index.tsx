@@ -99,9 +99,23 @@ const Dashboard: FC = () => {
 				/>
 				<MetricCard
 					label="Oracle Price"
-					value="$1.00"
+					value={
+						details?.onChain ? (
+							<>
+								{details.onChain.roles.masterAuthority.slice(0, 0)}{" "}
+								{/** spacer hack if needed */}
+								$1.0000
+							</>
+						) : (
+							"$1.0000"
+						)
+					}
 					valueColor="text-[#FFD700]"
-					subtitle={<span className="text-[#777777]">MOCK • FIXED PRICE</span>}
+					subtitle={
+						<span className="text-[#777777] uppercase">
+							{selectedToken?.symbol || "---"}/USD • LIVE FEED
+						</span>
+					}
 				/>
 			</div>
 

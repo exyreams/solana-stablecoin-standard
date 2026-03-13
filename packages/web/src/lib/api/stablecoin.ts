@@ -343,4 +343,78 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
+	getOracleStatus: async (): Promise<{ status: any; feeds: any[] }> => {
+		const response = await api.get<{ status: any; feeds: any[] }>(
+			"/admin/oracle/status",
+		);
+		return response.data;
+	},
+	addOracleFeed: async (data: {
+		label: string;
+		feedAddress: string;
+		weight: number;
+		feedType: number;
+		feedIndex: number;
+	}): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/oracle/feeds",
+			data,
+		);
+		return response.data;
+	},
+	removeOracleFeed: async (
+		index: number,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.delete<{ success: boolean; signature: string }>(
+			`/admin/oracle/feeds/${index}`,
+		);
+		return response.data;
+	},
+	crankOracleFeed: async (data: {
+		feedIndex: number;
+		price: number;
+	}): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/oracle/crank",
+			data,
+		);
+		return response.data;
+	},
+	setManualPrice: async (data: {
+		price: number;
+		active: boolean;
+	}): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/oracle/manual-price",
+			data,
+		);
+		return response.data;
+	},
+	updateOracleConfig: async (
+		data: any,
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.put<{ success: boolean; signature: string }>(
+			"/admin/oracle/config",
+			data,
+		);
+		return response.data;
+	},
+	aggregatePrices: async (
+		feedAccounts: string[],
+	): Promise<{ success: boolean; signature: string }> => {
+		const response = await api.post<{ success: boolean; signature: string }>(
+			"/admin/oracle/aggregate",
+			{ feedAccounts },
+		);
+		return response.data;
+	},
+	getOracleActivity: async (limit = 10): Promise<{ entries: any[] }> => {
+		const response = await api.get<{ entries: any[] }>(
+			"/admin/oracle/activity",
+			{
+				params: { limit },
+			},
+		);
+		return response.data;
+	},
 };
