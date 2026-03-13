@@ -90,8 +90,10 @@ export async function getStable(mintAddress?: string) {
 }
 
 import adminRoutes from "./routes/admin.js";
+import analyticsRoutes from "./routes/analytics.js";
 import complianceRoutes from "./routes/compliance.js";
 import createStablecoinRoutes from "./routes/create-stablecoin.js";
+import dashboardSummaryRoutes from "./routes/dashboard.js";
 import getStablecoinRoutes from "./routes/get-stablecoin.js";
 import listStablecoinsRoutes from "./routes/list-stablecoins.js";
 // Routes
@@ -135,13 +137,17 @@ dashboard.use("/*", adminAuth);
 // Admin-only management routes
 dashboard.use("/create-stablecoin/*", rbac(["ADMIN"]));
 dashboard.use("/compliance/*", rbac(["ADMIN"]));
+dashboard.use("/analytics/*", rbac(["ADMIN", "MINTER"]));
 dashboard.use("/privacy/*", rbac(["ADMIN"]));
 dashboard.use("/webhooks/*", rbac(["ADMIN"]));
+dashboard.use("/dashboard/*", rbac(["ADMIN", "MINTER"]));
 
 dashboard.route("/create-stablecoin", createStablecoinRoutes);
+dashboard.route("/analytics", analyticsRoutes);
 dashboard.route("/compliance", complianceRoutes);
 dashboard.route("/privacy", privacyRoutes);
 dashboard.route("/webhooks", webhookRoutes);
+dashboard.route("/dashboard", dashboardSummaryRoutes);
 
 // Shared routes (Admin & Minter)
 dashboard.use("/list-stablecoins/*", rbac(["ADMIN", "MINTER"]));

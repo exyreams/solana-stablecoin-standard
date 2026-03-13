@@ -4,7 +4,7 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
-import { and, count, desc, eq, gte, inArray, lte, or, like } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, like, lte, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import {
@@ -385,7 +385,12 @@ app.get("/audit", async (c) => {
 		const aConditions = [];
 		if (action) {
 			if (action === "BLACKLIST") {
-				aConditions.push(or(like(auditLogs.action, "BLACKLIST_%"), eq(auditLogs.action, "BLACKLIST")));
+				aConditions.push(
+					or(
+						like(auditLogs.action, "BLACKLIST_%"),
+						eq(auditLogs.action, "BLACKLIST"),
+					),
+				);
 			} else {
 				aConditions.push(eq(auditLogs.action, action));
 			}
