@@ -162,6 +162,7 @@ Most routes (except Health and Public Stablecoin info) require a JSON Web Token 
 
 For hands-on testing and automated verification, see:
 - [API Testing Guide](./testing/API_TEST.md) — Comprehensive phase-by-phase testing manual.
+- [CLI Testing Guide](./testing/CLI_TEST.md) — Phase-based CLI verification guide.
 - [Postman Collection](./testing/sss-postman-collection.json) — Ready-to-use API requests for manual testing.
 
 ---

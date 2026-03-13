@@ -271,6 +271,8 @@ docs/                 # Standard specifications and guides
 - [Compliance Guide](./docs/COMPLIANCE.md) — Regulatory considerations and audit trails
 - [API Reference](./docs/API.md) — Backend service API documentation
 - [API Testing Guide](./docs/testing/API_TEST.md) — Step-by-step API verification manual
+- [CLI Reference](./docs/CLI.md) — Command-line interface usage and examples
+- [CLI Testing Guide](./docs/testing/CLI_TEST.md) — Phase-by-phase CLI verification guide
 
 ---
 
