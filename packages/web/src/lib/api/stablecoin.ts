@@ -423,4 +423,81 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
+	getAnalytics: async (
+		mintAddress?: string,
+	): Promise<{
+		overview: {
+			totalSupply: string;
+			minted24h: string;
+			burned24h: string;
+			netChange24h: string;
+		};
+		topHolders: {
+			rank: number;
+			address: string;
+			owner: string;
+			balance: string;
+			percentage: string;
+		}[];
+		history: {
+			date: string;
+			supply: number;
+		}[];
+		breakdown: {
+			name: string;
+			value: number;
+		}[];
+		rpcError?: boolean;
+	}> => {
+		const response = await api.get("/analytics", {
+			params: { mint: mintAddress },
+		});
+		return response.data;
+	},
+	getDashboardSummary: async (
+		mintAddress?: string,
+	): Promise<{
+		metrics: {
+			totalSupply: string;
+			totalSupplyRaw: number;
+			change24h: string;
+			changePercent24h: string;
+			isPaused: boolean;
+			activeMinters: string;
+			minterCapacity: string;
+			price: string;
+		};
+		stats: {
+			totalMinted: string;
+			mintCount: string;
+			totalBurned: string;
+			burnCount: string;
+			frozenCount: string;
+			blacklistCount: string;
+		};
+		roles: {
+			masterAuthority: string;
+			pauser: string;
+			blacklister: string;
+			burner: string;
+			seizer: string;
+		};
+		activities: {
+			timestamp: string;
+			action: string;
+			amount: string;
+			target: string;
+			status: string;
+			actionColor?: string;
+		}[];
+		trajectory: {
+			date: string;
+			supply: number;
+		}[];
+	}> => {
+		const response = await api.get("/dashboard/summary", {
+			params: { mint: mintAddress },
+		});
+		return response.data;
+	},
 };

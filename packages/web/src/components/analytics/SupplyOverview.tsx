@@ -1,37 +1,42 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import type { FC } from "react";
 
-const metrics = [
-	{
-		label: "Current Supply",
-		value: "42,500,000",
-		change: "+2.4%",
-		trend: "up",
-	},
-	{
-		label: "24H Minted",
-		value: "1,620,000",
-		change: "+15.2%",
-		trend: "up",
-	},
-	{
-		label: "24H Burned",
-		value: "145,000",
-		change: "-8.1%",
-		trend: "down",
-	},
-	{
-		label: "Net Change",
-		value: "+1,475,000",
-		change: "+3.5%",
-		trend: "up",
-	},
-];
+interface SupplyOverviewProps {
+	metrics: {
+		totalSupply: string;
+		minted24h: string;
+		burned24h: string;
+		netChange24h: string;
+	};
+}
 
-export const SupplyOverview: FC = () => {
+export const SupplyOverview: FC<SupplyOverviewProps> = ({ metrics }) => {
+	const items = [
+		{
+			label: "Current Supply",
+			value: metrics.totalSupply,
+			trend: "stable",
+		},
+		{
+			label: "24H Minted",
+			value: metrics.minted24h,
+			trend: "up",
+		},
+		{
+			label: "24H Burned",
+			value: metrics.burned24h,
+			trend: "down",
+		},
+		{
+			label: "Net Change",
+			value: metrics.netChange24h,
+			trend: metrics.netChange24h.startsWith("+") ? "up" : "down",
+		},
+	];
+
 	return (
 		<div className="grid grid-cols-4 gap-4">
-			{metrics.map((metric) => (
+			{items.map((metric) => (
 				<div
 					key={metric.label}
 					className="bg-(--bg-panel) border border-(--border-mid) p-4"
@@ -44,15 +49,18 @@ export const SupplyOverview: FC = () => {
 					</div>
 					<div
 						className={`flex items-center gap-1 text-xs font-mono ${
-							metric.trend === "up" ? "text-[#00ff88]" : "text-[#ff4444]"
+							metric.trend === "up"
+								? "text-[#00ff88]"
+								: metric.trend === "down"
+									? "text-[#ff4444]"
+									: "text-(--text-dim)"
 						}`}
 					>
-						{metric.trend === "up" ? (
-							<TrendingUp className="w-3 h-3" />
-						) : (
-							<TrendingDown className="w-3 h-3" />
-						)}
-						<span>{metric.change}</span>
+						{metric.trend === "up" && <TrendingUp className="w-3 h-3" />}
+						{metric.trend === "down" && <TrendingDown className="w-3 h-3" />}
+						<span>
+							{metric.label === "Current Supply" ? "LIVE" : "LAST 24H"}
+						</span>
 					</div>
 				</div>
 			))}

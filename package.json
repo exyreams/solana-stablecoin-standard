@@ -36,6 +36,9 @@
     "packages/*",
     "services"
   ],
+  "overrides": {
+    "ioredis": "5.10.0"
+  },
   "pnpm": {
     "overrides": {
       "ioredis": "5.10.0"

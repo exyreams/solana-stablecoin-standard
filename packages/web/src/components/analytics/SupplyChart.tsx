@@ -1,49 +1,89 @@
 import type { FC } from "react";
+import {
+	Area,
+	AreaChart,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 
-const timeframes = ["24H", "7D", "30D", "90D", "ALL"];
+interface AnalyticsSupplyChartProps {
+	data: {
+		date: string;
+		supply: number;
+	}[];
+}
 
-export const AnalyticsSupplyChart: FC = () => {
+export const AnalyticsSupplyChart: FC<AnalyticsSupplyChartProps> = ({
+	data,
+}) => {
+	const formatYAxis = (value: number) => {
+		if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+		if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+		return value.toString();
+	};
+
+	const formatDate = (dateStr: string) => {
+		const d = new Date(dateStr);
+		return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+	};
+
 	return (
-		<div className="bg-(--bg-panel) border border-(--border-mid) p-6">
-			<div className="flex items-center justify-between mb-4">
-				<div className="text-[10px] uppercase text-(--text-dim) font-semibold tracking-wider">
-					Supply History
-				</div>
-				<div className="flex gap-1">
-					{timeframes.map((tf, i) => (
-						<button
-							key={tf}
-							className={`px-3 py-1 text-[10px] font-mono border transition-colors ${
-								i === 2
-									? "bg-(--bg-surface) border-(--accent-primary) text-(--accent-primary)"
-									: "bg-(--bg-input) border-(--border-mid) text-(--text-dim) hover:border-(--border-bright)"
-							}`}
-						>
-							{tf}
-						</button>
-					))}
-				</div>
-			</div>
-			<div className="h-[300px] w-full relative">
-				<svg width="100%" height="100%" viewBox="0 0 1000 250">
+		<div className="w-full h-full relative min-h-0">
+			<ResponsiveContainer width="100%" height="100%" minHeight={300}>
+				<AreaChart
+					data={data}
+					margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+				>
 					<defs>
-						<linearGradient id="supplyGrad" x1="0" y1="0" x2="0" y2="1">
-							<stop offset="0%" stopColor="rgba(204, 163, 82, 0.2)" />
-							<stop offset="100%" stopColor="transparent" />
+						<linearGradient id="colorSupply" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="5%" stopColor="#CCA352" stopOpacity={0.3} />
+							<stop offset="95%" stopColor="#CCA352" stopOpacity={0} />
 						</linearGradient>
 					</defs>
-					<path
-						d="M0,200 L100,195 L200,180 L300,170 L400,160 L500,145 L600,130 L700,110 L800,95 L900,70 L1000,40"
-						fill="none"
-						stroke="var(--accent-primary)"
-						strokeWidth="2"
+					<XAxis
+						dataKey="date"
+						axisLine={false}
+						tickLine={false}
+						tick={{ fill: "#666", fontSize: 10, fontFamily: "monospace" }}
+						tickFormatter={formatDate}
+						minTickGap={30}
 					/>
-					<path
-						d="M0,200 L100,195 L200,180 L300,170 L400,160 L500,145 L600,130 L700,110 L800,95 L900,70 L1000,40 L1000,250 L0,250 Z"
-						fill="url(#supplyGrad)"
+					<YAxis
+						axisLine={false}
+						tickLine={false}
+						tick={{ fill: "#666", fontSize: 10, fontFamily: "monospace" }}
+						tickFormatter={formatYAxis}
 					/>
-				</svg>
-			</div>
+					<Tooltip
+						contentStyle={{
+							backgroundColor: "#111",
+							border: "1px solid #333",
+							fontSize: "12px",
+							fontFamily: "monospace",
+							color: "#EAEAEA",
+						}}
+						itemStyle={{ color: "#CCA352" }}
+						labelFormatter={(label: any) => formatDate(label)}
+						formatter={(value: any) => [
+							Number(value).toLocaleString(undefined, {
+								minimumFractionDigits: 2,
+							}),
+							"Supply",
+						]}
+					/>
+					<Area
+						type="monotone"
+						dataKey="supply"
+						stroke="#CCA352"
+						strokeWidth={2}
+						fillOpacity={1}
+						fill="url(#colorSupply)"
+						animationDuration={1500}
+					/>
+				</AreaChart>
+			</ResponsiveContainer>
 		</div>
 	);
 };

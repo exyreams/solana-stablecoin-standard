@@ -62,7 +62,7 @@ export const DashboardTopBar: FC = () => {
 								className="fixed inset-0 z-10"
 								onClick={() => setShowTokenDropdown(false)}
 							/>
-							<div className="absolute left-0 top-full mt-2 bg-[#0f0f0f] border border-[#333333] min-w-[200px] z-20 shadow-xl rounded-sm py-1 overflow-hidden">
+							<div className="absolute left-0 top-full mt-2 bg-[#0f0f0f] border border-[#333333] min-w-[220px] z-20 shadow-xl rounded-sm py-1 overflow-hidden">
 								{tokens.length === 0 ? (
 									<div className="px-4 py-2 font-mono text-[10px] text-[#777777]">
 										NO TOKENS FOUND
@@ -75,21 +75,29 @@ export const DashboardTopBar: FC = () => {
 												setSelectedToken(token);
 												setShowTokenDropdown(false);
 											}}
-											className={`w-full px-4 py-2.5 text-left font-mono text-[11px] hover:bg-primary/10 transition-colors flex items-center justify-between ${
+											className={`w-full px-4 py-2.5 text-left font-mono text-[11px] hover:bg-primary/10 transition-colors flex items-center justify-between group ${
 												selectedToken?.id === token.id
-													? "text-primary bg-primary/5"
-													: "text-[#EAEAEA]"
+													? "text-primary bg-primary/5 border-l-2 border-primary"
+													: "text-[#EAEAEA] border-l-2 border-transparent"
 											}`}
 										>
-											<div className="flex items-center gap-2">
+											<div className="flex items-center gap-2.5">
 												<TokenIcon
 													symbol={token.symbol}
 													logoUri={token.onChain?.uri || token.uri}
 													size="sm"
 												/>
-												<span>{token.symbol}-SOL</span>
+												<div className="flex flex-col">
+													<span className="font-bold">{token.symbol}-SOL</span>
+													<span className="text-[9px] text-(--text-dim)">
+														{token.name}
+													</span>
+												</div>
 											</div>
-											<Badge variant="accent" className="text-[7px] uppercase">
+											<Badge
+												variant="accent"
+												className="text-[7px] uppercase opacity-70 group-hover:opacity-100"
+											>
 												{token.preset}
 											</Badge>
 										</button>

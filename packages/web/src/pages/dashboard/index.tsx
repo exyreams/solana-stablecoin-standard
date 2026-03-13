@@ -1,4 +1,3 @@
-import { Loader2 } from "lucide-react";
 import { type FC, useEffect, useState } from "react";
 import {
 	ActionCard,
@@ -8,37 +7,35 @@ import {
 	SupplyChart,
 } from "../../components/dashboard";
 import { useTokens } from "../../contexts/TokenContext";
-import {
-	type StablecoinDetails,
-	stablecoinApi,
-} from "../../lib/api/stablecoin";
+import { stablecoinApi } from "../../lib/api/stablecoin";
 
 const Dashboard: FC = () => {
 	const { selectedToken } = useTokens();
-	const [details, setDetails] = useState<StablecoinDetails | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
+	const [summary, setSummary] = useState<any>(null);
+	const [isLoading, setIsLoading] = useState(true); // Set to true initially
 
 	useEffect(() => {
-		const fetchDetails = async () => {
+		const fetchSummary = async () => {
 			if (!selectedToken) return;
 
 			try {
-				setIsLoading(true);
-				const data = await stablecoinApi.get(selectedToken.mintAddress);
-				setDetails(data);
+				const data = await stablecoinApi.getDashboardSummary(
+					selectedToken.mintAddress,
+				);
+				setSummary(data);
 			} catch (error) {
-				console.error("Failed to fetch dashboard details:", error);
+				console.error("Failed to fetch dashboard summary:", error);
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
-		fetchDetails();
-	}, [selectedToken]);
+		setIsLoading(true); // Set loading true before initial fetch
+		fetchSummary();
+		const interval = setInterval(fetchSummary, 15000); // Poll every 15s
 
-	const formatNumber = (num: string | number) => {
-		return new Intl.NumberFormat().format(Number(num));
-	};
+		return () => clearInterval(interval);
+	}, [selectedToken]);
 
 	if (!selectedToken) {
 		return (
@@ -49,72 +46,65 @@ const Dashboard: FC = () => {
 		);
 	}
 
-	if (isLoading && !details) {
+	if (isLoading || !summary) {
+		// Show loading if still loading or summary is not yet available
 		return (
-			<div className="flex items-center justify-center p-24">
-				<Loader2 className="w-8 h-8 animate-spin text-primary" />
+			<div className="flex items-center justify-center min-h-[400px]">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
 			</div>
 		);
 	}
 
-	const tokenData = details || selectedToken;
-	const isPaused = tokenData.onChain?.paused ?? false;
+	const metrics = summary?.metrics;
+	const isPaused = metrics?.isPaused ?? false;
 
 	return (
-		<>
+		<div className="flex flex-col gap-6">
 			<div className="grid grid-cols-4 gap-4">
 				<MetricCard
 					label="Total Supply"
-					value={
-						tokenData.onChain
-							? formatNumber(
-									Number(tokenData.onChain.supply) /
-										10 ** tokenData.onChain.decimals,
-								)
-							: "---"
-					}
+					value={metrics?.totalSupply || "---"}
 					subtitle={
-						<span className="text-[#777777]">
-							DECIMALS: {tokenData.decimals}
+						<span
+							className={`text-[10px] font-mono ${Number(metrics?.changePercent24h || 0) >= 0 ? "text-[#00ff88]" : "text-[#ff4444]"}`}
+						>
+							{Number(metrics?.changePercent24h || 0) >= 0 ? "▲" : "▼"}{" "}
+							{Math.abs(Number(metrics?.changePercent24h || 0))}% 24H
 						</span>
 					}
 				/>
 				<MetricCard
-					label="Technical Standard"
-					value={tokenData.preset.toUpperCase()}
-					subtitle={<span className="text-[#CCA352]">TOKEN-2022</span>}
+					label="Active Minters"
+					value={metrics?.activeMinters || "0 / 12"}
+					subtitle={
+						<span className="text-(--text-dim) uppercase">
+							CAPACITY: {metrics?.minterCapacity}
+						</span>
+					}
 				/>
 				<MetricCard
 					label="Pause Status"
 					value={
-						<span
-							className={`inline-flex items-center px-2.5 py-1 text-[9px] font-bold border mt-3 ${isPaused ? "border-destructive text-destructive bg-destructive/5" : "border-[#00ff88] text-[#00ff88] bg-[rgba(0,255,136,0.05)]"}`}
-						>
-							{isPaused ? "🔴 PAUSED" : "🟢 ACTIVE"}
-						</span>
+						<div className="mt-2">
+							<span
+								className={`inline-flex items-center px-2 py-0.5 text-[9px] font-bold border ${isPaused ? "border-destructive text-destructive bg-destructive/5" : "border-[#00ff88] text-[#00ff88] bg-[rgba(0,255,136,0.05)]"}`}
+							>
+								{isPaused ? "PAUSED" : "ACTIVE"}
+							</span>
+						</div>
 					}
 					subtitle={
-						<span className="text-[#777777] mt-3 block">REAL-TIME STATUS</span>
+						<span className="text-(--text-dim) mt-3 block uppercase">
+							LAST RE-ENTRY: 12H AGO
+						</span>
 					}
 				/>
 				<MetricCard
 					label="Oracle Price"
-					value={
-						details?.onChain ? (
-							<>
-								{details.onChain.roles.masterAuthority.slice(0, 0)}{" "}
-								{/** spacer hack if needed */}
-								$1.0000
-							</>
-						) : (
-							"$1.0000"
-						)
-					}
-					valueColor="text-[#FFD700]"
+					value={`$${metrics?.price || "1.0000"}`}
+					valueColor="text-(--accent-active)"
 					subtitle={
-						<span className="text-[#777777] uppercase">
-							{selectedToken?.symbol || "---"}/USD • LIVE FEED
-						</span>
+						<span className="text-(--text-dim) uppercase">PYTH ORACLE</span>
 					}
 				/>
 			</div>
@@ -123,62 +113,67 @@ const Dashboard: FC = () => {
 				<div className="grid grid-cols-3 gap-4 flex-2">
 					<ActionCard
 						label="Mint Tokens"
-						description="CREATE NEW SUPPLY"
+						description="INCREMENT CIRCULATING"
 						variant="mint"
-						amount={`UNIT: ${tokenData.symbol}`}
-						count="MINTING INTERFACE"
-						lastAction="READY"
+						amount={
+							summary?.stats?.totalMinted
+								? `+${summary.stats.totalMinted}`
+								: undefined
+						}
+						count={
+							summary?.stats?.mintCount
+								? `${summary.stats.mintCount} TXS`
+								: undefined
+						}
 					/>
 					<ActionCard
 						label="Burn Tokens"
-						description="REDUCE CIRCULATION"
+						description="REDUCE TOTAL SUPPLY"
 						variant="burn"
-						amount={`UNIT: ${tokenData.symbol}`}
-						count="BURNING INTERFACE"
-						lastAction="READY"
+						amount={
+							summary?.stats?.totalBurned
+								? `-${summary.stats.totalBurned}`
+								: undefined
+						}
+						count={
+							summary?.stats?.burnCount
+								? `${summary.stats.burnCount} TXS`
+								: undefined
+						}
 					/>
 					<ActionCard
 						label="Freeze Account"
-						description="SUSPEND TRANSFERS"
+						description="SUSPEND USER ASSETS"
 						count={
-							tokenData.onChain?.extensions.defaultAccountFrozen
-								? "DEFAULT FROZEN"
-								: "MANUAL FREEZE"
+							summary?.stats?.frozenCount
+								? `${summary.stats.frozenCount} ACTIVE`
+								: undefined
 						}
-						lastAction="COMPLIANCE"
 					/>
 					<ActionCard
-						label="Blacklist Address"
-						description="COMPLIANCE ENFORCEMENT"
-						badge={tokenData.preset === "sss2" ? "SSS-2 ONLY" : "NA"}
+						label="Blacklist"
+						description="GLOBAL DENY-LIST"
+						badge={selectedToken.preset === "sss2" ? "SSS-2 ONLY" : "NA"}
 						count={
-							tokenData.onChain?.extensions.transferHook
-								? "HOOK ENABLED"
-								: "NO HOOK"
+							summary?.stats?.blacklistCount
+								? `${summary.stats.blacklistCount} BLOCKED`
+								: undefined
 						}
-						lastAction="REGULATORY"
 					/>
 					<ActionCard
 						label="Manage Minters"
-						description="ROLE PERMISSIONS"
-						count="QUOTA MANAGEMENT"
-						lastAction="ADMIN"
+						description="ROLES & PERMISSIONS"
 					/>
-					<ActionCard
-						label="View Audit Log"
-						description="TRANSACTION HISTORY"
-						count="EVENT LOGS"
-						lastAction="SECURE"
-					/>
+					<ActionCard label="View Audit Log" description="ON-CHAIN HISTORY" />
 				</div>
 
-				<RolePanel details={tokenData} />
+				<RolePanel details={selectedToken} roles={summary?.roles} />
 			</div>
 
-			<SupplyChart />
+			<SupplyChart data={summary?.trajectory || []} />
 
-			<ActivityTable />
-		</>
+			<ActivityTable activities={summary?.activities || []} />
+		</div>
 	);
 };
 

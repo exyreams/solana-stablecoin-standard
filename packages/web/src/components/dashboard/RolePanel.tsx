@@ -3,43 +3,64 @@ import type { StablecoinDetails } from "../../lib/api/stablecoin";
 
 interface RolePanelProps {
 	details: StablecoinDetails;
+	roles?: {
+		masterAuthority: string;
+		pauser: string;
+		blacklister: string;
+		burner: string;
+		seizer: string;
+	};
 }
 
-export const RolePanel: FC<RolePanelProps> = ({ details }) => {
+export const RolePanel: FC<RolePanelProps> = ({
+	details,
+	roles: summaryRoles,
+}) => {
 	const truncateAddress = (addr: string) => {
+		if (addr === "---" || !addr) return "---";
 		return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
 	};
 
 	const roles = [
 		{
 			name: "Master Authority",
-			address: details.onChain
-				? truncateAddress(details.onChain.roles.masterAuthority)
-				: "---",
+			address: summaryRoles?.masterAuthority
+				? truncateAddress(summaryRoles.masterAuthority)
+				: details.onChain
+					? truncateAddress(details.onChain.roles.masterAuthority)
+					: "---",
 		},
 		{
 			name: "Pauser",
-			address: details.onChain
-				? truncateAddress(details.onChain.roles.pauser)
-				: "---",
+			address: summaryRoles?.pauser
+				? truncateAddress(summaryRoles.pauser)
+				: details.onChain
+					? truncateAddress(details.onChain.roles.pauser)
+					: "---",
 		},
 		{
 			name: "Blacklister",
-			address: details.onChain
-				? truncateAddress(details.onChain.roles.blacklister)
-				: "---",
+			address: summaryRoles?.blacklister
+				? truncateAddress(summaryRoles.blacklister)
+				: details.onChain
+					? truncateAddress(details.onChain.roles.blacklister)
+					: "---",
 		},
 		{
 			name: "Burner",
-			address: details.onChain
-				? truncateAddress(details.onChain.roles.burner)
-				: "---",
+			address: summaryRoles?.burner
+				? truncateAddress(summaryRoles.burner)
+				: details.onChain
+					? truncateAddress(details.onChain.roles.burner)
+					: "---",
 		},
 		{
 			name: "Seizer",
-			address: details.onChain
-				? truncateAddress(details.onChain.roles.seizer)
-				: "---",
+			address: summaryRoles?.seizer
+				? truncateAddress(summaryRoles.seizer)
+				: details.onChain
+					? truncateAddress(details.onChain.roles.seizer)
+					: "---",
 		},
 	];
 

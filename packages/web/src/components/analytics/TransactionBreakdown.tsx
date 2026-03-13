@@ -1,37 +1,81 @@
 import type { FC } from "react";
+import {
+	Bar,
+	BarChart,
+	Cell,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 
-const transactions = [
-	{ type: "Mint", count: 1247, percentage: 68, color: "bg-[#00ff88]" },
-	{ type: "Burn", count: 342, percentage: 19, color: "bg-[#ff4444]" },
-	{ type: "Freeze", count: 156, percentage: 8, color: "bg-[#ffaa00]" },
-	{ type: "Other", count: 89, percentage: 5, color: "bg-(--text-dim)" },
-];
+interface TransactionBreakdownProps {
+	data: {
+		name: string;
+		value: number;
+	}[];
+}
 
-export const TransactionBreakdown: FC = () => {
+const COLORS = ["#CCA352", "#8884d8", "#82ca9d", "#ffc658", "#ff7300"];
+
+export const TransactionBreakdown: FC<TransactionBreakdownProps> = ({
+	data,
+}) => {
+	const total = data.reduce((acc, curr) => acc + curr.value, 0);
+
 	return (
-		<div className="bg-(--bg-panel) border border-(--border-mid) p-6">
-			<div className="text-[10px] uppercase text-(--text-dim) font-semibold tracking-wider mb-4">
-				Transaction Breakdown (30D)
-			</div>
-			<div className="space-y-4">
-				{transactions.map((tx) => (
-					<div key={tx.type}>
-						<div className="flex justify-between items-center mb-2 text-xs font-mono">
-							<span className="text-(--text-main)">{tx.type}</span>
-							<div className="flex items-center gap-3">
-								<span className="text-(--text-dim)">{tx.count} txns</span>
-								<span className="text-(--text-main)">{tx.percentage}%</span>
-							</div>
-						</div>
-						<div className="w-full bg-(--bg-surface) h-2 overflow-hidden">
-							<div
-								className={`h-full ${tx.color}`}
-								style={{ width: `${tx.percentage}%` }}
-							/>
-						</div>
+		<div className="w-full h-full flex flex-col">
+			{data.length === 0 ? (
+				<div className="flex-1 flex items-center justify-center">
+					<div className="text-sm font-mono text-(--text-dim)">
+						NO ACTIVITY RECORDED
 					</div>
-				))}
-			</div>
+				</div>
+			) : (
+				<div className="flex-1 w-full relative min-h-0">
+					<ResponsiveContainer width="100%" height="100%">
+						<BarChart
+							layout="vertical"
+							data={data}
+							margin={{ left: -20, right: 20 }}
+						>
+							<XAxis type="number" hide />
+							<YAxis
+								dataKey="name"
+								type="category"
+								axisLine={false}
+								tickLine={false}
+								tick={{ fill: "#777", fontSize: 10, fontFamily: "monospace" }}
+								width={100}
+							/>
+							<Tooltip
+								cursor={{ fill: "transparent" }}
+								contentStyle={{
+									backgroundColor: "#111",
+									border: "1px solid #333",
+									fontSize: "12px",
+									fontFamily: "monospace",
+									color: "#EAEAEA",
+								}}
+							/>
+							<Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+								{data.map((_, index) => (
+									<Cell
+										key={`cell-${index}`}
+										fill={COLORS[index % COLORS.length]}
+									/>
+								))}
+							</Bar>
+						</BarChart>
+					</ResponsiveContainer>
+				</div>
+			)}
+
+			{total > 0 && (
+				<div className="mt-4 pt-4 border-t border-(--border-dim) text-[10px] text-(--text-dim) font-mono">
+					TOTAL EVENTS RECORDED: {total}
+				</div>
+			)}
 		</div>
 	);
 };

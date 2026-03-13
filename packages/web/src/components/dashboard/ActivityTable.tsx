@@ -10,70 +10,11 @@ interface Activity {
 	actionColor?: string;
 }
 
-const activities: Activity[] = [
-	{
-		timestamp: "2026.03.05 14:02",
-		action: "MINT",
-		amount: "+500,000.00",
-		target: "Treasury → 9zK...M22",
-		status: "FINALIZED",
-		actionColor: "text-(--accent-active)",
-	},
-	{
-		timestamp: "2026.03.05 13:45",
-		action: "FREEZE",
-		amount: "--",
-		target: "Account 8xL...11Q",
-		status: "CONFIRMED",
-	},
-	{
-		timestamp: "2026.03.05 12:12",
-		action: "BURN",
-		amount: "-25,000.00",
-		target: "Exchange → NULL",
-		status: "CONFIRMED",
-		actionColor: "text-[#ff4444]",
-	},
-	{
-		timestamp: "2026.03.05 11:05",
-		action: "BLACKLIST",
-		amount: "--",
-		target: "Add 4fP...99K",
-		status: "FINALIZED",
-	},
-	{
-		timestamp: "2026.03.05 10:44",
-		action: "MINT",
-		amount: "+1,000,000.00",
-		target: "Treasury → 5aW...V34",
-		status: "FINALIZED",
-		actionColor: "text-(--accent-active)",
-	},
-	{
-		timestamp: "2026.03.05 09:12",
-		action: "UPDATE ORACLE",
-		amount: "--",
-		target: "Pyth Feed V2",
-		status: "CONFIRMED",
-	},
-	{
-		timestamp: "2026.03.04 23:59",
-		action: "MINT",
-		amount: "+120,000.00",
-		target: "Treasury → LP_SOL",
-		status: "FINALIZED",
-		actionColor: "text-(--accent-active)",
-	},
-	{
-		timestamp: "2026.03.04 22:30",
-		action: "TRANSFER AUTH",
-		amount: "--",
-		target: "Master → Pending",
-		status: "CONFIRMED",
-	},
-];
+interface ActivityTableProps {
+	activities: Activity[];
+}
 
-export const ActivityTable: FC = () => {
+export const ActivityTable: FC<ActivityTableProps> = ({ activities }) => {
 	return (
 		<div className="bg-[rgba(15,15,15,0.8)] border border-(--border-mid) relative">
 			<div className="border-b border-(--border-dim) px-4 py-2 flex justify-between items-center bg-linear-to-r from-(--bg-surface) to-transparent">
@@ -102,33 +43,49 @@ export const ActivityTable: FC = () => {
 					</tr>
 				</thead>
 				<tbody>
-					{activities.map((activity, index) => (
-						<tr key={index}>
-							<td className="px-3 py-3 border-b border-(--border-dim) text-(--text-dim)">
-								{activity.timestamp}
-							</td>
+					{activities.length === 0 ? (
+						<tr>
 							<td
-								className={`px-3 py-3 border-b border-(--border-dim) ${activity.actionColor || ""}`}
+								colSpan={5}
+								className="px-3 py-8 text-center text-(--text-dim)"
 							>
-								{activity.action}
-							</td>
-							<td className="px-3 py-3 border-b border-(--border-dim)">
-								{activity.amount}
-							</td>
-							<td className="px-3 py-3 border-b border-(--border-dim) text-(--text-dim)">
-								{activity.target}
-							</td>
-							<td className="px-3 py-3 border-b border-(--border-dim)">
-								<Badge
-									variant={
-										activity.status === "FINALIZED" ? "accent" : "default"
-									}
-								>
-									{activity.status}
-								</Badge>
+								NO RECENT ACTIVITY RECORDED
 							</td>
 						</tr>
-					))}
+					) : (
+						activities.map((activity, index) => (
+							<tr key={index}>
+								<td className="px-3 py-3 border-b border-(--border-dim) text-(--text-dim)">
+									{activity.timestamp}
+								</td>
+								<td
+									className={`px-3 py-3 border-b border-(--border-dim) ${activity.actionColor || ""}`}
+								>
+									{activity.action}
+								</td>
+								<td className="px-3 py-3 border-b border-(--border-dim)">
+									{activity.amount}
+								</td>
+								<td className="px-3 py-3 border-b border-(--border-dim) text-(--text-dim)">
+									{activity.target.length > 20
+										? `${activity.target.slice(0, 10)}...${activity.target.slice(-8)}`
+										: activity.target}
+								</td>
+								<td className="px-3 py-3 border-b border-(--border-dim)">
+									<Badge
+										variant={
+											activity.status === "FINALIZED" ||
+											activity.status === "CONFIRMED"
+												? "accent"
+												: "default"
+										}
+									>
+										{activity.status}
+									</Badge>
+								</td>
+							</tr>
+						))
+					)}
 				</tbody>
 			</table>
 		</div>
