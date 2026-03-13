@@ -33,6 +33,12 @@ export function initCommand(): Command {
 			"--auditor-elgamal-pubkey <pubkey>",
 			"Auditor ElGamal public key hex (SSS-3)",
 		)
+		.option("--mint-keypair <path>", "Path to a specific mint keypair file")
+		.option(
+			"--mint-close-authority",
+			"Enable mint close authority (incompatible with Metaplex)",
+			false,
+		)
 		.action(async (opts, cmd) => {
 			const globals = cmd.parent!.opts();
 			const spinner = ora("Initializing stablecoin...").start();
@@ -56,6 +62,8 @@ export function initCommand(): Command {
 						transferHookProgramId: customConfig.transfer_hook_program_id
 							? new PublicKey(customConfig.transfer_hook_program_id)
 							: undefined,
+						mintKeypair: opts.mintKeypair ? loadKeypair(opts.mintKeypair) : undefined,
+						enableMintCloseAuthority: opts.mintCloseAuthority ?? false,
 						enableConfidentialTransfers:
 							customConfig.enable_confidential_transfers ?? false,
 						confidentialTransferAutoApprove:
@@ -65,10 +73,10 @@ export function initCommand(): Command {
 							: undefined,
 					});
 					spinner.succeed("Stablecoin initialized from custom config!");
-					success(`Mint address: ${stable.mint.toBase58()}`);
+					success(`Mint address: ${stable.stablecoin.mint.toBase58()}`);
 					info(`Config file:  ${opts.custom}`);
 					printInitSummary(
-						stable.mint,
+						stable.stablecoin.mint,
 						customConfig.name ?? opts.name,
 						opts.symbol,
 						"custom",
@@ -103,6 +111,8 @@ export function initCommand(): Command {
 					decimals: parseInt(opts.decimals),
 					uri: opts.uri,
 					authority,
+					mintKeypair: opts.mintKeypair ? loadKeypair(opts.mintKeypair) : undefined,
+					enableMintCloseAuthority: opts.mintCloseAuthority ?? false,
 				};
 
 				// SSS-2: transfer hook program is required
@@ -131,7 +141,12 @@ export function initCommand(): Command {
 				const stable = await SolanaStablecoin.create(connection, createConfig);
 
 				spinner.succeed("Stablecoin initialized!");
-				printInitSummary(stable.mint, opts.name, opts.symbol, presetLabel);
+				printInitSummary(
+					stable.stablecoin.mint,
+					opts.name,
+					opts.symbol,
+					presetLabel,
+				);
 			} catch (err: any) {
 				spinner.fail("Initialization failed");
 				error(err.message);

@@ -17,6 +17,10 @@ export function mintersCommand(): Command {
 			const globals = cmd.parent!.parent!.opts();
 			const spinner = ora("Fetching minters...").start();
 			try {
+				if (!globals.mint) {
+					spinner.fail("No mint address provided. Use --mint <address> or set STABLECOIN_MINT env var.");
+					process.exit(1);
+				}
 				const authority = loadKeypair(globals.keypair);
 				const connection = new Connection(globals.url, "confirmed");
 				const stable = await SolanaStablecoin.load(
@@ -71,6 +75,10 @@ export function mintersCommand(): Command {
 			const globals = cmd.parent!.parent!.opts();
 			const spinner = ora("Adding minter...").start();
 			try {
+				if (!globals.mint) {
+					spinner.fail("No mint address provided. Use --mint <address> or set STABLECOIN_MINT env var.");
+					process.exit(1);
+				}
 				const authority = loadKeypair(globals.keypair);
 				const connection = new Connection(globals.url, "confirmed");
 				const stable = await SolanaStablecoin.load(
@@ -106,6 +114,10 @@ export function mintersCommand(): Command {
 			const globals = cmd.parent!.parent!.opts();
 			const spinner = ora("Removing minter...").start();
 			try {
+				if (!globals.mint) {
+					spinner.fail("No mint address provided. Use --mint <address> or set STABLECOIN_MINT env var.");
+					process.exit(1);
+				}
 				const authority = loadKeypair(globals.keypair);
 				const connection = new Connection(globals.url, "confirmed");
 				const stable = await SolanaStablecoin.load(
@@ -138,6 +150,10 @@ export function mintersCommand(): Command {
 			const globals = cmd.parent!.parent!.opts();
 			const spinner = ora("Updating minter...").start();
 			try {
+				if (!globals.mint) {
+					spinner.fail("No mint address provided. Use --mint <address> or set STABLECOIN_MINT env var.");
+					process.exit(1);
+				}
 				const authority = loadKeypair(globals.keypair);
 				const connection = new Connection(globals.url, "confirmed");
 				const stable = await SolanaStablecoin.load(

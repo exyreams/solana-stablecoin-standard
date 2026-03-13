@@ -13,6 +13,10 @@ export function supplyCommand(): Command {
 			const globals = cmd.parent!.opts();
 			const spinner = ora("Fetching supply...").start();
 			try {
+				if (!globals.mint) {
+					spinner.fail("No mint address provided. Use --mint <address> or set STABLECOIN_MINT env var.");
+					process.exit(1);
+				}
 				const authority = loadKeypair(globals.keypair);
 				const connection = new Connection(globals.url, "confirmed");
 				const stable = await SolanaStablecoin.load(

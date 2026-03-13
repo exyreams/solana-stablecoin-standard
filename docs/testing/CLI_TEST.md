@@ -1102,10 +1102,7 @@ sss-token oracle add-feed \
   --mint $STABLECOIN_MINT \
   --index 0 \
   --type manual \
-  --address 11111111111111111111111111111111 \
-  --label "Manual EUR/USD Feed" \
-  --weight 100 \
-  --staleness 0
+  --address 11111111111111111111111111111111
 ```
 
 **Expected Output:**
@@ -1117,37 +1114,21 @@ Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 
 **Note**: Manual feeds are useful for testing. For production, use Pyth, Switchboard, or Chainlink.
 
-### 9.4 Add Pyth Feed (Production)
-```bash
-# Example: Pyth EUR/USD feed on devnet
-sss-token oracle add-feed \
-  --mint $STABLECOIN_MINT \
-  --index 1 \
-  --type pyth \
-  --address <PYTH_EUR_USD_FEED_ADDRESS> \
-  --label "Pyth EUR/USD" \
-  --weight 100
-```
-
-**Note**: Get Pyth feed addresses from https://pyth.network/developers/price-feed-ids
-
-### 9.5 List All Feeds
+### 9.4 List All Feeds
 ```bash
 sss-token oracle feeds --mint $STABLECOIN_MINT
 ```
 
 **Expected Output:**
 ```
-┌───────┬────────────┬──────────────────────────────────────────────┬──────────────────────┬─────────┬────────┬────────────┬─────────────────────────┐
-│ Index │ Type       │ Address                                      │ Label                │ Enabled │ Weight │ Last Price │ Last Update             │
-├───────┼────────────┼──────────────────────────────────────────────┼──────────────────────┼─────────┼────────┼────────────┼─────────────────────────┤
-│ 0     │ Manual     │ 11111111111111111111111111111111             │ Manual EUR/USD Feed  │ 🟢 Yes  │ 100    │ (none)     │ (none)                  │
-├───────┼────────────┼──────────────────────────────────────────────┼──────────────────────┼─────────┼────────┼────────────┼─────────────────────────┤
-│ 1     │ Pyth       │ <PYTH_FEED_ADDRESS>                          │ Pyth EUR/USD         │ 🟢 Yes  │ 100    │ (none)     │ (none)                  │
-└───────┴────────────┴──────────────────────────────────────────────┴──────────────────────┴─────────┴────────┴────────────┴─────────────────────────┘
+┌───────┬────────┬──────────────────────────────────┬────────────┬─────────┬────────┬────────────┬─────────────┐
+│ Index │ Type   │ Address                          │ Label      │ Enabled │ Weight │ Last Price │ Last Update │
+├───────┼────────┼──────────────────────────────────┼────────────┼─────────┼────────┼────────────┼─────────────┤
+│ 0     │ Manual │ 11111111111111111111111111111111 │ (no label) │ 🟢 Yes  │ 1      │ (none)     │ (none)      │
+└───────┴────────┴──────────────────────────────────┴────────────┴─────────┴────────┴────────────┴─────────────┘
 ```
 
-### 9.6 Crank Manual Feed (Push Price)
+### 9.5 Crank Manual Feed (Push Price)
 ```bash
 # Push EUR/USD price of 1.085 (in 9-decimal fixed-point: 1085000000)
 sss-token oracle crank \
@@ -1166,14 +1147,33 @@ Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 
 **Note**: Price format is 9-decimal fixed-point (1.085 = 1_085_000_000).
 
-### 9.7 Verify Feed Update
+### 9.5 Crank Manual Feed (Push Price)
+```bash
+# Push EUR/USD price of 1.085 (in 9-decimal fixed-point: 1085000000)
+sss-token oracle crank \
+  --mint $STABLECOIN_MINT \
+  0 \
+  --price 1085000000 \
+  --confidence 1000000
+```
+
+**Expected Output:**
+```
+✔ Feed 0 cranked with price 1085000000
+
+Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
+```
+
+**Note**: Price format is 9-decimal fixed-point (1.085 = 1_085_000_000).
+
+### 9.6 Verify Feed Update
 ```bash
 sss-token oracle feeds --mint $STABLECOIN_MINT
 ```
 
 **Check**: Feed 0 should show `Last Price: 1085000000` and recent timestamp.
 
-### 9.8 Get Mint Price
+### 9.7 Get Mint Price
 ```bash
 sss-token oracle price --mint $STABLECOIN_MINT --side mint
 ```
@@ -1185,7 +1185,7 @@ sss-token oracle price --mint $STABLECOIN_MINT --side mint
 
 **Note**: Includes mint premium (10 bps = 0.1%).
 
-### 9.9 Get Redeem Price
+### 9.8 Get Redeem Price
 ```bash
 sss-token oracle price --mint $STABLECOIN_MINT --side redeem
 ```
@@ -1197,7 +1197,7 @@ sss-token oracle price --mint $STABLECOIN_MINT --side redeem
 
 **Note**: Includes redeem discount (10 bps = 0.1%).
 
-### 9.10 Set Manual Price Override
+### 9.9 Set Manual Price Override
 ```bash
 sss-token oracle set-manual \
   --mint $STABLECOIN_MINT \
@@ -1214,7 +1214,7 @@ Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 
 **Note**: When active, manual price overrides aggregated feed prices.
 
-### 9.11 Update Oracle Config
+### 9.10 Update Oracle Config
 ```bash
 sss-token oracle update \
   --mint $STABLECOIN_MINT \
@@ -1230,7 +1230,7 @@ sss-token oracle update \
 Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 ```
 
-### 9.12 Pause Oracle
+### 9.11 Pause Oracle
 ```bash
 sss-token oracle update --mint $STABLECOIN_MINT --pause
 ```
@@ -1242,24 +1242,24 @@ sss-token oracle update --mint $STABLECOIN_MINT --pause
 Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 ```
 
-### 9.13 Unpause Oracle
+### 9.12 Unpause Oracle
 ```bash
 sss-token oracle update --mint $STABLECOIN_MINT --unpause
 ```
 
-### 9.14 Remove Feed
+### 9.13 Remove Feed
 ```bash
-sss-token oracle remove-feed --mint $STABLECOIN_MINT 1
+sss-token oracle remove-feed --mint $STABLECOIN_MINT 0
 ```
 
 **Expected Output:**
 ```
-✔ Feed 1 removed
+✔ Feed 0 removed
 
 Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 ```
 
-### 9.15 Transfer Oracle Authority (Step 1 of 2)
+### 9.14 Transfer Oracle Authority (Step 1 of 2)
 ```bash
 sss-token oracle transfer-authority \
   --mint $STABLECOIN_MINT \
@@ -1274,7 +1274,7 @@ The new authority must call "sss-token oracle accept-authority" to complete
 Transaction: https://explorer.solana.com/tx/<SIGNATURE>?cluster=devnet
 ```
 
-### 9.16 Accept Oracle Authority (Step 2 of 2)
+### 9.15 Accept Oracle Authority (Step 2 of 2)
 ```bash
 sss-token oracle accept-authority \
   --mint $STABLECOIN_MINT \
@@ -1283,7 +1283,7 @@ sss-token oracle accept-authority \
 
 **For Testing**: Skip unless you have the new authority's keypair.
 
-### 9.17 Close Oracle
+### 9.16 Close Oracle
 ```bash
 # Remove all feeds first
 sss-token oracle remove-feed --mint $STABLECOIN_MINT 0
