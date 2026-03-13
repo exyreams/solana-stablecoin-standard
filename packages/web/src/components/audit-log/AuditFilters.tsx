@@ -1,19 +1,23 @@
 import type { FC } from "react";
 
 interface AuditFiltersProps {
-	onFilterChange?: (filters: any) => void;
+	onFilterChange: (filters: any) => void;
+	filters: any;
 }
 
-export const AuditFilters: FC<AuditFiltersProps> = () => {
+export const AuditFilters: FC<AuditFiltersProps> = ({
+	onFilterChange,
+	filters,
+}) => {
 	const actionTypes = [
-		{ label: "MINT", active: true, color: "text-green-400" },
-		{ label: "BURN", active: true, color: "text-red-400" },
-		{ label: "FREEZE", active: true, color: "text-yellow-400" },
-		{ label: "BLACKLIST", active: true, color: "text-red-400" },
-		{ label: "SEIZE", active: true, color: "text-red-400" },
-		{ label: "THAW", active: false, color: "text-(--text-dim)" },
-		{ label: "ROLE_UPDATE", active: false, color: "text-(--text-dim)" },
-		{ label: "ORACLE", active: false, color: "text-(--text-dim)" },
+		{ label: "MINT", color: "text-green-400" },
+		{ label: "BURN", color: "text-red-400" },
+		{ label: "FREEZE", color: "text-yellow-400" },
+		{ label: "BLACKLIST", color: "text-red-400" },
+		{ label: "SEIZE", color: "text-red-400" },
+		{ label: "THAW", color: "text-(--text-dim)" },
+		{ label: "UPDATE_ROLES", color: "text-(--text-dim)" },
+		{ label: "ORACLE", color: "text-(--text-dim)" },
 	];
 
 	return (
@@ -27,13 +31,17 @@ export const AuditFilters: FC<AuditFiltersProps> = () => {
 					<div className="flex items-center gap-1">
 						<input
 							type="text"
-							defaultValue="2023.10.20"
+							placeholder="YYYY.MM.DD"
+							value={filters.startDate}
+							onChange={(e) => onFilterChange({ startDate: e.target.value })}
 							className="w-full bg-(--bg-input) border border-(--border-dim) text-(--text-main) font-mono text-[11px] px-2.5 py-1.5 outline-none focus:border-(--accent-primary)"
 						/>
 						<span className="text-(--text-dark)">→</span>
 						<input
 							type="text"
-							defaultValue="2023.10.24"
+							placeholder="YYYY.MM.DD"
+							value={filters.endDate}
+							onChange={(e) => onFilterChange({ endDate: e.target.value })}
 							className="w-full bg-(--bg-input) border border-(--border-dim) text-(--text-main) font-mono text-[11px] px-2.5 py-1.5 outline-none focus:border-(--accent-primary)"
 						/>
 						<span className="px-1 cursor-pointer opacity-60 hover:opacity-100">
@@ -51,8 +59,15 @@ export const AuditFilters: FC<AuditFiltersProps> = () => {
 						{actionTypes.map((action) => (
 							<button
 								key={action.label}
+								onClick={() =>
+									onFilterChange({
+										action: filters.action === action.label ? "" : action.label,
+									})
+								}
 								className={`px-2.5 py-1 text-[10px] font-mono border border-(--border-dim) cursor-pointer bg-(--bg-input) transition-colors ${
-									action.active ? action.color : "text-(--text-dim)"
+									filters.action === action.label
+										? action.color
+										: "text-(--text-dim)"
 								}`}
 							>
 								{action.label}
@@ -70,6 +85,8 @@ export const AuditFilters: FC<AuditFiltersProps> = () => {
 						<input
 							type="text"
 							placeholder="Address..."
+							value={filters.address}
+							onChange={(e) => onFilterChange({ address: e.target.value })}
 							className="w-full bg-(--bg-input) border border-(--border-mid) text-(--text-main) font-mono text-[11px] px-2.5 py-1.5 pr-8 outline-none focus:border-(--accent-primary)"
 						/>
 						<span className="absolute right-2 top-1.5 opacity-50">🔍</span>
@@ -82,13 +99,22 @@ export const AuditFilters: FC<AuditFiltersProps> = () => {
 						Status
 					</label>
 					<div className="flex bg-(--bg-input) border border-(--border-dim)">
-						<button className="px-3 py-1.5 text-[10px] font-mono text-(--text-dark) border-r border-(--border-dim)">
+						<button
+							onClick={() => onFilterChange({ status: "" })}
+							className={`px-3 py-1.5 text-[10px] font-mono border-r border-(--border-dim) ${!filters.status ? "text-(--accent-primary)" : "text-(--text-dark)"}`}
+						>
 							ALL
 						</button>
-						<button className="px-3 py-1.5 text-[10px] font-mono text-green-400 bg-(--bg-surface) border-r border-(--border-dim)">
+						<button
+							onClick={() => onFilterChange({ status: "success" })}
+							className={`px-3 py-1.5 text-[10px] font-mono border-r border-(--border-dim) ${filters.status === "success" ? "text-green-400" : "text-(--text-dark)"}`}
+						>
 							SUCCESS
 						</button>
-						<button className="px-3 py-1.5 text-[10px] font-mono text-(--text-dark)">
+						<button
+							onClick={() => onFilterChange({ status: "failed" })}
+							className={`px-3 py-1.5 text-[10px] font-mono ${filters.status === "failed" ? "text-red-400" : "text-(--text-dark)"}`}
+						>
 							FAILED
 						</button>
 					</div>

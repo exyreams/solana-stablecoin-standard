@@ -276,13 +276,19 @@ export const stablecoinApi = {
 		);
 		return response.data;
 	},
-	getAuditLogs: async (
-		limit = 100,
-	): Promise<{ count: number; entries: any[] }> => {
+	getAuditLogs: async (params?: {
+		limit?: number;
+		offset?: number;
+		action?: string;
+		address?: string;
+		startDate?: string;
+		endDate?: string;
+		status?: string;
+	}): Promise<{ count: number; entries: any[] }> => {
 		const response = await api.get<{ count: number; entries: any[] }>(
 			"/compliance/audit",
 			{
-				params: { limit },
+				params,
 			},
 		);
 		return response.data;

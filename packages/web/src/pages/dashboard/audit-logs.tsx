@@ -1,12 +1,39 @@
-import type { FC } from "react";
-import {
-	AuditDetail,
-	AuditFilters,
-	AuditTable,
-} from "../../components/audit-log";
+import { type FC, useEffect, useState } from "react";
+import { AuditFilters, AuditTable } from "../../components/audit-log";
 import { Button } from "../../components/ui/Button";
+import { stablecoinApi } from "../../lib/api/stablecoin";
 
 const AuditLogs: FC = () => {
+	const [events, setEvents] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [filters, setFilters] = useState({
+		limit: 15,
+		offset: 0,
+		action: "",
+		address: "",
+		startDate: "",
+		endDate: "",
+	});
+	const [selectedEvent, setSelectedEvent] = useState<any>(null);
+	const [totalCount, setTotalCount] = useState(0);
+
+	const fetchLogs = async () => {
+		setLoading(true);
+		try {
+			const data = await stablecoinApi.getAuditLogs(filters);
+			setEvents(data.entries);
+			setTotalCount(data.count);
+		} catch (error) {
+			console.error("Failed to fetch audit logs:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchLogs();
+	}, [filters]);
+
 	return (
 		<>
 			<div className="font-mono text-[10px] text-[#777777] mb-1">
@@ -33,15 +60,44 @@ const AuditLogs: FC = () => {
 					<Button variant="secondary" size="sm">
 						JSON EXPORT
 					</Button>
-					<Button variant="secondary" size="sm" className="ml-2">
+					<Button
+						variant="secondary"
+						size="sm"
+						className="ml-2"
+						onClick={() =>
+							setFilters({
+								limit: 15,
+								offset: 0,
+								action: "",
+								address: "",
+								startDate: "",
+								endDate: "",
+							})
+						}
+					>
 						RESET FILTERS
 					</Button>
 				</div>
 			</div>
 
-			<AuditFilters />
-			<AuditTable />
-			<AuditDetail />
+			<AuditFilters
+				onFilterChange={(newFilters) =>
+					setFilters((prev) => ({ ...prev, ...newFilters, offset: 0 }))
+				}
+				filters={filters}
+			/>
+			<AuditTable
+				events={events}
+				loading={loading}
+				onSelectEvent={setSelectedEvent}
+				selectedEventId={selectedEvent?.id}
+				totalCount={totalCount}
+				limit={filters.limit}
+				offset={filters.offset}
+				onPageChange={(newOffset) =>
+					setFilters((prev) => ({ ...prev, offset: newOffset }))
+				}
+			/>
 		</>
 	);
 };

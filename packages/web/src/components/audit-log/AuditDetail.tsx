@@ -1,126 +1,100 @@
 import type { FC } from "react";
 import { Badge } from "../ui/Badge";
 
-export const AuditDetail: FC = () => {
-	return (
-		<div className="bg-(--bg-surface) border border-(--accent-primary) border-l-4 p-4 relative mt-auto">
-			<div className="flex justify-between items-center mb-4 pb-2 border-b border-(--border-dim)">
-				<span className="text-sm font-mono font-bold tracking-wider">
-					EVENT DETAILS — MINT
-				</span>
-				<span className="text-sm cursor-pointer opacity-60 hover:opacity-100">
-					✕
-				</span>
-			</div>
+interface AuditDetailProps {
+	event: any;
+}
 
-			<div className="grid grid-cols-2 gap-6">
-				<div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Timestamp
-						</span>
-						<span className="font-mono">2023-10-24T14:02:41.002Z</span>
-					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
+export const AuditDetail: FC<AuditDetailProps> = ({ event }) => {
+	if (!event) return null;
+
+	const getActionBadge = (action: string) => {
+		const variants: Record<string, any> = {
+			MINT: { variant: "success", text: "MINT" },
+			BURN: { variant: "danger", text: "BURN" },
+			FREEZE: { variant: "warning", text: "FREEZE" },
+			BLACKLIST: { variant: "danger", text: "BLACKLIST" },
+			BLACKLIST_ADD: { variant: "danger", text: "BLACKLIST+" },
+			BLACKLIST_REMOVE: { variant: "default", text: "BLACKLIST-" },
+			SEIZE: { variant: "danger", text: "SEIZE" },
+			THAW: { variant: "default", text: "THAW" },
+			UPDATE_ROLES: { variant: "warning", text: "ROLES" },
+		};
+		const config = variants[action] || { variant: "default", text: action };
+		return <Badge variant={config.variant}>{config.text}</Badge>;
+	};
+
+	return (
+		<div className="py-4 px-6 bg-black/40 border-y border-(--border-dim) shadow-inner">
+			<div className="grid grid-cols-2 gap-8">
+				{/* Left Side: Structured Data */}
+				<div className="space-y-3">
+					<div className="grid grid-cols-[100px_1fr] gap-4 items-center text-[10px]">
+						<span className="text-(--text-dark) uppercase font-bold tracking-tighter">
 							Action Type
 						</span>
-						<Badge variant="success">MINT</Badge>
+						<div className="flex items-center gap-2">
+							{getActionBadge(event.action)}
+							<Badge
+								variant="default"
+								className="opacity-50 text-[8px] px-1 py-0"
+							>
+								{event.type}
+							</Badge>
+						</div>
 					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Initiator
+					<div className="grid grid-cols-[100px_1fr] gap-4 items-start text-[10px]">
+						<span className="text-(--text-dark) uppercase font-bold tracking-tighter pt-0.5">
+							Address
 						</span>
-						<span className="font-mono text-(--text-dim)">
-							8x2...f93h22JK...291f93{" "}
-							<span className="text-[9px] cursor-pointer opacity-60 hover:opacity-100 ml-1">
-								📋
-							</span>
-						</span>
-					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Target
-						</span>
-						<span className="font-mono text-(--text-dim)">
-							3M1...a21kL89s...z90a21{" "}
-							<span className="text-[9px] cursor-pointer opacity-60 hover:opacity-100 ml-1">
-								📋
-							</span>
+						<span className="font-mono text-(--text-dim) break-all leading-tight">
+							{event.address}
 						</span>
 					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
+					<div className="grid grid-cols-[100px_1fr] gap-4 items-center text-[10px]">
+						<span className="text-(--text-dark) uppercase font-bold tracking-tighter">
 							Amount
 						</span>
-						<span className="font-mono text-green-400">+5,000,000.00 USDC</span>
-					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Fee (SOL)
-						</span>
-						<span className="font-mono">0.000005</span>
-					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Program ID
-						</span>
-						<span className="font-mono text-(--text-dark)">
-							TokenkegQf...{" "}
-							<span className="cursor-pointer opacity-60 hover:opacity-100">
-								📋
+						{event.amount ? (
+							<span
+								className={`font-mono font-bold ${event.action === "MINT" ? "text-green-400" : "text-red-400"}`}
+							>
+								{event.action === "MINT" ? "+" : "-"}
+								{event.amount}
 							</span>
-						</span>
+						) : (
+							<span className="font-mono text-(--text-dark)">—</span>
+						)}
 					</div>
-					<div className="grid grid-cols-[120px_1fr] gap-3 mb-2 text-[11px]">
-						<span className="text-(--text-dark) uppercase font-bold text-[10px]">
-							Instr. Index
+					<div className="grid grid-cols-[100px_1fr] gap-4 items-start text-[10px]">
+						<span className="text-(--text-dark) uppercase font-bold tracking-tighter pt-0.5">
+							Signature
 						</span>
-						<span className="font-mono">0</span>
+						<div className="flex flex-col gap-1">
+							<span className="font-mono text-(--text-dark) break-all leading-tight">
+								{event.signature || "—"}
+							</span>
+							{event.signature && (
+								<a
+									href={`https://explorer.solana.com/tx/${event.signature}?cluster=custom&customUrl=http://localhost:8899`}
+									target="_blank"
+									rel="noreferrer"
+									className="text-(--accent-primary) no-underline text-[9px] hover:underline w-fit"
+								>
+									VIEW ON EXPLORER →
+								</a>
+							)}
+						</div>
 					</div>
 				</div>
 
-				<div>
-					<span className="text-[9px] text-(--text-dark) font-mono uppercase font-bold block mb-2">
-						Raw Transaction & Logs
+				{/* Right Side: Log Data */}
+				<div className="flex flex-col">
+					<span className="text-[9px] text-(--text-dark) font-mono uppercase font-bold mb-1.5 opacity-60">
+						Reason / Log Item
 					</span>
-					<div className="bg-(--bg-input) border border-(--border-dim) p-3 font-mono text-[10px] text-(--text-dim) h-[200px] overflow-y-auto leading-relaxed">
-						{"{"}
-						<br />
-						&nbsp;&nbsp;"instruction": "0x0b",
-						<br />
-						&nbsp;&nbsp;"data": "0x00004a817c8000000000",
-						<br />
-						&nbsp;&nbsp;"logs": [
-						<br />
-						&nbsp;&nbsp;&nbsp;&nbsp;"
-						<span className="text-green-400">
-							Program log: Instruction: MintTo
-						</span>
-						",
-						<br />
-						&nbsp;&nbsp;&nbsp;&nbsp;"
-						<span className="text-green-400">
-							Program log: Minting 5000000 tokens
-						</span>
-						",
-						<br />
-						&nbsp;&nbsp;&nbsp;&nbsp;"Program log: Success",
-						<br />
-						&nbsp;&nbsp;&nbsp;&nbsp;"Program consumption: 4502 compute units"
-						<br />
-						&nbsp;&nbsp;],
-						<br />
-						&nbsp;&nbsp;"compute_units": 4502,
-						<br />
-						&nbsp;&nbsp;"recent_blockhash": "8xJ...p9K"
-						<br />
-						{"}"}
-					</div>
-					<div className="text-right mt-3">
-						<button className="bg-transparent border border-(--accent-primary) text-(--accent-primary) font-mono text-[10px] font-bold px-3 py-1.5 cursor-pointer">
-							OPEN IN EXPLORER
-						</button>
+					<div className="flex-grow bg-black/60 border border-(--border-mid) p-3 font-mono text-[10px] text-(--text-dim) leading-relaxed whitespace-pre-wrap max-h-[120px] overflow-y-auto custom-scrollbar">
+						{event.reason}
 					</div>
 				</div>
 			</div>
