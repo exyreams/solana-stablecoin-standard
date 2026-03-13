@@ -37,7 +37,6 @@ impl FuzzTest {
             "MIN".to_string(),
             "https://example.com/minimal.json".to_string(),
             6,
-            false, // enable_mint_close_authority (default false for Metaplex compatibility)
             false, // enable_permanent_delegate
             false, // enable_transfer_hook
             false, // default_account_frozen
