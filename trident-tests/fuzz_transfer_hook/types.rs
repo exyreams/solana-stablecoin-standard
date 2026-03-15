@@ -26,7 +26,7 @@ pub mod transfer_hook {
 
     /// Returns the program ID for transfer_hook
     pub fn program_id() -> Pubkey {
-        pubkey!("F8wwXWp8JUKVrDPwFCpG2NrheV3X7KKatoDuiYeBigkf")
+        pubkey!("HPksBobjquMqBfnCgpqBQDkomJ4HmGB1AbvJnemNBEig")
     }
 
     // ------------------------------------------------------------------------
@@ -390,7 +390,7 @@ pub mod sss_oracle {
 
     /// Returns the program ID for sss_oracle
     pub fn program_id() -> Pubkey {
-        pubkey!("7gw6jAKSZx4mueRHcT8kxtjWen9X53NJdKHrXNUwUQrd")
+        pubkey!("7nFqXZae9mzYP7LefmCe9C1V2zzPbrY3nLR9WVGorQee")
     }
 
     // ------------------------------------------------------------------------
@@ -1532,7 +1532,7 @@ pub mod sss_token {
 
     /// Returns the program ID for sss_token
     pub fn program_id() -> Pubkey {
-        pubkey!("EsfnG79GeuaxGxnttbJ2kHYRs8CwP5RNNMbr6a3MiZaK")
+        pubkey!("GQp6UgyhLZP6zXRf24JH2BiwuoSAfYZruJ3WUPkqgj8X")
     }
 
     // ------------------------------------------------------------------------
@@ -2863,6 +2863,167 @@ pub mod sss_token {
             metas.push(self.accounts.roles_config.clone());
 
             metas.push(self.accounts.token_program.clone());
+
+            metas.push(self.accounts.system_program.clone());
+
+            metas.push(self.accounts.rent.clone());
+
+            metas.extend(self.remaining_accounts.clone());
+            metas
+        }
+
+        pub fn instruction(&self) -> Instruction {
+            let mut buffer: Vec<u8> = Vec::new();
+
+            buffer.extend_from_slice(&Self::discriminator());
+
+            self.data.serialize(&mut buffer).unwrap();
+
+            Instruction::new_with_bytes(program_id(), &buffer, self.to_account_metas())
+        }
+    }
+
+    // ....................................................................
+    // Instruction: MetaplexMetadata
+    // ....................................................................
+
+    /// Main instruction struct for MetaplexMetadata
+    pub struct MetaplexMetadataInstruction {
+        pub accounts: MetaplexMetadataInstructionAccountMetas,
+        pub data: MetaplexMetadataInstructionData,
+        pub remaining_accounts: Vec<AccountMeta>,
+    }
+
+    /// Account metadata for MetaplexMetadata instruction
+    #[derive(Debug, Clone, Default)]
+    pub struct MetaplexMetadataInstructionAccountMetas {
+        pub authority: AccountMeta,
+
+        pub mint: AccountMeta,
+
+        pub stablecoin_state: AccountMeta,
+
+        pub metadata: AccountMeta,
+
+        pub token_metadata_program: AccountMeta,
+
+        pub sysvar_instructions: AccountMeta,
+
+        pub system_program: AccountMeta,
+
+        pub rent: AccountMeta,
+    }
+
+    /// Account pubkeys for MetaplexMetadata instruction
+    #[derive(Debug, Clone)]
+    pub struct MetaplexMetadataInstructionAccounts {
+        pub authority: Pubkey,
+
+        pub mint: Pubkey,
+
+        pub stablecoin_state: Pubkey,
+
+        pub metadata: Pubkey,
+    }
+
+    impl MetaplexMetadataInstructionAccounts {
+        pub fn new(
+            authority: Pubkey,
+
+            mint: Pubkey,
+
+            stablecoin_state: Pubkey,
+
+            metadata: Pubkey,
+        ) -> Self {
+            Self {
+                authority,
+
+                mint,
+
+                stablecoin_state,
+
+                metadata,
+            }
+        }
+    }
+
+    /// Instruction data for MetaplexMetadata
+    #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+    pub struct MetaplexMetadataInstructionData {
+        pub config: MetaplexMetadataConfig,
+    }
+
+    impl MetaplexMetadataInstructionData {
+        pub fn new(config: MetaplexMetadataConfig) -> Self {
+            Self { config }
+        }
+    }
+
+    /// Implementation for MetaplexMetadataInstruction
+    impl MetaplexMetadataInstruction {
+        fn discriminator() -> [u8; 8] {
+            [34u8, 182u8, 235u8, 21u8, 162u8, 5u8, 84u8, 161u8]
+        }
+
+        pub fn data(data: MetaplexMetadataInstructionData) -> Self {
+            Self {
+                accounts: MetaplexMetadataInstructionAccountMetas::default(),
+                data,
+                remaining_accounts: Vec::new(),
+            }
+        }
+
+        pub fn accounts(mut self, accounts: MetaplexMetadataInstructionAccounts) -> Self {
+            self.accounts.authority = AccountMeta::new(accounts.authority, true);
+
+            self.accounts.mint = AccountMeta::new(accounts.mint, true);
+
+            self.accounts.stablecoin_state =
+                AccountMeta::new_readonly(accounts.stablecoin_state, false);
+
+            self.accounts.metadata = AccountMeta::new(accounts.metadata, false);
+
+            self.accounts.token_metadata_program = AccountMeta::new_readonly(
+                pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"),
+                false,
+            );
+
+            self.accounts.sysvar_instructions = AccountMeta::new_readonly(
+                pubkey!("Sysvar1nstructions1111111111111111111111111"),
+                false,
+            );
+
+            self.accounts.system_program =
+                AccountMeta::new_readonly(pubkey!("11111111111111111111111111111111"), false);
+
+            self.accounts.rent = AccountMeta::new_readonly(
+                pubkey!("SysvarRent111111111111111111111111111111111"),
+                false,
+            );
+
+            self
+        }
+
+        pub fn remaining_accounts(mut self, accounts: Vec<AccountMeta>) -> Self {
+            self.remaining_accounts = accounts;
+            self
+        }
+
+        fn to_account_metas(&self) -> Vec<AccountMeta> {
+            let mut metas = Vec::new();
+
+            metas.push(self.accounts.authority.clone());
+
+            metas.push(self.accounts.mint.clone());
+
+            metas.push(self.accounts.stablecoin_state.clone());
+
+            metas.push(self.accounts.metadata.clone());
+
+            metas.push(self.accounts.token_metadata_program.clone());
+
+            metas.push(self.accounts.sysvar_instructions.clone());
 
             metas.push(self.accounts.system_program.clone());
 
@@ -5315,6 +5476,68 @@ impl ConfidentialCreditsEnabled {
     }
 }
 
+/// Custom struct: MetadataInitialized
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MetadataInitialized {
+    pub mint: Pubkey,
+
+    pub name: String,
+
+    pub symbol: String,
+
+    pub uri: String,
+
+    pub authority: Pubkey,
+
+    pub timestamp: i64,
+}
+
+impl MetadataInitialized {
+    pub fn new(
+        mint: Pubkey,
+
+        name: String,
+
+        symbol: String,
+
+        uri: String,
+
+        authority: Pubkey,
+
+        timestamp: i64,
+    ) -> Self {
+        Self {
+            mint,
+
+            name,
+
+            symbol,
+
+            uri,
+
+            authority,
+
+            timestamp,
+        }
+    }
+}
+
+/// Custom struct: MetaplexMetadataConfig
+#[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
+pub struct MetaplexMetadataConfig {
+    pub name: String,
+
+    pub symbol: String,
+
+    pub uri: String,
+}
+
+impl MetaplexMetadataConfig {
+    pub fn new(name: String, symbol: String, uri: String) -> Self {
+        Self { name, symbol, uri }
+    }
+}
+
 /// Custom struct: MintClosed
 #[derive(Debug, BorshDeserialize, BorshSerialize, Clone)]
 pub struct MintClosed {
@@ -5712,6 +5935,8 @@ pub struct StablecoinConfig {
 
     pub decimals: u8,
 
+    pub enable_mint_close_authority: bool,
+
     pub enable_permanent_delegate: bool,
 
     pub enable_transfer_hook: bool,
@@ -5737,6 +5962,8 @@ impl StablecoinConfig {
 
         decimals: u8,
 
+        enable_mint_close_authority: bool,
+
         enable_permanent_delegate: bool,
 
         enable_transfer_hook: bool,
@@ -5759,6 +5986,8 @@ impl StablecoinConfig {
             uri,
 
             decimals,
+
+            enable_mint_close_authority,
 
             enable_permanent_delegate,
 
